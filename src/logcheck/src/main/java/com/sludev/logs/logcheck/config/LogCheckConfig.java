@@ -28,9 +28,26 @@ public class LogCheckConfig
     private Path logPath;
     private Path statusFilePath;
     private Path configFilePath;
-    private String redisServer;
+    private Path holdingFolderPath;
+    private String redisHost;
     private String redisPort;
 
+    public Path getHoldingFolderPath()
+    {
+        return holdingFolderPath;
+    }
+
+    public void setHoldingFolderPath(Path h)
+    {
+        this.holdingFolderPath = h;
+    }
+
+    public void setHoldingFolderPath(String h)
+    {
+        Path p = Paths.get(h);
+        this.holdingFolderPath = p;
+    }
+    
     public Path getConfigFilePath()
     {
         return configFilePath;
@@ -132,11 +149,17 @@ public class LogCheckConfig
         return dryRun;
     }
 
-    public void setDryRun(boolean dryRun)
+    public void setDryRun(boolean d)
     {
-        this.dryRun = dryRun;
+        this.dryRun = d;
     }
 
+    public void setDryRun(String d)
+    {
+        boolean b = Boolean.valueOf(d);
+        this.dryRun = b;
+    }
+    
     public boolean isShowVersion()
     {
         return showVersion;
@@ -195,14 +218,14 @@ public class LogCheckConfig
         this.statusFilePath = p;
     }
     
-    public String getRedisServer()
+    public String getRedisHost()
     {
-        return redisServer;
+        return redisHost;
     }
 
-    public void setRedisServer(String redisServer)
+    public void setRedisHost(String redisHost)
     {
-        this.redisServer = redisServer;
+        this.redisHost = redisHost;
     }
 
     public String getRedisPort()

@@ -6,7 +6,9 @@
 package com.sludev.logs.logcheck.main;
 
 import com.sludev.logs.logcheck.config.LogCheckConfig;
+import com.sludev.logs.logcheck.enums.LogCheckResultStatusEnum;
 import com.sludev.logs.logcheck.utils.LogCheckResult;
+import com.sludev.logs.logcheck.utils.LogCheckUtil;
 import java.util.concurrent.Callable;
 
 /**
@@ -31,6 +33,14 @@ public class LogCheckRun implements Callable<LogCheckResult>
     public LogCheckResult call() throws Exception
     {
         LogCheckResult res = new LogCheckResult();
+        
+        if( config.isShowVersion() )
+        {
+            LogCheckUtil.displayVersion();
+            res.setStatus(LogCheckResultStatusEnum.SUCCESS);
+            
+            return res;
+        }
         
         return res;
     }

@@ -181,7 +181,7 @@ public class LogCheckMain
                         config.setCronScheduleString(currOpt.getValue());
                         break;
                       
-                    case "email-on-failure":
+                    case "email-on-error":
                         // Send an email when we have an error
                         config.setEmailOnError(currOpt.getValue());
                         break;
@@ -225,6 +225,27 @@ public class LogCheckMain
                         // Write a file preventing multiple instances
                         config.setLockFilePath(currOpt.getValue());
                         break;
+                        
+                    case "log-file":
+                        // Log file for monitoring
+                        config.setLogPath(currOpt.getValue());
+                        break;
+                        
+                        
+                    case "redis-host":
+                        // The redis host for receiving logs
+                        config.setRedisHost(currOpt.getValue());
+                        break;
+                        
+                    case "redis-port":
+                        // The redis server port
+                        config.setRedisPort(currOpt.getValue());
+                        break;
+                        
+                    case "status-file":
+                        // Write session data
+                        config.setStatusFilePath(currOpt.getValue());
+                        break;
                 }
             }
         }
@@ -236,8 +257,8 @@ public class LogCheckMain
             pw.append( String.format("Error : '%s'\n\n", ex.getMessage()));
             
             HelpFormatter formatter = new HelpFormatter();
-            formatter.printHelp( pw, 80,"\njava -jar mssqlrestore-0.9.jar ", 
-                                        "\nThe mssqlrestore application can be used in a variety of options and modes.\n", options,
+            formatter.printHelp( pw, 80,"\njava -jar logcheck-0.9.jar ", 
+                                        "\nThe logcheck application can be used in a variety of options and modes.\n", options,
                                         0, 2, "© All Rights Reserved.",
                                         true);
             
@@ -284,6 +305,103 @@ public class LogCheckMain
                                 .hasArg()
                                 .withArgName("CONFFILE")
                                 .create() );
+        
+        options.addOption( OptionBuilder.withLongOpt( "service" )
+                                .withDescription( "Run as a background service" )
+                                .create() );
+
+        options.addOption( OptionBuilder.withLongOpt( "arg-file" )
+                                .withDescription( "Command-line argument file." )
+                                .hasArg()
+                                .withArgName("ARGFILE")
+                                .create() );
+        
+        options.addOption( OptionBuilder.withLongOpt( "holding-folder" )
+                                .withDescription( "Local folder for keeping downloaded data." )
+                                .hasArg()
+                                .withArgName("LOGFILE")
+                                .create() );
+        
+        options.addOption( OptionBuilder.withLongOpt( "cron-schedule" )
+                                .withDescription( "Specify the schedule." )
+                                .hasArg()
+                                .withArgName("CRONSCHEDULE")
+                                .create() );
+        
+        options.addOption( OptionBuilder.withLongOpt( "email-on-error" )
+                                .withDescription( "Send an email to this person on failure" )
+                                .hasArg()
+                                .withArgName("EMAILONERROR")
+                                .create() );
+        
+        options.addOption( OptionBuilder.withLongOpt( "smtp-server" )
+                                .withDescription( "SMTP Server name" )
+                                .hasArg()
+                                .withArgName("SMTPSERVERNAME")
+                                .create() );
+        
+        options.addOption( OptionBuilder.withLongOpt( "smtp-port" )
+                                .withDescription( "SMTP Server Port" )
+                                .hasArg()
+                                .withArgName("SMTPSERVERPORT")
+                                .create() );
+        
+        options.addOption( OptionBuilder.withLongOpt( "smtp-user" )
+                                .withDescription( "SMTP User" )
+                                .hasArg()
+                                .withArgName("SMTPUSER")
+                                .create() );
+        
+        options.addOption( OptionBuilder.withLongOpt( "smtp-pass" )
+                                .withDescription( "SMTP User password" )
+                                .hasArg()
+                                .withArgName("SMTPUSERPASS")
+                                .create() );
+        
+        options.addOption( OptionBuilder.withLongOpt( "smtp-proto" )
+                                .withDescription( "SMTP Protocol" )
+                                .hasArg()
+                                .withArgName("SMTPPROTO")
+                                .create() );
+        
+        options.addOption( OptionBuilder.withLongOpt( "dry-run" )
+                                .withDescription( "Do not update the database" )
+                                .create() );
+        
+        options.addOption( OptionBuilder.withLongOpt( "version" )
+                                .withDescription( "Show the application version" )
+                                .create() );
+        
+        options.addOption( OptionBuilder.withLongOpt( "lock-file" )
+                                .withDescription( "Prevent multiple instances of the service from running." )
+                                .hasArg()
+                                .withArgName("LOCKFILE")
+                                .create() );
+        
+        options.addOption( OptionBuilder.withLongOpt( "log-file" )
+                                .withDescription( "Log file required for checking." )
+                                .hasArg()
+                                .withArgName("LOGFILE")
+                                .create() );
+        
+        options.addOption( OptionBuilder.withLongOpt( "redis-host" )
+                                .withDescription( "Address of the log file's redis host." )
+                                .hasArg()
+                                .withArgName("REDISHOST")
+                                .create() );
+        
+        options.addOption( OptionBuilder.withLongOpt( "redis-port" )
+                                .withDescription( "Redis server port." )
+                                .hasArg()
+                                .withArgName("REDISPORT")
+                                .create() );
+        
+        options.addOption( OptionBuilder.withLongOpt( "status-file" )
+                                .withDescription( "Status file used for session data." )
+                                .hasArg()
+                                .withArgName("STATUSFILE")
+                                .create() );
+        
         
         return options;
     }

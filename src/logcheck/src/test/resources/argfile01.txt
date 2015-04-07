@@ -1,0 +1,17 @@
+##############################################################################
+##
+##  General
+##
+##############################################################################
+
+# A01. simple example
+# --version
+
+# A02. config file example
+--config-file src/test/resources/config01.xml
+
+# A03. Azure list
+#--azure-path sqlblog01 --azure-account-name portalvhds2vshk796z7zn5 --azure-list-only --azure-list-order LASTMODIFIED_DESC --azure-key PPygi4RKEsyYQLwmdPY0gTQcu3iGQGvCnjzYUWsdunKMF4Eg3FUQN+k4wzcnPSZ8EaZd59GIXgWpoT5208/z2g==
+
+# A04. Azure download
+--azure-path sqlblog01 --azure-account-name portalvhds2vshk796z7zn5 --azure-download-only --backup-full-file-name blogdb201503270500.zip --holding-folder /tmp --azure-key PPygi4RKEsyYQLwmdPY0gTQcu3iGQGvCnjzYUWsdunKMF4Eg3FUQN+k4wzcnPSZ8EaZd59GIXgWpoT5208/z2g==
