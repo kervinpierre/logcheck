@@ -1,0 +1,124 @@
+<?xml version="1.0"?>
+<!--
+ SLU Dev Inc. CONFIDENTIAL
+ DO NOT COPY
+
+Copyright (c) [2012] - [2015] SLU Dev Inc. <info@sludev.com>
+All Rights Reserved.
+
+NOTICE:  All information contained herein is, and remains
+ the property of SLU Dev Inc. and its suppliers,
+ if any.  The intellectual and technical concepts contained
+ herein are proprietary to SLU Dev Inc. and its suppliers and
+ may be covered by U.S. and Foreign Patents, patents in process,
+ and are protected by trade secret or copyright law.
+ Dissemination of this information or reproduction of this material
+ is strictly forbidden unless prior written permission is obtained
+ from SLU Dev Inc.
+-->
+
+<!-- Main 'MsSQLRestore' configuration file.  This file specifies the config -->
+<!-- for its main parameters. -->
+<xs:schema version="1.0"
+           xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           elementFormDefault="qualified">
+
+    <xs:element name="logCheckConfig">
+        <xs:complexType>
+            <xs:choice minOccurs="0" maxOccurs="unbounded">
+                
+                <xs:element name="service" type="xs:boolean" minOccurs="0" maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>Run as a background service</xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                
+                <xs:element name="holdingFolder" type="xs:string" minOccurs="0"  maxOccurs="1">
+                     <xs:annotation>
+                        <xs:documentation>Local folder for keeping downloaded data.</xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                
+                <xs:element name="cronSchedule" type="xs:string" minOccurs="0"  maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>Specify the schedule.</xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                
+                <xs:element name="emailOnError" type="xs:string" minOccurs="0" maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>Send an email to this person on failure</xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                
+                <xs:element name="smtpServer" type="xs:string" minOccurs="0"  maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>SMTP Server name</xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+
+                <xs:element name="smtpUser" type="xs:string" minOccurs="0"  maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>SMTP User</xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                
+                <xs:element name="smtpPass" type="xs:string" minOccurs="0"  maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>SMTP User password</xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                
+                <xs:element name="smtpPort" type="xs:string" minOccurs="0"  maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>SMTP Server Port</xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                
+                <xs:element name="smtpProtocol" type="xs:string" minOccurs="0"  maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>SMTP Protocol</xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                
+                <xs:element name="dryRun" type="xs:string" minOccurs="0"  maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>Do not update the database.</xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                
+                <xs:element name="lockFilePath" type="xs:string" minOccurs="0" maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>Prevent multiple instances of the service from running.</xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                
+                <xs:element name="logFilePath" type="xs:string" minOccurs="0" maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>Log file to be monitored</xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                
+                <xs:element name="statusFilePath" type="xs:string" minOccurs="0" maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>Session data file</xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                
+                <xs:element name="redisHost" type="xs:string" minOccurs="0" maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>Redis server where logs are stored</xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                
+                <xs:element name="redisPort" type="xs:string" minOccurs="0" maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>Redis server port where logs are stored</xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                
+            </xs:choice>
+        </xs:complexType>
+    </xs:element>
+    
+</xs:schema>
