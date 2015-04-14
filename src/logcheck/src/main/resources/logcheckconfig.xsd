@@ -39,9 +39,9 @@ NOTICE:  All information contained herein is, and remains
                     </xs:annotation>
                 </xs:element>
                 
-                <xs:element name="cronSchedule" type="xs:string" minOccurs="0"  maxOccurs="1">
+                <xs:element name="pollInterval" type="xs:string" minOccurs="0"  maxOccurs="1">
                     <xs:annotation>
-                        <xs:documentation>Specify the schedule.</xs:documentation>
+                        <xs:documentation>Seconds between polling the log file.</xs:documentation>
                     </xs:annotation>
                 </xs:element>
                 
@@ -105,15 +105,9 @@ NOTICE:  All information contained herein is, and remains
                     </xs:annotation>
                 </xs:element>
                 
-                <xs:element name="redisHost" type="xs:string" minOccurs="0" maxOccurs="1">
+                <xs:element name="elasticsearchURL" type="xs:string" minOccurs="0" maxOccurs="1">
                     <xs:annotation>
-                        <xs:documentation>Redis server where logs are stored</xs:documentation>
-                    </xs:annotation>
-                </xs:element>
-                
-                <xs:element name="redisPort" type="xs:string" minOccurs="0" maxOccurs="1">
-                    <xs:annotation>
-                        <xs:documentation>Redis server port where logs are stored</xs:documentation>
+                        <xs:documentation>Elasticsearch server where logs are stored.  Including protocol and port.</xs:documentation>
                     </xs:annotation>
                 </xs:element>
                 

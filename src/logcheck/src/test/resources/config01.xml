@@ -23,10 +23,9 @@
     <service>false</service>
     <holdingFolder>/tmp</holdingFolder>
     
-    <redisHost>127.0.0.1</redisHost>
-    <redisPort>6379</redisPort>
+    <elasticsearchURL>http://127.0.0.1:9200/</elasticsearchURL>
+    <pollInterval>10</pollInterval>
     
-    <cronSchedule>*/2 * * * *</cronSchedule>
     <emailOnError>false</emailOnError>
 
     <smtpServer>smtp.sendgrid.net</smtpServer>

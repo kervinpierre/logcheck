@@ -15,17 +15,17 @@
  *   is strictly forbidden unless prior written permission is obtained
  *   from SLU Dev Inc.
  */
-package com.sludev.logs.logcheck.enums;
+package com.sludev.logs.logcheck.log;
+
+import java.util.concurrent.BlockingDeque;
 
 /**
- *
+ * An class that provides log entries.
+ * 
  * @author kervin
  */
-public enum LogCheckResultStatusEnum
+public interface ILogEntrySource
 {
-    NONE,
-    SUCCESS,
-    FAIL,
-    STARTED,
-    ALREADYRUNNING
+    public LogEntry next();
+    public void setCompletedLogEntries(BlockingDeque<LogEntry> c);
 }

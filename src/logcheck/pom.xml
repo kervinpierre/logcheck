@@ -49,5 +49,10 @@
             <version>4.10</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>io.searchbox</groupId>
+            <artifactId>jest</artifactId>
+            <version>0.1.5</version>
+        </dependency>
     </dependencies>
 </project>
