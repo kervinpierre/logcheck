@@ -11,5 +11,11 @@
 # --config-file src/test/resources/config01.xml
 
 # A03. 
---log-file src/test/resources/app-release-20150406-01.log --file-from-start --elasticsearch-url http://dev01.fsastore.com:9200/
+#--log-file src/test/resources/app-release-20150406-01.log --file-from-start --elasticsearch-url http://10.210.66.14:9200/
+
+# A04. Windows testing
+#--lock-file c:/windows/temp/logcheck.lck --log-file c:/logs/webapp/fsastore.com/app.log --file-from-start --elasticsearch-url http://10.210.66.14:9200/
+
+# A04. Windows testing, new logs only
+--lock-file c:/windows/temp/logcheck.lck --log-file c:/logs/webapp/fsastore.com/app.log --elasticsearch-url http://10.210.66.14:9200/
 
