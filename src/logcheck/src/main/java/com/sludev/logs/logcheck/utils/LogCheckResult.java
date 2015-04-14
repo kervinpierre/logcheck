@@ -5,7 +5,7 @@
  */
 package com.sludev.logs.logcheck.utils;
 
-import com.sludev.logs.logcheck.enums.LogCheckResultStatusEnum;
+import com.sludev.logs.logcheck.enums.LogCheckResultStatus;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -18,20 +18,20 @@ public class LogCheckResult
     private static final Logger log 
                       = LogManager.getLogger(LogCheckResult.class);
     
-    private LogCheckResultStatusEnum status;
+    private LogCheckResultStatus status;
 
-    public LogCheckResultStatusEnum getStatus()
+    public LogCheckResultStatus getStatus()
     {
         return status;
     }
 
-    public void setStatus(LogCheckResultStatusEnum s)
+    public void setStatus(LogCheckResultStatus s)
     {
         this.status = s;
     }
     
     public LogCheckResult()
     {
-        status = LogCheckResultStatusEnum.NONE;
+        status = LogCheckResultStatus.NONE;
     }
 }

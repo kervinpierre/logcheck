@@ -1,21 +1,41 @@
 /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+ *   SLU Dev Inc. CONFIDENTIAL
+ *   DO NOT COPY
+ *  
+ *  Copyright (c) [2012] - [2015] SLU Dev Inc. <info@sludev.com>
+ *  All Rights Reserved.
+ *  
+ *  NOTICE:  All information contained herein is, and remains
+ *   the property of SLU Dev Inc. and its suppliers,
+ *   if any.  The intellectual and technical concepts contained
+ *   herein are proprietary to SLU Dev Inc. and its suppliers and
+ *   may be covered by U.S. and Foreign Patents, patents in process,
+ *   and are protected by trade secret or copyright law.
+ *   Dissemination of this information or reproduction of this material
+ *   is strictly forbidden unless prior written permission is obtained
+ *   from SLU Dev Inc.
  */
 package com.sludev.logs.logcheck.config;
 
+import com.sludev.logs.logcheck.enums.LogCheckIndexNameFormat;
+import com.sludev.logs.logcheck.utils.LogCheckConstants;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import org.apache.logging.log4j.LogManager;
 
 /**
  *
- * @author Administrator
+ * @author kervin
  */
 public class LogCheckConfig
 {
+    private static final org.apache.logging.log4j.Logger log 
+                             = LogManager.getLogger(LogCheckConfig.class);
+    
     private boolean service;
-    private String cronScheduleString;
+    private long pollIntervalSeconds;
     private String emailOnError;
     private String smtpServer;
     private String smtpPort;
@@ -24,13 +44,73 @@ public class LogCheckConfig
     private String smtpProto;
     private boolean dryRun;
     private boolean showVersion;
+    private boolean fileFromStart;
     private Path lockFilePath;
     private Path logPath;
     private Path statusFilePath;
     private Path configFilePath;
     private Path holdingFolderPath;
-    private String redisHost;
-    private String redisPort;
+    private URL elasticsearchURL;
+    private String elasticsearchIndexName;
+    private String elasticsearchIndexPrefix;
+    private String elasticsearchLogType;
+    private LogCheckIndexNameFormat elasticsearchIndexNameFormat;
+
+    public String getElasticsearchLogType()
+    {
+        return elasticsearchLogType;
+    }
+
+    public void setElasticsearchLogType(String e)
+    {
+        this.elasticsearchLogType = e;
+    }
+
+    public LogCheckIndexNameFormat getElasticsearchIndexNameFormat()
+    {
+        return elasticsearchIndexNameFormat;
+    }
+
+    public void setElasticsearchIndexNameFormat(LogCheckIndexNameFormat e)
+    {
+        this.elasticsearchIndexNameFormat = e;
+    }
+
+    public void setElasticsearchIndexNameFormat(String e)
+    {
+        LogCheckIndexNameFormat lcinf = LogCheckIndexNameFormat.valueOf(e);
+        this.elasticsearchIndexNameFormat = lcinf;
+    }
+    
+    public String getElasticsearchIndexName()
+    {
+        return elasticsearchIndexName;
+    }
+
+    public void setElasticsearchIndexName(String e)
+    {
+        this.elasticsearchIndexName = e;
+    }
+
+    public String getElasticsearchIndexPrefix()
+    {
+        return elasticsearchIndexPrefix;
+    }
+
+    public void setElasticsearchIndexPrefix(String e)
+    {
+        this.elasticsearchIndexPrefix = e;
+    }
+
+    public boolean isFileFromStart()
+    {
+        return fileFromStart;
+    }
+
+    public void setFileFromStart(boolean f)
+    {
+        this.fileFromStart = f;
+    }
 
     public Path getHoldingFolderPath()
     {
@@ -74,16 +154,21 @@ public class LogCheckConfig
         this.service = service;
     }
 
-    public String getCronScheduleString()
+    public long getPollIntervalSeconds()
     {
-        return cronScheduleString;
+        return pollIntervalSeconds;
     }
 
-    public void setCronScheduleString(String cronScheduleString)
+    public void setPollIntervalSeconds(long p)
     {
-        this.cronScheduleString = cronScheduleString;
+        this.pollIntervalSeconds = p;
     }
 
+    public void setPollIntervalSeconds(String p)
+    {
+        this.pollIntervalSeconds = Long.parseLong(p);
+    }
+    
     public String getEmailOnError()
     {
         return emailOnError;
@@ -218,25 +303,43 @@ public class LogCheckConfig
         this.statusFilePath = p;
     }
     
-    public String getRedisHost()
+    public URL getElasticsearchURL()
     {
-        return redisHost;
+        return elasticsearchURL;
     }
 
-    public void setRedisHost(String redisHost)
+    public final void setElasticsearchURL(URL u)
     {
-        this.redisHost = redisHost;
-    }
-
-    public String getRedisPort()
-    {
-        return redisPort;
-    }
-
-    public void setRedisPort(String redisPort)
-    {
-        this.redisPort = redisPort;
+        this.elasticsearchURL = u;
     }
     
+    public final void setElasticsearchURL(String u)
+    {
+        URL esu = null;
+        
+        try
+        {
+            esu = new URL(u);
+        }
+        catch (MalformedURLException ex)
+        {
+            log.error( String.format("Invalid Elasticsearch URL : '%s'", u), ex);
+        }
+        
+        this.elasticsearchURL = esu;
+    }
     
+    public LogCheckConfig()
+    {
+        pollIntervalSeconds = LogCheckConstants.DEFAULT_POLL_INTERVAL;
+        setElasticsearchURL(LogCheckConstants.DEFAULT_ELASTICSEARCH_URL);
+        fileFromStart = false;
+        
+        elasticsearchIndexPrefix 
+                = LogCheckConstants.DEFAULT_ELASTICSEARCH_INDEX_PREFIX;
+        elasticsearchIndexNameFormat 
+                = LogCheckConstants.DEFAULT_ELASTICSEARCH_INDEX_NAME_FORMAT;
+        
+        elasticsearchLogType = LogCheckConstants.DEFAULT_ELASTICSEARCH_LOG_TYPE;
+    }
 }

@@ -183,7 +183,7 @@ public class LogCheckConfigFile
         XPathFactory currXPathfactory = XPathFactory.newInstance();
         XPath currXPath = currXPathfactory.newXPath();
         String holdFolderStr = null;
-        String cronSchedStr = null;
+        String pollIntervalStr = null;
         String smtpServerStr = null;
         String smtpUserStr = null;
         String smtpPassStr = null;
@@ -191,8 +191,7 @@ public class LogCheckConfigFile
         String smtpProtocolStr = null;
         String dryRunStr = null;
         String lockFileStr = null;
-        String redisHostStr = null;
-        String redisPortStr = null;
+        String elasticsearchURLStr = null;
         String logFileStr = null;
         String statusFileStr = null;
         
@@ -207,7 +206,7 @@ public class LogCheckConfigFile
         
         try
         {
-            cronSchedStr = currXPath.compile("./cronSchedule").evaluate(currEl);
+            pollIntervalStr = currXPath.compile("./pollInterval").evaluate(currEl);
         }
         catch (XPathExpressionException ex)
         {
@@ -288,22 +287,13 @@ public class LogCheckConfigFile
         
         try
         {
-            redisHostStr = currXPath.compile("./redisHost").evaluate(currEl);
+            elasticsearchURLStr = currXPath.compile("./elasticsearchURL").evaluate(currEl);
         }
         catch (XPathExpressionException ex)
         {
             log.debug("configuration parsing error.", ex);
         }
-        
-        try
-        {
-            redisPortStr = currXPath.compile("./redisPort").evaluate(currEl);
-        }
-        catch (XPathExpressionException ex)
-        {
-            log.debug("configuration parsing error.", ex);
-        }
-        
+
         try
         {
             statusFileStr = currXPath.compile("./statusFilePath").evaluate(currEl);
@@ -318,9 +308,9 @@ public class LogCheckConfigFile
             config.setHoldingFolderPath(holdFolderStr);
         }
         
-        if( StringUtils.isNoneBlank(cronSchedStr) )
+        if( StringUtils.isNoneBlank(pollIntervalStr) )
         {
-            config.setCronScheduleString(cronSchedStr);
+            config.setPollIntervalSeconds(pollIntervalStr);
         }
         
         
@@ -364,14 +354,9 @@ public class LogCheckConfigFile
             config.setLogPath(logFileStr);
         }
         
-        if( StringUtils.isNoneBlank(redisHostStr) )
+        if( StringUtils.isNoneBlank(elasticsearchURLStr) )
         {
-            config.setRedisHost(redisHostStr);
-        }
-        
-        if( StringUtils.isNoneBlank(redisPortStr) )
-        {
-            config.setRedisPort(redisPortStr);
+            config.setElasticsearchURL(elasticsearchURLStr);
         }
         
         if( StringUtils.isNoneBlank(statusFileStr) )

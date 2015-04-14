@@ -15,11 +15,14 @@
  *   is strictly forbidden unless prior written permission is obtained
  *   from SLU Dev Inc.
  */
-package com.sludev.logs.logcheck.config;
+package com.sludev.logs.logcheck.store;
 
 import com.sludev.logs.logcheck.LogCheckProperties;
 import com.sludev.logs.logcheck.LogCheckTestWatcher;
-import com.sludev.logs.logcheck.utils.LogCheckException;
+import com.sludev.logs.logcheck.enums.LogCheckLogLevel;
+import com.sludev.logs.logcheck.log.LogEntry;
+import com.sludev.logs.logcheck.utils.LogCheckResult;
+import java.time.LocalDateTime;
 import java.util.Properties;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -27,7 +30,6 @@ import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.Rule;
 import org.junit.rules.TestWatcher;
@@ -36,10 +38,10 @@ import org.junit.rules.TestWatcher;
  *
  * @author kervin
  */
-public class LogCheckConfigFileTest
+public class LogEntryElasticSearchTest
 {
     private static final Logger log 
-                   = LogManager.getLogger(LogCheckConfigFileTest.class);
+                   = LogManager.getLogger(LogEntryElasticSearchTest.class);
 
     private Properties testProperties;
 
@@ -57,7 +59,7 @@ public class LogCheckConfigFileTest
         testProperties = LogCheckProperties.GetProperties();
     }
     
-    public LogCheckConfigFileTest()
+    public LogEntryElasticSearchTest()
     {
     }
     
@@ -70,27 +72,35 @@ public class LogCheckConfigFileTest
     public static void tearDownClass()
     {
     }
-
+    
     @After
     public void tearDown()
     {
     }
 
     /**
-     * Test of read method, of class LogCheckConfigFile.
-     * @throws com.sludev.logs.logcheck.utils.LogCheckException
+     * Test of put method, of class LogEntryElasticSearch.
      */
     @Test
-    @Ignore
-    public void testRead() throws LogCheckException
+    public void testPut()
     {
-        log.info("read");
+        log.debug("testing put()");
         
-        String confPathString = testProperties.getProperty("logcheck.test0001.conffile");
+        String elasticsearchURL = testProperties.getProperty("logcheck.test0001.elasticsearchurl");
         
-        LogCheckConfigFile instance = new LogCheckConfigFile();
-        instance.setFilePath(confPathString);
-        instance.read();
+        LogEntry le = new LogEntry();
+        le.setHost("test-host");
+        le.setTimeStamp(LocalDateTime.now());
+        le.setLevel(LogCheckLogLevel.DEBUG);
+        le.setMessage(String.format("Message Message\nMessage Message Message\nMessage Message"));
+        le.setException(String.format("Exception Exception\nException Exception Exception\nException Exception"));
+        le.setLogger("com.example.test");
+        
+        LogEntryElasticSearch instance = new LogEntryElasticSearch();
+        instance.setElasticsearchURL(elasticsearchURL);
+        instance.init();
+        
+        LogCheckResult result = instance.put(le);
     }
     
 }

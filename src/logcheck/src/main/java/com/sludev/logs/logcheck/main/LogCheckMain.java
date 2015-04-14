@@ -1,7 +1,19 @@
 /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+ *   SLU Dev Inc. CONFIDENTIAL
+ *   DO NOT COPY
+ *  
+ *  Copyright (c) [2012] - [2015] SLU Dev Inc. <info@sludev.com>
+ *  All Rights Reserved.
+ *  
+ *  NOTICE:  All information contained herein is, and remains
+ *   the property of SLU Dev Inc. and its suppliers,
+ *   if any.  The intellectual and technical concepts contained
+ *   herein are proprietary to SLU Dev Inc. and its suppliers and
+ *   may be covered by U.S. and Foreign Patents, patents in process,
+ *   and are protected by trade secret or copyright law.
+ *   Dissemination of this information or reproduction of this material
+ *   is strictly forbidden unless prior written permission is obtained
+ *   from SLU Dev Inc.
  */
 package com.sludev.logs.logcheck.main;
 
@@ -176,9 +188,9 @@ public class LogCheckMain
                         config.setService(true);
                         break;
                       
-                    case "cron-schedule":
-                        // Cron Schedule
-                        config.setCronScheduleString(currOpt.getValue());
+                    case "poll-interval":
+                        // File polling interval
+                        config.setPollIntervalSeconds(currOpt.getValue());
                         break;
                       
                     case "email-on-error":
@@ -231,15 +243,14 @@ public class LogCheckMain
                         config.setLogPath(currOpt.getValue());
                         break;
                         
-                        
-                    case "redis-host":
-                        // The redis host for receiving logs
-                        config.setRedisHost(currOpt.getValue());
+                    case "file-from-start":
+                        // Process the specified log file from its start
+                        config.setFileFromStart(true);
                         break;
                         
-                    case "redis-port":
-                        // The redis server port
-                        config.setRedisPort(currOpt.getValue());
+                    case "elasticsearch-url":
+                        // The Elasticsearch URL
+                        config.setElasticsearchURL(currOpt.getValue());
                         break;
                         
                     case "status-file":
@@ -278,6 +289,8 @@ public class LogCheckMain
         ExecutorService currExe = Executors.newSingleThreadExecutor(thFactory);
         Future exeRes = currExe.submit(currRunTask);
         
+        currExe.shutdown();
+                
         try
         {
             LogCheckResult resp = currRunTask.get();
@@ -290,8 +303,6 @@ public class LogCheckMain
         {
             log.error("Application execution error", ex);
         }
-        
-        currExe.shutdown();
         
         log.debug( String.format("LogCheckMain end.\n") );
     }
@@ -322,10 +333,10 @@ public class LogCheckMain
                                 .withArgName("LOGFILE")
                                 .create() );
         
-        options.addOption( OptionBuilder.withLongOpt( "cron-schedule" )
-                                .withDescription( "Specify the schedule." )
+        options.addOption( OptionBuilder.withLongOpt( "poll-interval" )
+                                .withDescription( "Seconds between polling the log file." )
                                 .hasArg()
-                                .withArgName("CRONSCHEDULE")
+                                .withArgName("POLLINTERVAL")
                                 .create() );
         
         options.addOption( OptionBuilder.withLongOpt( "email-on-error" )
@@ -384,17 +395,16 @@ public class LogCheckMain
                                 .withArgName("LOGFILE")
                                 .create() );
         
-        options.addOption( OptionBuilder.withLongOpt( "redis-host" )
-                                .withDescription( "Address of the log file's redis host." )
-                                .hasArg()
-                                .withArgName("REDISHOST")
+        options.addOption( OptionBuilder.withLongOpt( "file-from-start" )
+                                .withDescription( "Process all records already in the log file." )
                                 .create() );
         
-        options.addOption( OptionBuilder.withLongOpt( "redis-port" )
-                                .withDescription( "Redis server port." )
+        options.addOption( OptionBuilder.withLongOpt( "elasticsearch-url" )
+                                .withDescription( "Elasticsearch URL, including protocol and port." )
                                 .hasArg()
-                                .withArgName("REDISPORT")
+                                .withArgName("ELASTICSEARCHURL")
                                 .create() );
+
         
         options.addOption( OptionBuilder.withLongOpt( "status-file" )
                                 .withDescription( "Status file used for session data." )
