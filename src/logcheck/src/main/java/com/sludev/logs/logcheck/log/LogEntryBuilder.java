@@ -27,12 +27,12 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 /**
- *
+ * Utility for processing LogEntry and related objects.
+ * 
  * @author kervin
  */
 public class LogEntryBuilder
 {
-
     private static final Logger log
             = LogManager.getLogger(LogEntryBuilder.class);
 
@@ -174,7 +174,7 @@ public class LogEntryBuilder
         columnString = new StringBuilder();
         columnCount = 0;
 
-        setLogRowStartPattern("^[\\s]*([A-Z]+)[\\s]+\\[([\\p{Alnum}:,\\s-]+)\\][\\s]+([\\p{Alnum}\\.]+)[\\s]*$");
+        setLogRowStartPattern("^[\\s]*([A-Z]+)[\\s]+\\[([\\p{Alnum}:,\\s-]+)\\][\\s]+([\\p{Alnum}\\.]+)[\\s]+([\\w\\.-]+)[\\s]*$");
         setLogColumnEndPattern("^\\[logging column end\\]$");
         setLogRowEndPattern("^\\[logging row end\\]$");
 
@@ -270,6 +270,7 @@ public class LogEntryBuilder
                 currentLogEntry.setLevel(currM.group(1));
                 currentLogEntry.setTimeStamp(currM.group(2));
                 currentLogEntry.setLogger(currM.group(3));
+                currentLogEntry.setHost(currM.group(4));
             }
         }
         else if (currentLogEntry != null

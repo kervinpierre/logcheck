@@ -28,7 +28,12 @@ import com.sludev.logs.logcheck.log.LogEntryQueueSource;
 import com.sludev.logs.logcheck.store.LogEntryElasticSearch;
 import com.sludev.logs.logcheck.utils.LogCheckResult;
 import com.sludev.logs.logcheck.tail.LogCheckTail;
+import com.sludev.logs.logcheck.utils.LogCheckException;
+import com.sludev.logs.logcheck.utils.LogCheckLockFile;
 import com.sludev.logs.logcheck.utils.LogCheckUtil;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -87,6 +92,39 @@ public class LogCheckRun implements Callable<LogCheckResult>
             res.setStatus(LogCheckResultStatus.SUCCESS);
             
             return res;
+        }
+        
+        // Acquire the lock if necessary
+        Path lk = config.getLockFilePath();
+        if( lk != null )
+        {
+            if( Files.exists(lk) )
+            {
+                int runningPID = 0;
+                
+                try
+                {
+                    runningPID = LogCheckLockFile.getLockPID(lk);
+                }
+                catch (IOException ex)
+                {
+                    throw new LogCheckException(String.format(
+                            "Exception reading lock file '%s'", lk), ex);
+                }
+                
+                throw new LogCheckException(String.format(
+                            "Process '%d' already has the lock file '%s'",
+                                            runningPID, lk));
+            }
+            else
+            {
+                if( LogCheckLockFile.acquireLockFile(lk) == false )
+                {
+                    String errMsg = String.format(
+                            "Error aquiring the lock file '%s'", lk);
+                    throw new LogCheckException(errMsg);
+                }
+            }
         }
         
         // Log tailing related objects
@@ -165,6 +203,25 @@ public class LogCheckRun implements Callable<LogCheckResult>
         catch (ExecutionException ex)
         {
             log.error("Application execution error", ex);
+        }
+        
+        // Release the locks if necessary
+        if( lk != null )
+        {
+            if( Files.exists(lk) )
+            {
+                if( LogCheckLockFile.releaseLockFile(lk) == false )
+                {
+                    String errMsg = String.format(
+                            "Error releasing the lock file '%s'", lk);
+                    throw new LogCheckException(errMsg);
+                }
+            }
+            else
+            {
+                log.error(String.format(
+                            "Expected lock file '%s' to exist.", lk));
+            }
         }
         
         return res;
