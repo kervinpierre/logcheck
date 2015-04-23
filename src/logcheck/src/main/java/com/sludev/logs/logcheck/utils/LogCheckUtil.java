@@ -26,7 +26,7 @@ public class LogCheckUtil
     public static void displayVersion()
     {
         System.out.println( String.format(
-                "\n%s : Version %s: Build [%s]\n\u00a9 SLU Dev Inc.  All Rights Reserved.\n", 
+                "\n%s : Version %s: Build [%s]\n\u00a9 All Rights Reserved.\n", 
                     LogCheckConstants.PROD_LONG_NAME,
                     LogCheckConstants.PROD_VERSION,
                     LogCheckConstants.PROD_BUILD) );

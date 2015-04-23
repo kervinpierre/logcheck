@@ -18,401 +18,183 @@
 package com.sludev.logs.logcheck.main;
 
 import com.sludev.logs.logcheck.config.LogCheckConfig;
-import com.sludev.logs.logcheck.config.LogCheckConfigFile;
-import com.sludev.logs.logcheck.utils.LogCheckResult;
 import com.sludev.logs.logcheck.utils.LogCheckException;
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.nio.file.Files;
-import java.nio.file.Paths;
+import com.sludev.logs.logcheck.utils.LogCheckResult;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.CommandLineParser;
-import org.apache.commons.cli.GnuParser;
-import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.Option;
-import org.apache.commons.cli.OptionBuilder;
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.ParseException;
 import org.apache.commons.lang3.concurrent.BasicThreadFactory;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 /**
  *
- * @author Administrator
+ * @author kervin
  */
 public class LogCheckMain 
 {
     private static final Logger log 
                              = LogManager.getLogger(LogCheckMain.class);
     
+    private String[] staticArgs = null;
+    
     /**
      * @param args the command line arguments
      */
     public static void main(String[] args)
     {  
-        CommandLineParser parser = new GnuParser();
-        Options options = ConfigureOptions();
-        LogCheckConfig config = new LogCheckConfig();
+        log.debug("Starting Log Check via its Command Line Interface.");
         
+        commonStart(args);
+    }
+    
+    
+    /**
+     * A common static method for all interfaces to us.  This interface is called
+     * currently from the...
+     * 1. Command Line Interface - main()
+     * 2. Unix Service Interface - JServ
+     * 3. Windows Service Interface - ProcRun
+     * 
+     * @param args 
+     */
+    public static void commonStart(String[] args)
+    {
+        // Initialize only.  Don't actually run or do anything else
+        LogCheckConfig res = LogCheckInitialize.initialize(args);
+        LogCheckResult procRes;
         
         try
         {
-            // Get the command line argument list from the OS
-            CommandLine line;
-            try
-            {
-                line = parser.parse(options, args);
-            }
-            catch (ParseException ex)
-            {
-                throw new LogCheckException( 
-                        String.format("Error parsing command line.'%s'", 
-                                ex.getMessage()), ex);
-            }
-            
-            // First check for an argument file, so it can override command
-            // line arguments from above.
-            //
-            // NB: You can't use command line arguments AND argfile at the same
-            //     time
-            if (line.hasOption("arg-file"))
-            {
-                String argfile = line.getOptionValue("arg-file");
-                
-                try
-                {
-                    BufferedReader reader = new BufferedReader( new FileReader(argfile));
-                    String argLine = "";
-                    
-                    do
-                    {
-                        argLine = reader.readLine();
-                        if( argLine != null )
-                        {
-                            argLine = argLine.trim();
-                        }
-                    }
-                    while(  argLine != null 
-                                && (argLine.length() < 1 ||  argLine.startsWith("#")) );
-                    
-                    String[] argArray = new String[0];
-                    
-                    if( argLine != null )
-                    {
-                        argArray = argLine.split("\\s+");
-                    }
-                    
-                            
-                    log.debug( String.format("LogCheckMain main() : Argfile parsed : %s\n", 
-                            Arrays.toString(argArray)) );
-        
-                    try
-                    {
-                        line = parser.parse(options, argArray);
-                    }
-                    catch (ParseException ex)
-                    {
-                        throw new LogCheckException( 
-                            String.format("Error parsing command line.'%s'", 
-                                ex.getMessage()), ex);
-                    }
-                }
-                catch (FileNotFoundException ex)
-                {
-                     log.error( "Error : File not found :", ex);
-                    throw new LogCheckException("ERROR: Argument file not found.", ex);
-                }
-                catch (IOException ex)
-                {
-                     log.error( "Error : IO : ", ex);
-                    throw new LogCheckException("ERROR: Argument file can not be read.", ex);
-                }
-            }
-            
-            // Second, check for the configuration file.  It needs to be parsed
-            // before all command line arguments.  So that these arguments later
-            // override the configuration file values
-            if (line.hasOption("config-file"))
-            {
-                String configfile = line.getOptionValue("config-file");
-                
-                if( Files.isReadable(Paths.get(configfile)) == false )
-                {
-                    throw new LogCheckException(
-                        String.format("Invalid configuration file '%s'.",
-                                        configfile));
-                }
-                
-                config.setConfigFilePath(configfile);
-                
-                if( config.getConfigFilePath() != null )
-                {
-                    LogCheckConfigFile confFile = new LogCheckConfigFile();
-                    confFile.setFilePath(config.getConfigFilePath());
-                    confFile.setConfig(config);
-
-                    confFile.read();
-                }
-            }
-            
-            if( line.getOptions().length < 1 )
-            {
-                // At least one option is mandatory
-                throw new LogCheckException("No program arguments were found.");
-            }
-            
-            // Argument order can be important. We may be creating THEN changing a folder's attributes.
-            // It would be important to create the folder first.
-            Iterator cmdI = line.iterator();
-            while( cmdI.hasNext())
-            {
-                Option currOpt = (Option)cmdI.next();
-                String currOptName = currOpt.getLongOpt();
-
-                switch( currOptName )
-                {
-                    case "service":
-                        // Run as a service
-                        config.setService(true);
-                        break;
-                      
-                    case "poll-interval":
-                        // File polling interval
-                        config.setPollIntervalSeconds(currOpt.getValue());
-                        break;
-                      
-                    case "email-on-error":
-                        // Send an email when we have an error
-                        config.setEmailOnError(currOpt.getValue());
-                        break;
-                      
-                    case "smtp-server":
-                        // SMTP host server
-                        config.setSmtpServer(currOpt.getValue());
-                        break;
-                    
-                    case "smtp-port":
-                        // SMTP server port
-                        config.setSmtpPort(currOpt.getValue());
-                        break;
-                        
-                    case "smtp-user":
-                        // SMTP Login user
-                        config.setSmtpUser(currOpt.getValue());
-                        break;
-                        
-                    case "smtp-pass":
-                        // SMTP Login password
-                        config.setSmtpPass(currOpt.getValue());
-                        break;
-                        
-                    case "smtp-proto":
-                        // STMP Protocol type
-                        config.setSmtpProto(currOpt.getValue());
-                        break;
-                        
-                    case "dry-run":
-                        // For testing, do not update the database
-                        config.setDryRun(true);
-                        break;
-                        
-                    case "version":
-                        // Show the application version and exit
-                        config.setShowVersion(true);
-                        break;
-                        
-                    case "lock-file":
-                        // Write a file preventing multiple instances
-                        config.setLockFilePath(currOpt.getValue());
-                        break;
-                        
-                    case "log-file":
-                        // Log file for monitoring
-                        config.setLogPath(currOpt.getValue());
-                        break;
-                        
-                    case "file-from-start":
-                        // Process the specified log file from its start
-                        config.setFileFromStart(true);
-                        break;
-                        
-                    case "elasticsearch-url":
-                        // The Elasticsearch URL
-                        config.setElasticsearchURL(currOpt.getValue());
-                        break;
-                        
-                    case "status-file":
-                        // Write session data
-                        config.setStatusFilePath(currOpt.getValue());
-                        break;
-                }
-            }
+            procRes = processStart(res); 
         }
         catch (LogCheckException ex)
         {
-            StringWriter sw = new StringWriter();
-            PrintWriter pw = new PrintWriter(sw);
-            
-            pw.append( String.format("Error : '%s'\n\n", ex.getMessage()));
-            
-            HelpFormatter formatter = new HelpFormatter();
-            formatter.printHelp( pw, 80,"\njava -jar logcheck-0.9.jar ", 
-                                        "\nThe logcheck application can be used in a variety of options and modes.\n", options,
-                                        0, 2, "© All Rights Reserved.",
-                                        true);
-            
-            System.out.println(sw.toString());
-            
-            System.exit(1);
-        }
+            log.error("Error running application.", ex);
+        }   
+    }
+    
+    public void destroy()
+    {
+        log.info("Service destroy called.");
         
+        ;
+    }
+
+    public void init(String[] args) 
+    {
+        log.info( String.format("Service init called.\n[[%s]]\n", 
+                Arrays.toString(args)) );
+        
+        this.staticArgs = args;
+    }
+
+    /**
+     * Unix/Linux JSvc start method
+     * 
+     */
+    public void start()
+    {
+        log.info("Starting LogCheck via its Unix Service Interface.");
+        
+        commonStart(this.staticArgs);
+    }
+
+    /**
+     * Service stop method.
+     * 
+     */
+    public void stop()
+    {
+        log.info("Service stop called...");
+        
+        ;
+    }
+    
+    /**
+     * Stop the ProcRun Windows Service.
+     * 
+     * @param args 
+     */
+    public static void windowsStop(String args[])
+    {
+        log.info("Windows service stop called...");
+
+        // MainUtils.stopAgent();
+    }
+
+    /**
+     * Start the ProcRun Windows Service.  This method must be kept running.
+     * The stop method may also be run from a separate thread.
+     * 
+     * An example of the ProcRun install command which must be run prior...
+     * 
+     * C:\commons-daemon\amd64\prunsrv.exe  //IS/LOGCHECK 
+     *   --Classpath=c:\src\fastsitesoft.com\svn\src\target\logcheck-0.9.jar 
+     *   --StartMode=jvm --StartClass=com.sludev.logs.logcheck.main.LogCheckMain 
+     *   --StartMethod=windowsStart --StopMethod=windowsStop
+     *   --JavaHome="C:\Program Files\Java\jdk1.7.0_51" 
+     *   --Jvm="C:\Program Files\Java\jdk1.7.0_51\jre\bin\server\jvm.dll" 
+     *   --StdOutput=auto --StdError=auto
+     * 
+     * Then the service can be run using...
+     * C:\commons-daemon\amd64\prunsrv.exe  //RS/LOGCHECK
+     * or...
+     * C:\commons-daemon\amd64\prunsrv.exe  //TS/LOGCHECK
+     * 
+     * or deleted...
+     * C:\commons-daemon\amd64\prunsrv.exe  //DS/LOGCHECK
+     * 
+     * @param args 
+     */
+    public static void windowsStart(String args[])
+    {
+        log.info("Starting LogCheck via its Windows Service Interface.");
+        
+        commonStart(args);
+    }
+    
+    /**
+     * Start a process thread for doing the actual work.
+     * 
+     * @param config 
+     * @return  
+     * @throws com.sludev.logs.logcheck.utils.LogCheckException  
+     */
+    public static LogCheckResult processStart(LogCheckConfig config) throws LogCheckException
+    {
+        LogCheckResult resp = null;
         LogCheckRun currRun = new LogCheckRun();
         FutureTask<LogCheckResult> currRunTask = new FutureTask<>(currRun);
         currRun.setConfig(config);
-        
+
         BasicThreadFactory thFactory = new BasicThreadFactory.Builder()
             .namingPattern("mainthread-%d")
             .build();
-        
+
         ExecutorService currExe = Executors.newSingleThreadExecutor(thFactory);
         Future exeRes = currExe.submit(currRunTask);
-        
+
         currExe.shutdown();
-                
+
         try
         {
-            LogCheckResult resp = currRunTask.get();
+            resp = currRunTask.get();
         }
         catch (InterruptedException ex)
         {
             log.error("Application thread was interrupted", ex);
+            throw new LogCheckException("Application thread was interrupted", ex);
         }
         catch (ExecutionException ex)
         {
             log.error("Application execution error", ex);
+            throw new LogCheckException("Application execution error", ex);
         }
         
-        log.debug( String.format("LogCheckMain end.\n") );
-    }
-    
-    private static Options ConfigureOptions()
-    {
-        Options options = new Options();
-
-        options.addOption( OptionBuilder.withLongOpt( "config-file" )
-                                .withDescription( "Configuration file." )
-                                .hasArg()
-                                .withArgName("CONFFILE")
-                                .create() );
-        
-        options.addOption( OptionBuilder.withLongOpt( "service" )
-                                .withDescription( "Run as a background service" )
-                                .create() );
-
-        options.addOption( OptionBuilder.withLongOpt( "arg-file" )
-                                .withDescription( "Command-line argument file." )
-                                .hasArg()
-                                .withArgName("ARGFILE")
-                                .create() );
-        
-        options.addOption( OptionBuilder.withLongOpt( "holding-folder" )
-                                .withDescription( "Local folder for keeping downloaded data." )
-                                .hasArg()
-                                .withArgName("LOGFILE")
-                                .create() );
-        
-        options.addOption( OptionBuilder.withLongOpt( "poll-interval" )
-                                .withDescription( "Seconds between polling the log file." )
-                                .hasArg()
-                                .withArgName("POLLINTERVAL")
-                                .create() );
-        
-        options.addOption( OptionBuilder.withLongOpt( "email-on-error" )
-                                .withDescription( "Send an email to this person on failure" )
-                                .hasArg()
-                                .withArgName("EMAILONERROR")
-                                .create() );
-        
-        options.addOption( OptionBuilder.withLongOpt( "smtp-server" )
-                                .withDescription( "SMTP Server name" )
-                                .hasArg()
-                                .withArgName("SMTPSERVERNAME")
-                                .create() );
-        
-        options.addOption( OptionBuilder.withLongOpt( "smtp-port" )
-                                .withDescription( "SMTP Server Port" )
-                                .hasArg()
-                                .withArgName("SMTPSERVERPORT")
-                                .create() );
-        
-        options.addOption( OptionBuilder.withLongOpt( "smtp-user" )
-                                .withDescription( "SMTP User" )
-                                .hasArg()
-                                .withArgName("SMTPUSER")
-                                .create() );
-        
-        options.addOption( OptionBuilder.withLongOpt( "smtp-pass" )
-                                .withDescription( "SMTP User password" )
-                                .hasArg()
-                                .withArgName("SMTPUSERPASS")
-                                .create() );
-        
-        options.addOption( OptionBuilder.withLongOpt( "smtp-proto" )
-                                .withDescription( "SMTP Protocol" )
-                                .hasArg()
-                                .withArgName("SMTPPROTO")
-                                .create() );
-        
-        options.addOption( OptionBuilder.withLongOpt( "dry-run" )
-                                .withDescription( "Do not update the database" )
-                                .create() );
-        
-        options.addOption( OptionBuilder.withLongOpt( "version" )
-                                .withDescription( "Show the application version" )
-                                .create() );
-        
-        options.addOption( OptionBuilder.withLongOpt( "lock-file" )
-                                .withDescription( "Prevent multiple instances of the service from running." )
-                                .hasArg()
-                                .withArgName("LOCKFILE")
-                                .create() );
-        
-        options.addOption( OptionBuilder.withLongOpt( "log-file" )
-                                .withDescription( "Log file required for checking." )
-                                .hasArg()
-                                .withArgName("LOGFILE")
-                                .create() );
-        
-        options.addOption( OptionBuilder.withLongOpt( "file-from-start" )
-                                .withDescription( "Process all records already in the log file." )
-                                .create() );
-        
-        options.addOption( OptionBuilder.withLongOpt( "elasticsearch-url" )
-                                .withDescription( "Elasticsearch URL, including protocol and port." )
-                                .hasArg()
-                                .withArgName("ELASTICSEARCHURL")
-                                .create() );
-
-        
-        options.addOption( OptionBuilder.withLongOpt( "status-file" )
-                                .withDescription( "Status file used for session data." )
-                                .hasArg()
-                                .withArgName("STATUSFILE")
-                                .create() );
-        
-        
-        return options;
+        return resp;
     }
 }
