@@ -26,9 +26,6 @@ import com.sludev.logs.logcheck.log.LogEntry;
 import com.sludev.logs.logcheck.log.LogEntryBuilder;
 import com.sludev.logs.logcheck.log.LogEntryQueueSink;
 import com.sludev.logs.logcheck.store.LogEntryElasticSearchTest;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Properties;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.ExecutionException;
@@ -37,8 +34,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.LinkedBlockingDeque;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import org.apache.commons.lang3.concurrent.BasicThreadFactory;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -48,6 +43,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import static org.junit.Assert.*;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.rules.TestWatcher;
 
@@ -101,7 +97,8 @@ public class LogCheckTailTest
      * @throws java.util.concurrent.ExecutionException
      */
     @Test
-    public void testCall() throws InterruptedException, ExecutionException
+    @Ignore
+    public void testTailLog01() throws InterruptedException, ExecutionException
     {
         log.debug("testing call()");
         
