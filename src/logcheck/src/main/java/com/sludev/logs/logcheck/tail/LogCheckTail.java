@@ -19,6 +19,7 @@ package com.sludev.logs.logcheck.tail;
 
 import com.sludev.logs.logcheck.log.LogEntryBuilder;
 import com.sludev.logs.logcheck.utils.LogCheckConstants;
+import com.sludev.logs.logcheck.utils.LogCheckException;
 import com.sludev.logs.logcheck.utils.LogCheckResult;
 import java.io.File;
 import java.nio.file.Path;
@@ -28,6 +29,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import org.apache.commons.io.input.Tailer;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -97,15 +99,32 @@ public class LogCheckTail implements Callable<LogCheckResult>
         return logFile;
     }
 
-    public void setLogFile(File l)
+    public void setLogFile(File l) throws LogCheckException
     {
+        if( l == null || l.exists() == false )
+        {
+            String errMsg = String.format("Log path '%s' is invalid.", l);
+            log.debug(errMsg);
+            
+            throw new LogCheckException(errMsg);
+        }
+        
         this.logFile = l;
     }
 
-    public void setLogFile(Path l)
+    public void setLogFile(Path l) throws LogCheckException
     {
+        if( l == null )
+        {
+            String errMsg = "Log path is empty.";
+            log.debug(errMsg);
+            
+            throw new LogCheckException(errMsg);
+        }
+        
         File f = l.toFile();
-        this.logFile = f;
+        
+        this.setLogFile(f);
     }
     
     public void setLogFile(String l)

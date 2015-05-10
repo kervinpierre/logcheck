@@ -63,6 +63,8 @@ public class LogCheckMain
      */
     public static void commonStart(String[] args)
     {
+        log.debug("LogCheckMain::commonStart() called");
+        
         // Initialize only.  Don't actually run or do anything else
         LogCheckConfig res = LogCheckInitialize.initialize(args);
         LogCheckResult procRes;
