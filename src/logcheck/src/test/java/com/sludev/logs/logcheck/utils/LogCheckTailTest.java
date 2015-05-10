@@ -98,7 +98,7 @@ public class LogCheckTailTest
      */
     @Test
     @Ignore
-    public void testTailLog01() throws InterruptedException, ExecutionException
+    public void testTailLog01() throws InterruptedException, ExecutionException, LogCheckException
     {
         log.debug("testing call()");
         
