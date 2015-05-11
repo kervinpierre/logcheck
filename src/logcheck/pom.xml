@@ -45,7 +45,7 @@
                                 <transformer
                                     implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                                     <manifestEntries>
-                                        <Main-Class>com.sludev.logs.logcheck.main.Main</Main-Class>
+                                        <Main-Class>com.sludev.logs.logcheck.main.LogCheckMain</Main-Class>
                                     </manifestEntries>
                                 </transformer>
                             </transformers>
@@ -113,11 +113,13 @@
             <artifactId>jest</artifactId>
             <version>0.1.5</version>
         </dependency>
+<!--
         <dependency>
             <groupId>com.fastsitesoft</groupId>
             <artifactId>fssagent</artifactId>
             <version>1.2</version>
             <scope>test</scope>
         </dependency>
+-->
     </dependencies>
 </project>

@@ -35,7 +35,7 @@
               <transformers>
                 <transformer>
                   <manifestEntries>
-                    <Main-Class>com.sludev.logs.logcheck.main.Main</Main-Class>
+                    <Main-Class>com.sludev.logs.logcheck.main.LogCheckMain</Main-Class>
                   </manifestEntries>
                 </transformer>
               </transformers>
@@ -62,22 +62,6 @@
         <exclusion>
           <artifactId>hamcrest-core</artifactId>
           <groupId>org.hamcrest</groupId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>com.fastsitesoft</groupId>
-      <artifactId>fssagent</artifactId>
-      <version>1.2</version>
-      <scope>test</scope>
-      <exclusions>
-        <exclusion>
-          <artifactId>snmp4j</artifactId>
-          <groupId>org.snmp4j</groupId>
-        </exclusion>
-        <exclusion>
-          <artifactId>cxf-rt-frontend-jaxws</artifactId>
-          <groupId>org.apache.cxf</groupId>
         </exclusion>
       </exclusions>
     </dependency>

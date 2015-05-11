@@ -39,7 +39,8 @@ public class LogCheckMain
     private static final Logger log 
                              = LogManager.getLogger(LogCheckMain.class);
     
-    private String[] staticArgs = null;
+    private static String[] staticArgs = null;
+    private static ExecutorService mainThreadExe = null;
     
     /**
      * @param args the command line arguments
@@ -63,7 +64,8 @@ public class LogCheckMain
      */
     public static void commonStart(String[] args)
     {
-        log.debug("LogCheckMain::commonStart() called");
+        log.debug("LogCheckMain::commonStart() called [%s]",
+                Arrays.toString(args));
         
         // Initialize only.  Don't actually run or do anything else
         LogCheckConfig res = LogCheckInitialize.initialize(args);
@@ -79,11 +81,24 @@ public class LogCheckMain
         }   
     }
     
+    public static void commonStop(String[] args)
+    {
+        log.debug("LogCheckMain::commonStop() called [%s]",
+                Arrays.toString(args));
+        
+        // Initialize only.  Don't actually run or do anything else
+        LogCheckConfig res = LogCheckInitialize.initialize(args);
+        LogCheckResult procRes;
+
+        procRes = processStop(res); 
+  
+    }
+    
     public void destroy()
     {
         log.info("Service destroy called.");
         
-        ;
+        commonStop(LogCheckMain.staticArgs);
     }
 
     public void init(String[] args) 
@@ -91,7 +106,7 @@ public class LogCheckMain
         log.info( String.format("Service init called.\n[[%s]]\n", 
                 Arrays.toString(args)) );
         
-        this.staticArgs = args;
+        LogCheckMain.staticArgs = args;
     }
 
     /**
@@ -102,7 +117,7 @@ public class LogCheckMain
     {
         log.info("Starting LogCheck via its Unix Service Interface.");
         
-        commonStart(this.staticArgs);
+        commonStart(LogCheckMain.staticArgs);
     }
 
     /**
@@ -125,7 +140,7 @@ public class LogCheckMain
     {
         log.info("Windows service stop called...");
 
-        // MainUtils.stopAgent();
+        commonStop(args);
     }
 
     /**
@@ -177,10 +192,10 @@ public class LogCheckMain
             .namingPattern("mainthread-%d")
             .build();
 
-        ExecutorService currExe = Executors.newSingleThreadExecutor(thFactory);
-        Future exeRes = currExe.submit(currRunTask);
+        mainThreadExe = Executors.newSingleThreadExecutor(thFactory);
+        Future exeRes = mainThreadExe.submit(currRunTask);
 
-        currExe.shutdown();
+        mainThreadExe.shutdown();
 
         try
         {
@@ -188,13 +203,40 @@ public class LogCheckMain
         }
         catch (InterruptedException ex)
         {
-            log.error("Application thread was interrupted", ex);
+            log.error("Application 'main' thread was interrupted", ex);
             throw new LogCheckException("Application thread was interrupted", ex);
         }
         catch (ExecutionException ex)
         {
-            log.error("Application execution error", ex);
+            log.error("Application 'main' thread execution error", ex);
             throw new LogCheckException("Application execution error", ex);
+        }
+        finally
+        {
+            // If main leaves for any reason, shutdown all threads
+            mainThreadExe.shutdownNow();
+        }
+        
+        return resp;
+    }
+    
+    /**
+     * Stop the currently running main thread process of the service and related
+     * threads.
+     * 
+     * @param config
+     * @return
+     */
+    public static LogCheckResult processStop(LogCheckConfig config)
+    {
+        LogCheckResult resp = new LogCheckResult();
+        
+        if( mainThreadExe != null )
+        {
+            // Shutdown the main thread if we have one.
+            // This will only work in ProcRun/JSvc JVM hosted mode.
+            // IPC would be needed otherwise
+            mainThreadExe.shutdownNow();
         }
         
         return resp;
