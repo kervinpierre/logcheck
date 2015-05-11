@@ -44,7 +44,7 @@ public class LogCheckConfig
     private String smtpProto;
     private boolean dryRun;
     private boolean showVersion;
-    private boolean fileFromStart;
+    private boolean tailFromEnd;
     private Path lockFilePath;
     private Path logPath;
     private Path statusFilePath;
@@ -102,14 +102,14 @@ public class LogCheckConfig
         this.elasticsearchIndexPrefix = e;
     }
 
-    public boolean isFileFromStart()
+    public boolean isTailFromEnd()
     {
-        return fileFromStart;
+        return tailFromEnd;
     }
 
-    public void setFileFromStart(boolean f)
+    public void setTailFromEnd(boolean f)
     {
-        this.fileFromStart = f;
+        this.tailFromEnd = f;
     }
 
     public Path getHoldingFolderPath()
@@ -333,7 +333,7 @@ public class LogCheckConfig
     {
         pollIntervalSeconds = LogCheckConstants.DEFAULT_POLL_INTERVAL;
         setElasticsearchURL(LogCheckConstants.DEFAULT_ELASTICSEARCH_URL);
-        fileFromStart = false;
+        tailFromEnd = true;
         
         elasticsearchIndexPrefix 
                 = LogCheckConstants.DEFAULT_ELASTICSEARCH_INDEX_PREFIX;

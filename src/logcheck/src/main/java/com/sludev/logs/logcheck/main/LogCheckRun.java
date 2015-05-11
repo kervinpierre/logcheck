@@ -134,7 +134,7 @@ public class LogCheckRun implements Callable<LogCheckResult>
         LogCheckTail lct = new LogCheckTail();
         lct.setLogFile(config.getLogPath());
         lct.setDelay(config.getPollIntervalSeconds());
-        lct.setTailFromEnd(!config.isFileFromStart());
+        lct.setTailFromEnd(config.isTailFromEnd());
         lct.setMainLogEntryBuilder(currLogEntryBuilder);
         
         // Log storage related objects
@@ -198,11 +198,28 @@ public class LogCheckRun implements Callable<LogCheckResult>
         }
         catch (InterruptedException ex)
         {
-            log.error("Application thread was interrupted", ex);
+            log.error("Application 'run' thread was interrupted", ex);
+            
+            // We don't have to do much here because the interrupt got us out
+            // of the while loop.
+            
         }
         catch (ExecutionException ex)
         {
-            log.error("Application execution error", ex);
+            log.error("Application 'run' execution error", ex);
+        }
+        finally
+        {
+            fileTailExe.shutdownNow();
+            logStoreExe.shutdownNow();
+            
+            // But work-around.  Interrupt Tailer object using a separate 'stop'
+            // thread.  This should not be necessary in Commons-IO 2.5+ since
+            // Tailer will stop on InterruptedException.
+            if( lct.getStopThreadExe() != null )
+            {
+                lct.getStopThreadExe().shutdownNow();
+            }
         }
         
         // Release the locks if necessary

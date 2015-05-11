@@ -19,7 +19,6 @@ package com.sludev.logs.logcheck.main;
 
 import com.sludev.logs.logcheck.config.LogCheckConfig;
 import com.sludev.logs.logcheck.config.LogCheckConfigFile;
-import com.sludev.logs.logcheck.utils.LogCheckResult;
 import com.sludev.logs.logcheck.utils.LogCheckException;
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
@@ -31,11 +30,6 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Iterator;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.FutureTask;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.GnuParser;
@@ -44,7 +38,6 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.OptionBuilder;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
-import org.apache.commons.lang3.concurrent.BasicThreadFactory;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -245,7 +238,7 @@ public class LogCheckInitialize
                         
                     case "file-from-start":
                         // Process the specified log file from its start
-                        config.setFileFromStart(true);
+                        config.setTailFromEnd(false);
                         break;
                         
                     case "elasticsearch-url":

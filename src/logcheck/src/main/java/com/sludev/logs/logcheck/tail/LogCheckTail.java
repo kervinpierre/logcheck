@@ -26,10 +26,12 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import org.apache.commons.io.input.Tailer;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.concurrent.BasicThreadFactory;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -46,6 +48,8 @@ public class LogCheckTail implements Callable<LogCheckResult>
     private Tailer mainTailer;
     private LogCheckTailerListener mainTailerListener;
     private LogEntryBuilder mainLogEntryBuilder;
+    private ScheduledExecutorService schedulerExe;
+    private ScheduledExecutorService stopThreadExe;
     
     private File logFile;
     private long delay;
@@ -54,6 +58,11 @@ public class LogCheckTail implements Callable<LogCheckResult>
     private int bufferSize;
     private long stopAfter;
 
+    public ScheduledExecutorService getStopThreadExe()
+    {
+        return stopThreadExe;
+    }
+    
     public long getStopAfter()
     {
         return stopAfter;
@@ -178,11 +187,13 @@ public class LogCheckTail implements Callable<LogCheckResult>
         // Don't bother with logs we missed earlier
         tailFromEnd = true;
         
-        reOpenOnChunk = true;
+        reOpenOnChunk = false;
         bufferSize = LogCheckConstants.DEFAULT_LOG_READ_BUFFER_SIZE_BYTES;
         delay      = LogCheckConstants.DEFAULT_POLL_INTERVAL;
         
         mainTailer = null;
+        schedulerExe = null;
+        stopThreadExe = null;
         
         stopAfter = 0;
     }
@@ -200,10 +211,9 @@ public class LogCheckTail implements Callable<LogCheckResult>
         
         if( stopAfter > 0 )
         {
-            ScheduledExecutorService scheduler;
-            scheduler = Executors.newScheduledThreadPool(1);
+            schedulerExe = Executors.newScheduledThreadPool(1);
 
-            scheduler.schedule(new Runnable() 
+            schedulerExe.schedule(new Runnable() 
             {
               @Override
               public void run()
@@ -212,10 +222,57 @@ public class LogCheckTail implements Callable<LogCheckResult>
               }
             }, stopAfter, SECONDS);
             
-            scheduler.shutdown();
+            schedulerExe.shutdown();
         }
         
+        /**
+         * Commons-IO 2.4 BUG : Swallows InterruptExceptions
+         * 
+         * So create a 'stop thread' that listens for interrupts then calls
+         * 'stop()' on the mainTailer if necessary
+         */
+        BasicThreadFactory stopThreadFactory = new BasicThreadFactory.Builder()
+            .namingPattern("stopthread-%d")
+            .build();
+        
+        stopThreadExe = Executors.newSingleThreadScheduledExecutor(stopThreadFactory);
+        Future stopThreadExeRes = stopThreadExe.submit(new Callable<Integer>()
+        {
+            @Override
+            public Integer call() throws Exception
+            {
+                try
+                {
+                    while(true)
+                    {
+                        // Sleep for a while, only to be interrupted
+                        Thread.sleep(60*1000);
+                    }
+                }
+                catch(InterruptedException ex)
+                {
+                    ;
+                }
+                finally
+                {
+                    // If this thread quits for any reason, stop the tailer too.
+                    stop();
+                }
+                
+                return 0;
+            }
+            
+        });
+
+        stopThreadExe.shutdown();
+            
         mainTailer.run();
+        
+        /**
+         * FIXME : We can choose to check the interrupted flag here.
+         */
+        
+        stop();
         
         return res;
     }
@@ -225,6 +282,11 @@ public class LogCheckTail implements Callable<LogCheckResult>
         if( mainTailer != null )
         {
             mainTailer.stop();
+        }
+        
+        if( schedulerExe != null )
+        {
+            schedulerExe.shutdownNow();
         }
     }
 }
