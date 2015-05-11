@@ -40,7 +40,7 @@ foreach ( $el in $args )
 
 if( $serviceInstall )
 {
-	$installStr = "$procRunExe //IS/LOGCHECK  --Classpath=""$javaJarPath"" --DisplayName=""Logcheck"" --StartMode=jvm --StartClass=$javaStartClass --StartMethod=windowsStart  --StopMode=jvm --StopClass=$javaStartClass --StopMethod=windowsStop --JavaHome=""$javaHome"" --Jvm=""$javaJVM"" --StdOutput=auto --StdError=auto --StartParams=$serviceArgs"
+	$installStr = "$procRunExe //IS/LOGCHECK  --Classpath=""$javaJarPath"" --DisplayName=""Logcheck"" --StartMode=jvm --StartClass=$javaStartClass --StartMethod=windowsStart  --StopMode=jvm --StopClass=$javaStartClass --StopMethod=windowsStop --JavaHome=""$javaHome"" --Jvm=""$javaJVM"" --StdOutput=auto --StdError=auto --StartParams=$serviceArgs --StopParams=$serviceArgs"
 
 	Write-Host "$installStr"
 	Invoke-Expression "$installStr"
