@@ -25,6 +25,6 @@ import java.util.concurrent.BlockingDeque;
  */
 public interface ILogEntrySink
 {
-    public void put(LogEntry le);
+    public void put(LogEntry le) throws InterruptedException;
     public void setCompletedLogEntries(BlockingDeque<LogEntry> c);
 }
