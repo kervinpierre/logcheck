@@ -26,6 +26,6 @@ import java.util.concurrent.BlockingDeque;
  */
 public interface ILogEntrySource
 {
-    public LogEntry next();
+    public LogEntry next() throws InterruptedException;
     public void setCompletedLogEntries(BlockingDeque<LogEntry> c);
 }

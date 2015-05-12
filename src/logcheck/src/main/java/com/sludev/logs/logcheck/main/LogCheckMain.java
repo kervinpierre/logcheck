@@ -64,8 +64,8 @@ public class LogCheckMain
      */
     public static void commonStart(String[] args)
     {
-        log.debug("LogCheckMain::commonStart() called [%s]",
-                Arrays.toString(args));
+        log.debug( String.format("LogCheckMain::commonStart() called [%s]",
+                Arrays.toString(args)) );
         
         // Initialize only.  Don't actually run or do anything else
         LogCheckConfig res = LogCheckInitialize.initialize(args);
@@ -83,8 +83,8 @@ public class LogCheckMain
     
     public static void commonStop(String[] args)
     {
-        log.debug("LogCheckMain::commonStop() called [%s]",
-                Arrays.toString(args));
+        log.debug( String.format("LogCheckMain::commonStop() called [%s]",
+                Arrays.toString(args)) );
         
         // Initialize only.  Don't actually run or do anything else
         LogCheckConfig res = LogCheckInitialize.initialize(args);

@@ -47,18 +47,12 @@ public class LogEntryQueueSink implements ILogEntrySink
      * Put a log entry in this class store.
      * 
      * @param le Log entry to store
+     * @throws java.lang.InterruptedException
      */
     @Override
-    public void put(LogEntry le)
+    public void put(LogEntry le) throws InterruptedException
     {
-        try
-        {
-            completedLogEntries.put(le);
-        }
-        catch (InterruptedException ex)
-        {
-            log.debug("put() : interrupted.", ex);
-        }
+        completedLogEntries.put(le);
     }
     
 }

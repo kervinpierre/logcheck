@@ -75,7 +75,19 @@ public class LogCheckTailerListener implements TailerListener
     {
         log.debug( String.format("handle() : '%s'\n", str));
         
-        mainLogEntryBuilder.handleLogLine(str);
+        /**
+         * BUG : Commons-IO 2.4 ignores InterruptedException but we should not
+         */
+        try
+        {
+            mainLogEntryBuilder.handleLogLine(str);
+        }
+        catch( InterruptedException ex )
+        {
+            log.debug("LogCheckTailerListener.handle() was interrupted.");
+            
+            throw new RuntimeException(ex);
+        }
     }
 
     @Override

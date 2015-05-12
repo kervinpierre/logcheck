@@ -58,7 +58,18 @@ public class LogCheckRun implements Callable<LogCheckResult>
     private LogCheckConfig config;
     private final ILogEntrySource logEntrySource;
     private final ILogEntrySink logEntrySink;
+    private Path lockFile;
+    
+    public Path getLockFile()
+    {
+        return lockFile;
+    }
 
+    public void setLockFile(Path l)
+    {
+        lockFile = l;
+    }
+    
     public LogCheckConfig getConfig()
     {
         return config;
@@ -94,38 +105,11 @@ public class LogCheckRun implements Callable<LogCheckResult>
             return res;
         }
         
-        // Acquire the lock if necessary
-        Path lk = config.getLockFilePath();
-        if( lk != null )
-        {
-            if( Files.exists(lk) )
-            {
-                int runningPID = 0;
-                
-                try
-                {
-                    runningPID = LogCheckLockFile.getLockPID(lk);
-                }
-                catch (IOException ex)
-                {
-                    throw new LogCheckException(String.format(
-                            "Exception reading lock file '%s'", lk), ex);
-                }
-                
-                throw new LogCheckException(String.format(
-                            "Process '%d' already has the lock file '%s'",
-                                            runningPID, lk));
-            }
-            else
-            {
-                if( LogCheckLockFile.acquireLockFile(lk) == false )
-                {
-                    String errMsg = String.format(
-                            "Error aquiring the lock file '%s'", lk);
-                    throw new LogCheckException(errMsg);
-                }
-            }
-        }
+        setLockFile( config.getLockFilePath() );
+        
+        // Setup the acquiring and release of the lock file
+        acquireLockFile( getLockFile() );
+        setupLockFileShutdownHook( getLockFile() );
         
         // Log tailing related objects
         LogEntryBuilder currLogEntryBuilder = new LogEntryBuilder();
@@ -222,26 +206,70 @@ public class LogCheckRun implements Callable<LogCheckResult>
             }
         }
         
-        // Release the locks if necessary
+        return res;
+    }
+
+    private void acquireLockFile(final Path lk) throws LogCheckException
+    {
         if( lk != null )
         {
             if( Files.exists(lk) )
             {
-                if( LogCheckLockFile.releaseLockFile(lk) == false )
+                int runningPID = 0;
+                
+                try
                 {
-                    String errMsg = String.format(
-                            "Error releasing the lock file '%s'", lk);
-                    throw new LogCheckException(errMsg);
+                    runningPID = LogCheckLockFile.getLockPID(lk);
                 }
+                catch (IOException ex)
+                {
+                    throw new LogCheckException(String.format(
+                            "Exception reading lock file '%s'", lk), ex);
+                }
+                
+                throw new LogCheckException(String.format(
+                            "Process '%d' already has the lock file '%s'",
+                                            runningPID, lk));
             }
             else
             {
-                log.error(String.format(
-                            "Expected lock file '%s' to exist.", lk));
+                if( LogCheckLockFile.acquireLockFile(lk) == false )
+                {
+                    String errMsg = String.format(
+                            "Error aquiring the lock file '%s'", lk);
+                    throw new LogCheckException(errMsg);
+                }
             }
         }
-        
-        return res;
     }
-
+    
+    private void setupLockFileShutdownHook(final Path lk)
+    {
+        Runtime.getRuntime().addShutdownHook(new Thread() 
+        {
+            @Override
+            public void run() 
+            {
+                // Release the locks if necessary
+                if( lk != null )
+                {
+                    if( Files.exists(lk) )
+                    {
+                        if( LogCheckLockFile.releaseLockFile(lk) == false )
+                        {
+                            String errMsg = String.format(
+                                    "Error releasing the lock file '%s'", lk);
+                            
+                            log.error(errMsg);
+                        }
+                    }
+                    else
+                    {
+                        log.error(String.format(
+                                    "Expected lock file '%s' to exist.", lk));
+                    }
+                }
+            }
+        }); 
+    }
 }

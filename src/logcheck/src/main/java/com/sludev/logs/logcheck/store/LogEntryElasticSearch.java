@@ -198,7 +198,7 @@ public class LogEntryElasticSearch implements ILogEntryStore
     }
 
     @Override
-    public LogCheckResult put(LogEntry le)
+    public LogCheckResult put(LogEntry le) throws InterruptedException
     {
         LogCheckResult res = new LogCheckResult();
         
@@ -212,6 +212,10 @@ public class LogEntryElasticSearch implements ILogEntryStore
         try
         {
             JestResult exRes = esClient.execute(index);
+        }
+        catch( InterruptedException ex)
+        {
+            throw ex;
         }
         catch (Exception ex)
         {

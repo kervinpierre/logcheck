@@ -29,7 +29,7 @@ import java.util.concurrent.Callable;
 public interface ILogEntryStore extends Callable<LogCheckResult>
 {
     public void init();
-    public LogCheckResult put(LogEntry le);
+    public LogCheckResult put(LogEntry le) throws InterruptedException;
     
     public void setMainLogEntrySource(ILogEntrySource src);
 }

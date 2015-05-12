@@ -47,22 +47,16 @@ public class LogEntryQueueSource implements ILogEntrySource
      * Get a log entry from this class store.  Blocks until one is available.
      * 
      * @return Returns the log entry or blocks.
+     * @throws java.lang.InterruptedException
      */
     @Override
-    public LogEntry next()
+    public LogEntry next() throws InterruptedException
     {
         LogEntry currLE = null;
         
         while( currLE == null )
         {
-            try
-            {
-                currLE = completedLogEntries.take();
-            }
-            catch (InterruptedException ex)
-            {
-                log.debug("next() : interrupted.", ex);
-            }
+            currLE = completedLogEntries.take();
         }
         
         return currLE;

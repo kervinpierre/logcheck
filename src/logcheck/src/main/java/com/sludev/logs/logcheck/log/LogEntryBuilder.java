@@ -242,7 +242,7 @@ public class LogEntryBuilder
      *
      * @param currLineStr The line to be processed into the current log entry.
      */
-    public void handleLogLine(String currLineStr)
+    public void handleLogLine(String currLineStr) throws InterruptedException
     {
         for (Pattern pt : logIngoreLine)
         {
