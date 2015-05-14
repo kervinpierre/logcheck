@@ -17,6 +17,7 @@
  */
 package com.sludev.logs.logcheck.tail;
 
+import com.sludev.logs.logcheck.tail.tailer.Tailer;
 import com.sludev.logs.logcheck.log.LogEntryBuilder;
 import com.sludev.logs.logcheck.utils.LogCheckConstants;
 import com.sludev.logs.logcheck.utils.LogCheckException;
@@ -29,8 +30,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import org.apache.commons.io.input.Tailer;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.concurrent.BasicThreadFactory;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -57,7 +56,7 @@ public class LogCheckTail implements Callable<LogCheckResult>
     private boolean reOpenOnChunk;
     private int bufferSize;
     private long stopAfter;
-
+    
     public ScheduledExecutorService getStopThreadExe()
     {
         return stopThreadExe;

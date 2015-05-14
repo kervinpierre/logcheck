@@ -123,6 +123,12 @@
             <artifactId>jest</artifactId>
             <version>0.1.5</version>
         </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-collections4</artifactId>
+            <version>LATEST</version>
+        </dependency>
+
 <!--
         <dependency>
             <groupId>com.fastsitesoft</groupId>

@@ -17,6 +17,8 @@
  */
 package com.sludev.logs.logcheck.log;
 
+import java.time.Duration;
+import java.time.LocalTime;
 import java.util.concurrent.BlockingDeque;
 
 /**
@@ -26,5 +28,15 @@ import java.util.concurrent.BlockingDeque;
 public interface ILogEntrySink
 {
     public void put(LogEntry le) throws InterruptedException;
+    public boolean validate(LogEntry le);
     public void setCompletedLogEntries(BlockingDeque<LogEntry> c);
+    
+    public Duration getLogDeduplicationDuration();
+    public void setLogDeduplicationDuration(Duration d);
+
+    public LocalTime getLogCutoffDate();
+    public void setLogCutoffDate(LocalTime l);
+
+    public Duration getLogCutoffDuration();
+    public void setLogCutoffDuration(Duration l);
 }

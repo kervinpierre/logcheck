@@ -17,9 +17,9 @@
  */
 package com.sludev.logs.logcheck.tail;
 
+import com.sludev.logs.logcheck.tail.tailer.TailerListener;
+import com.sludev.logs.logcheck.tail.tailer.Tailer;
 import com.sludev.logs.logcheck.log.LogEntryBuilder;
-import org.apache.commons.io.input.Tailer;
-import org.apache.commons.io.input.TailerListener;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 

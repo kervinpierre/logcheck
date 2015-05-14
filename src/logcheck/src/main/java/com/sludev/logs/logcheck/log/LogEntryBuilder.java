@@ -46,7 +46,7 @@ public class LogEntryBuilder
     private final StringBuilder columnString;
     private int columnCount;
     private ILogEntrySink completionCallback;
-
+    
     public ILogEntrySink getCompletionCallback()
     {
         return completionCallback;
@@ -241,6 +241,7 @@ public class LogEntryBuilder
      * Process a new line from the log file.
      *
      * @param currLineStr The line to be processed into the current log entry.
+     * @throws java.lang.InterruptedException
      */
     public void handleLogLine(String currLineStr) throws InterruptedException
     {

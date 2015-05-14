@@ -23,6 +23,9 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Duration;
+import java.time.LocalTime;
+import java.time.Period;
 import org.apache.logging.log4j.LogManager;
 
 /**
@@ -54,6 +57,9 @@ public class LogCheckConfig
     private String elasticsearchIndexName;
     private String elasticsearchIndexPrefix;
     private String elasticsearchLogType;
+    private LocalTime logCutoffDate;
+    private Duration logCutoffDuration;
+    private Duration logDeduplicationDuration;
     private LogCheckIndexNameFormat elasticsearchIndexNameFormat;
 
     public String getElasticsearchLogType()
@@ -61,6 +67,57 @@ public class LogCheckConfig
         return elasticsearchLogType;
     }
 
+    public Duration getLogDeduplicationDuration()
+    {
+        return logDeduplicationDuration;
+    }
+
+    public void setLogDeduplicationDuration(Duration d)
+    {
+        this.logDeduplicationDuration = d;
+    }
+
+    public void setLogDeduplicationDuration(String d)
+    {
+        Duration p = Duration.parse(d);
+        
+        this.logDeduplicationDuration = p;
+    }
+    
+    public LocalTime getLogCutoffDate()
+    {
+        return logCutoffDate;
+    }
+
+    public void setLogCutoffDate(LocalTime l)
+    {
+        this.logCutoffDate = l;
+    }
+
+    public void setLogCutoffDate(String c)
+    {
+        LocalTime t = LocalTime.parse(c);
+        
+        this.logCutoffDate = t;
+    }
+
+    public Duration getLogCutoffDuration()
+    {
+        return logCutoffDuration;
+    }
+
+    public void setLogCutoffDuration(Duration l)
+    {
+        this.logCutoffDuration = l;
+    }
+
+    public void setLogCutoffDuration(String c)
+    {
+        Duration p = Duration.parse(c);
+        
+        this.logCutoffDuration = p;
+    }
+    
     public void setElasticsearchLogType(String e)
     {
         this.elasticsearchLogType = e;

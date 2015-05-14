@@ -226,6 +226,11 @@ public class LogCheckInitialize
                         config.setShowVersion(true);
                         break;
                         
+                     case "log-deduplication-duration":
+                        // Don't send the same log twice
+                        config.setLogDeduplicationDuration(currOpt.getValue());
+                        break;
+                        
                     case "lock-file":
                         // Write a file preventing multiple instances
                         config.setLockFilePath(currOpt.getValue());
@@ -236,6 +241,16 @@ public class LogCheckInitialize
                         config.setLogPath(currOpt.getValue());
                         break;
                         
+                    case "log-cutoff-duration":
+                        // Do not process before specified period
+                        config.setLogCutoffDuration(currOpt.getValue());
+                        break;
+                        
+                     case "log-cutoff-date":
+                        // Do not process before specified period
+                        config.setLogCutoffDate(currOpt.getValue());
+                        break;
+                         
                     case "file-from-start":
                         // Process the specified log file from its start
                         config.setTailFromEnd(false);
@@ -360,6 +375,24 @@ public class LogCheckInitialize
                                 .withDescription( "Log file required for checking." )
                                 .hasArg()
                                 .withArgName("LOGFILE")
+                                .create() );
+        
+        options.addOption( OptionBuilder.withLongOpt( "log-cutoff-duration" )
+                                .withDescription( "Do not process logs older than this duration. E.g. \"P2DT3H4M\"  becomes \"2 days, 3 hours and 4 minutes\"" )
+                                .hasArg()
+                                .withArgName("LOGCUTOFFPERIOD")
+                                .create() );
+        
+        options.addOption( OptionBuilder.withLongOpt( "log-cutoff-date" )
+                                .withDescription( "Do not process logs older than this date. YYYYMMDD-hhmmss" )
+                                .hasArg()
+                                .withArgName("LOGCUTOFFDATE")
+                                .create() );
+        
+        options.addOption( OptionBuilder.withLongOpt( "log-deduplicate-duration" )
+                                .withDescription( "Do not not send the same log entry more than once per session for the specified duration. See 'log-cutoff-duration" )
+                                .hasArg()
+                                .withArgName("LOGDEDUP")
                                 .create() );
         
         options.addOption( OptionBuilder.withLongOpt( "file-from-start" )
