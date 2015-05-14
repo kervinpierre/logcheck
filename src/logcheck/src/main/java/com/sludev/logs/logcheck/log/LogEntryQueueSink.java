@@ -17,12 +17,19 @@
  */
 package com.sludev.logs.logcheck.log;
 
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.time.Duration;
+import java.time.LocalTime;
 import java.util.concurrent.BlockingDeque;
+import org.apache.commons.collections4.map.PassiveExpiringMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 /**
- *
+ * Class for queuing outgoing log entries.  This implementation uses a blocking queue
+ * for queuing between threads.
+ * 
  * @author kervin
  */
 public class LogEntryQueueSink implements ILogEntrySink
@@ -31,6 +38,47 @@ public class LogEntryQueueSink implements ILogEntrySink
                              = LogManager.getLogger(LogEntryQueueSink.class);
     
     private BlockingDeque<LogEntry> completedLogEntries;
+    private Duration logDeduplicationDuration;
+    private LocalTime logCutoffDate;
+    private Duration logCutoffDuration;
+    
+    private MessageDigest mainDigest;
+    
+    /**
+     * Log Entry SHA256 hash and the last time an enqueue was attempted.
+     */
+    private PassiveExpiringMap<Byte[],LocalTime> sessionHashes;
+    
+
+    /**
+     *
+     * @param l
+     */
+    @Override
+    public void setLogCutoffDate(LocalTime l)
+    {
+        this.logCutoffDate = l;
+    }
+
+    /**
+     *
+     * @return
+     */
+    @Override
+    public Duration getLogCutoffDuration()
+    {
+        return logCutoffDuration;
+    }
+
+    /**
+     *
+     * @param l
+     */
+    @Override
+    public void setLogCutoffDuration(Duration l)
+    {
+        this.logCutoffDuration = l;
+    }
 
     public BlockingDeque<LogEntry> getCompletedLogEntries()
     {
@@ -42,7 +90,20 @@ public class LogEntryQueueSink implements ILogEntrySink
     {
         this.completedLogEntries = c;
     }
-        
+       
+    public void LogEntryQueueSink()
+    {
+        try
+        {
+            mainDigest = MessageDigest.getInstance("SHA256");
+        }
+        catch (NoSuchAlgorithmException ex)
+        {
+            mainDigest = null;
+            log.error("Error creating 'SHA256' digest", ex);
+        }
+    }
+    
     /**
      * Put a log entry in this class store.
      * 
@@ -52,7 +113,52 @@ public class LogEntryQueueSink implements ILogEntrySink
     @Override
     public void put(LogEntry le) throws InterruptedException
     {
+        if( validate(le) == false )
+        {
+            return;
+        }
+        
         completedLogEntries.put(le);
+    }
+
+    /**
+     * Check if a supplied LogEntry will be allowed in the Sink.
+     * 
+     * @param le
+     * @return
+     */
+    @Override
+    public boolean validate(LogEntry le)
+    {
+        boolean res = true;
+        
+        // Use the crypto-hash of the Value Object for deduplication
+        // There are probably many other ways to do this.
+        // TODO  : Investigate other hashing approaches
+        LogEntryVO currVO = LogEntryBuilder.logEntry2VO(le);
+        String voStr = LogEntryBuilder.vo2JS(currVO);
+        
+       // byte[] currHash = mainDigest.digest(voStr.getBytes());
+        
+        return res;
+    }
+
+    @Override
+    public Duration getLogDeduplicationDuration()
+    {
+        return logDeduplicationDuration;
+    }
+
+    @Override
+    public void setLogDeduplicationDuration(Duration d)
+    {
+        logDeduplicationDuration = d;
+    }
+
+    @Override
+    public LocalTime getLogCutoffDate()
+    {
+        return logCutoffDate;
     }
     
 }

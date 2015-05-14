@@ -111,6 +111,10 @@ public class LogCheckRun implements Callable<LogCheckResult>
         acquireLockFile( getLockFile() );
         setupLockFileShutdownHook( getLockFile() );
         
+        logEntrySink.setLogDeduplicationDuration(config.getLogDeduplicationDuration());
+        logEntrySink.setLogCutoffDate(config.getLogCutoffDate());
+        logEntrySink.setLogCutoffDuration(config.getLogCutoffDuration());
+        
         // Log tailing related objects
         LogEntryBuilder currLogEntryBuilder = new LogEntryBuilder();
         currLogEntryBuilder.setCompletionCallback(logEntrySink);

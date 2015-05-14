@@ -200,6 +200,8 @@ public class LogEntryElasticSearch implements ILogEntryStore
     @Override
     public LogCheckResult put(LogEntry le) throws InterruptedException
     {
+        log.debug( String.format("put() for logEntry '%s'\n", le.getTimeStamp()));
+        
         LogCheckResult res = new LogCheckResult();
         
         LogEntryVO currVO = LogEntryBuilder.logEntry2VO(le);
