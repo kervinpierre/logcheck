@@ -23,6 +23,7 @@ import com.sludev.logs.logcheck.log.LogEntry;
 import com.sludev.logs.logcheck.log.LogEntryBuilder;
 import com.sludev.logs.logcheck.log.LogEntryVO;
 import com.sludev.logs.logcheck.utils.LogCheckConstants;
+import com.sludev.logs.logcheck.utils.LogCheckException;
 import com.sludev.logs.logcheck.utils.LogCheckResult;
 import io.searchbox.client.JestClient;
 import io.searchbox.client.JestClientFactory;
@@ -198,7 +199,7 @@ public class LogEntryElasticSearch implements ILogEntryStore
     }
 
     @Override
-    public LogCheckResult put(LogEntry le) throws InterruptedException
+    public LogCheckResult put(LogEntry le) throws InterruptedException, LogCheckException
     {
         log.debug( String.format("put() for logEntry '%s'\n", le.getTimeStamp()));
         
@@ -221,7 +222,11 @@ public class LogEntryElasticSearch implements ILogEntryStore
         }
         catch (Exception ex)
         {
-            log.error( String.format("Error sending log entry to Elasticsearch '%s'", le.getLogger()), ex);
+            String errMsg = String.format("Error sending log entry to Elasticsearch '%s'", le.getLogger());
+            
+            log.info( errMsg, ex);
+            
+            throw new LogCheckException(errMsg, ex);
         }
 
         return res;

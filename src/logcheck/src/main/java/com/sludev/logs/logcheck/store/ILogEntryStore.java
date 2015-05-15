@@ -19,6 +19,7 @@ package com.sludev.logs.logcheck.store;
 
 import com.sludev.logs.logcheck.log.ILogEntrySource;
 import com.sludev.logs.logcheck.log.LogEntry;
+import com.sludev.logs.logcheck.utils.LogCheckException;
 import com.sludev.logs.logcheck.utils.LogCheckResult;
 import java.util.concurrent.Callable;
 
@@ -29,7 +30,7 @@ import java.util.concurrent.Callable;
 public interface ILogEntryStore extends Callable<LogCheckResult>
 {
     public void init();
-    public LogCheckResult put(LogEntry le) throws InterruptedException;
+    public LogCheckResult put(LogEntry le) throws InterruptedException, LogCheckException;
     
     public void setMainLogEntrySource(ILogEntrySource src);
 }
