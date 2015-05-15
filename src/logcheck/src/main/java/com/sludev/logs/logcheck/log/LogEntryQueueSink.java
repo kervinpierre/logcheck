@@ -37,11 +37,33 @@ public class LogEntryQueueSink implements ILogEntrySink
     private static final Logger log 
                              = LogManager.getLogger(LogEntryQueueSink.class);
     
+    /**
+     * TODO : The 'Completed Entries' queue should be serialized on disk in case of an
+     * application crash. Maybe http://www.mapdb.org/ helpful
+     */
     private BlockingDeque<LogEntry> completedLogEntries;
+    
+    /**
+     * TODO : Logs should not be duplicated for this duration.
+     * 
+     * TODO : Duplication check should be allowed to ignore specified fields, 
+     *         e.g. timestamp or exception stack or id fields.
+     */
     private Duration logDeduplicationDuration;
+    
+    /**
+     * TODO : The date that should be ignored when processing old logs
+     */
     private LocalTime logCutoffDate;
+    
+    /**
+     * TODO : Do not process logs this duration in the past
+     */
     private Duration logCutoffDuration;
     
+    /**
+     * TODO : Use SHA256 for log deduplication
+     */
     private MessageDigest mainDigest;
     
     /**
