@@ -1,0 +1,5 @@
+## Display version
+# --version
+
+# Simple continuous random write mainly using defaults
+--output-file /tmp/logcheck-sample-app-output.txt

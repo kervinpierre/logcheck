@@ -32,10 +32,9 @@ import java.util.Arrays;
 import java.util.Iterator;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
-import org.apache.commons.cli.GnuParser;
+import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
-import org.apache.commons.cli.OptionBuilder;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.logging.log4j.LogManager;
@@ -56,7 +55,7 @@ public class LogCheckInitialize
      */
     public static LogCheckConfig initialize(String[] args)
     {  
-        CommandLineParser parser = new GnuParser();
+        CommandLineParser parser = new DefaultParser();
         Options options = configureOptions();
         LogCheckConfig config = new LogCheckConfig();
         
@@ -293,124 +292,124 @@ public class LogCheckInitialize
     {
         Options options = new Options();
 
-        options.addOption( OptionBuilder.withLongOpt( "config-file" )
-                                .withDescription( "Configuration file." )
+        options.addOption( Option.builder().longOpt("config-file")
+                                .desc( "Configuration file." )
                                 .hasArg()
-                                .withArgName("CONFFILE")
-                                .create() );
+                                .argName("CONFFILE")
+                                .build() );
         
-        options.addOption( OptionBuilder.withLongOpt( "service" )
-                                .withDescription( "Run as a background service" )
-                                .create() );
+        options.addOption( Option.builder().longOpt( "service" )
+                                .desc( "Run as a background service" )
+                                .build() );
 
-        options.addOption( OptionBuilder.withLongOpt( "arg-file" )
-                                .withDescription( "Command-line argument file." )
+        options.addOption( Option.builder().longOpt( "arg-file" )
+                                .desc( "Command-line argument file." )
                                 .hasArg()
-                                .withArgName("ARGFILE")
-                                .create() );
+                                .argName("ARGFILE")
+                                .build() );
         
-        options.addOption( OptionBuilder.withLongOpt( "holding-folder" )
-                                .withDescription( "Local folder for keeping downloaded data." )
+        options.addOption( Option.builder().longOpt( "holding-folder" )
+                                .desc( "Local folder for keeping downloaded data." )
                                 .hasArg()
-                                .withArgName("LOGFILE")
-                                .create() );
+                                .argName("LOGFILE")
+                                .build() );
         
-        options.addOption( OptionBuilder.withLongOpt( "poll-interval" )
-                                .withDescription( "Seconds between polling the log file." )
+        options.addOption( Option.builder().longOpt( "poll-interval" )
+                                .desc( "Seconds between polling the log file." )
                                 .hasArg()
-                                .withArgName("POLLINTERVAL")
-                                .create() );
+                                .argName("POLLINTERVAL")
+                                .build() );
         
-        options.addOption( OptionBuilder.withLongOpt( "email-on-error" )
-                                .withDescription( "Send an email to this person on failure" )
+        options.addOption( Option.builder().longOpt( "email-on-error" )
+                                .desc( "Send an email to this person on failure" )
                                 .hasArg()
-                                .withArgName("EMAILONERROR")
-                                .create() );
+                                .argName("EMAILONERROR")
+                                .build() );
         
-        options.addOption( OptionBuilder.withLongOpt( "smtp-server" )
-                                .withDescription( "SMTP Server name" )
+        options.addOption( Option.builder().longOpt( "smtp-server" )
+                                .desc( "SMTP Server name" )
                                 .hasArg()
-                                .withArgName("SMTPSERVERNAME")
-                                .create() );
+                                .argName("SMTPSERVERNAME")
+                                .build() );
         
-        options.addOption( OptionBuilder.withLongOpt( "smtp-port" )
-                                .withDescription( "SMTP Server Port" )
+        options.addOption( Option.builder().longOpt( "smtp-port" )
+                                .desc( "SMTP Server Port" )
                                 .hasArg()
-                                .withArgName("SMTPSERVERPORT")
-                                .create() );
+                                .argName("SMTPSERVERPORT")
+                                .build() );
         
-        options.addOption( OptionBuilder.withLongOpt( "smtp-user" )
-                                .withDescription( "SMTP User" )
+        options.addOption( Option.builder().longOpt( "smtp-user" )
+                                .desc( "SMTP User" )
                                 .hasArg()
-                                .withArgName("SMTPUSER")
-                                .create() );
+                                .argName("SMTPUSER")
+                                .build() );
         
-        options.addOption( OptionBuilder.withLongOpt( "smtp-pass" )
-                                .withDescription( "SMTP User password" )
+        options.addOption( Option.builder().longOpt( "smtp-pass" )
+                                .desc( "SMTP User password" )
                                 .hasArg()
-                                .withArgName("SMTPUSERPASS")
-                                .create() );
+                                .argName("SMTPUSERPASS")
+                                .build() );
         
-        options.addOption( OptionBuilder.withLongOpt( "smtp-proto" )
-                                .withDescription( "SMTP Protocol" )
+        options.addOption( Option.builder().longOpt( "smtp-proto" )
+                                .desc( "SMTP Protocol" )
                                 .hasArg()
-                                .withArgName("SMTPPROTO")
-                                .create() );
+                                .argName("SMTPPROTO")
+                                .build() );
         
-        options.addOption( OptionBuilder.withLongOpt( "dry-run" )
-                                .withDescription( "Do not update the database" )
-                                .create() );
+        options.addOption( Option.builder().longOpt( "dry-run" )
+                                .desc( "Do not update the database" )
+                                .build() );
         
-        options.addOption( OptionBuilder.withLongOpt( "version" )
-                                .withDescription( "Show the application version" )
-                                .create() );
+        options.addOption( Option.builder().longOpt( "version" )
+                                .desc( "Show the application version" )
+                                .build() );
         
-        options.addOption( OptionBuilder.withLongOpt( "lock-file" )
-                                .withDescription( "Prevent multiple instances of the service from running." )
+        options.addOption( Option.builder().longOpt( "lock-file" )
+                                .desc( "Prevent multiple instances of the service from running." )
                                 .hasArg()
-                                .withArgName("LOCKFILE")
-                                .create() );
+                                .argName("LOCKFILE")
+                                .build() );
         
-        options.addOption( OptionBuilder.withLongOpt( "log-file" )
-                                .withDescription( "Log file required for checking." )
+        options.addOption( Option.builder().longOpt( "log-file" )
+                                .desc( "Log file required for checking." )
                                 .hasArg()
-                                .withArgName("LOGFILE")
-                                .create() );
+                                .argName("LOGFILE")
+                                .build() );
         
-        options.addOption( OptionBuilder.withLongOpt( "log-cutoff-duration" )
-                                .withDescription( "Do not process logs older than this duration. E.g. \"P2DT3H4M\"  becomes \"2 days, 3 hours and 4 minutes\"" )
+        options.addOption( Option.builder().longOpt( "log-cutoff-duration" )
+                                .desc( "Do not process logs older than this duration. E.g. \"P2DT3H4M\"  becomes \"2 days, 3 hours and 4 minutes\"" )
                                 .hasArg()
-                                .withArgName("LOGCUTOFFPERIOD")
-                                .create() );
+                                .argName("LOGCUTOFFPERIOD")
+                                .build() );
         
-        options.addOption( OptionBuilder.withLongOpt( "log-cutoff-date" )
-                                .withDescription( "Do not process logs older than this date. YYYYMMDD-hhmmss" )
+        options.addOption( Option.builder().longOpt( "log-cutoff-date" )
+                                .desc( "Do not process logs older than this date. YYYYMMDD-hhmmss" )
                                 .hasArg()
-                                .withArgName("LOGCUTOFFDATE")
-                                .create() );
+                                .argName("LOGCUTOFFDATE")
+                                .build() );
         
-        options.addOption( OptionBuilder.withLongOpt( "log-deduplicate-duration" )
-                                .withDescription( "Do not not send the same log entry more than once per session for the specified duration. See 'log-cutoff-duration" )
+        options.addOption( Option.builder().longOpt( "log-deduplicate-duration" )
+                                .desc( "Do not not send the same log entry more than once per session for the specified duration. See 'log-cutoff-duration" )
                                 .hasArg()
-                                .withArgName("LOGDEDUP")
-                                .create() );
+                                .argName("LOGDEDUP")
+                                .build() );
         
-        options.addOption( OptionBuilder.withLongOpt( "file-from-start" )
-                                .withDescription( "Process all records already in the log file." )
-                                .create() );
+        options.addOption( Option.builder().longOpt( "file-from-start" )
+                                .desc( "Process all records already in the log file." )
+                                .build() );
         
-        options.addOption( OptionBuilder.withLongOpt( "elasticsearch-url" )
-                                .withDescription( "Elasticsearch URL, including protocol and port." )
+        options.addOption( Option.builder().longOpt( "elasticsearch-url" )
+                                .desc( "Elasticsearch URL, including protocol and port." )
                                 .hasArg()
-                                .withArgName("ELASTICSEARCHURL")
-                                .create() );
+                                .argName("ELASTICSEARCHURL")
+                                .build() );
 
         
-        options.addOption( OptionBuilder.withLongOpt( "status-file" )
-                                .withDescription( "Status file used for session data." )
+        options.addOption( Option.builder().longOpt( "status-file" )
+                                .desc( "Status file used for session data." )
                                 .hasArg()
-                                .withArgName("STATUSFILE")
-                                .create() );
+                                .argName("STATUSFILE")
+                                .build() );
         
         
         return options;

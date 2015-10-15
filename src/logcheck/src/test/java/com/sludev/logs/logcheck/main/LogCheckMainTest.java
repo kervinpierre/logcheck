@@ -19,9 +19,6 @@ package com.sludev.logs.logcheck.main;
 
 import com.sludev.logs.logcheck.LogCheckProperties;
 import com.sludev.logs.logcheck.LogCheckTestWatcher;
-import com.sludev.logs.logcheck.config.LogCheckConfig;
-import com.sludev.logs.logcheck.store.LogEntryElasticSearchTest;
-import com.sludev.logs.logcheck.utils.LogCheckResult;
 import java.util.Properties;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -30,7 +27,6 @@ import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import static org.junit.Assert.*;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.rules.TestWatcher;
