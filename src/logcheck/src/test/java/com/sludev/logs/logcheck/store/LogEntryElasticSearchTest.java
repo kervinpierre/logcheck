@@ -84,7 +84,7 @@ public class LogEntryElasticSearchTest
      */
     @Test
     @Ignore
-    public void testPut()
+    public void testPut() throws Exception
     {
         log.debug("testing put()");
         

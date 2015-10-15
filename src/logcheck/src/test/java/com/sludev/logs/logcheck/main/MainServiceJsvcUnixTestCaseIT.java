@@ -79,7 +79,6 @@ public class MainServiceJsvcUnixTestCaseIT
      * 
      */
     @Test
-    @Ignore
     public void testMainJsvcStart()
     {
         log.info("Starting UNIX Jsvc service test.");

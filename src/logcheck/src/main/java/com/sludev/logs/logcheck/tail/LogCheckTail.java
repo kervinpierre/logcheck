@@ -23,6 +23,7 @@ import com.sludev.logs.logcheck.utils.LogCheckConstants;
 import com.sludev.logs.logcheck.utils.LogCheckException;
 import com.sludev.logs.logcheck.utils.LogCheckResult;
 import java.io.File;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.concurrent.Callable;
@@ -50,7 +51,7 @@ public class LogCheckTail implements Callable<LogCheckResult>
     private ScheduledExecutorService schedulerExe;
     private ScheduledExecutorService stopThreadExe;
     
-    private File logFile;
+    private Path logFile;
     private long delay;
     private boolean tailFromEnd;
     private boolean reOpenOnChunk;
@@ -87,29 +88,19 @@ public class LogCheckTail implements Callable<LogCheckResult>
         return mainTailer;
     }
 
-    public void setMainTailer(Tailer mainTailer)
-    {
-        this.mainTailer = mainTailer;
-    }
-
     public LogCheckTailerListener getMainTailerListener()
     {
         return mainTailerListener;
     }
 
-    public void setMainTailerListener(LogCheckTailerListener mainTailerListener)
-    {
-        this.mainTailerListener = mainTailerListener;
-    }
-
-    public File getLogFile()
+    public Path getLogFile()
     {
         return logFile;
     }
 
-    public void setLogFile(File l) throws LogCheckException
+    public void setLogFile(Path l) throws LogCheckException
     {
-        if( l == null || l.exists() == false )
+        if( l == null || Files.exists(l) == false )
         {
             String errMsg = String.format("Log path '%s' is invalid.", l);
             log.debug(errMsg);
@@ -118,27 +109,6 @@ public class LogCheckTail implements Callable<LogCheckResult>
         }
         
         this.logFile = l;
-    }
-
-    public void setLogFile(Path l) throws LogCheckException
-    {
-        if( l == null )
-        {
-            String errMsg = "Log path is empty.";
-            log.debug(errMsg);
-            
-            throw new LogCheckException(errMsg);
-        }
-        
-        File f = l.toFile();
-        
-        this.setLogFile(f);
-    }
-    
-    public void setLogFile(String l)
-    {
-        File f = Paths.get(l).toFile();
-        this.logFile = f;
     }
     
     public long getDelay()
@@ -166,19 +136,9 @@ public class LogCheckTail implements Callable<LogCheckResult>
         return reOpenOnChunk;
     }
 
-    public void setReOpenOnChunk(boolean reOpenOnChunk)
-    {
-        this.reOpenOnChunk = reOpenOnChunk;
-    }
-
     public int getBufferSize()
     {
         return bufferSize;
-    }
-
-    public void setBufferSize(int bufferSize)
-    {
-        this.bufferSize = bufferSize;
     }
 
     public LogCheckTail()
@@ -196,8 +156,7 @@ public class LogCheckTail implements Callable<LogCheckResult>
         
         stopAfter = 0;
     }
-    
-    
+
     @Override
     public LogCheckResult call()
     {
@@ -205,8 +164,13 @@ public class LogCheckTail implements Callable<LogCheckResult>
         
         mainTailerListener = new LogCheckTailerListener();
         mainTailerListener.setMainLogEntryBuilder(mainLogEntryBuilder);
-        mainTailer = new Tailer(logFile, mainTailerListener, delay, 
-                                   tailFromEnd, reOpenOnChunk );
+        mainTailer = Tailer.from(logFile,
+                Tailer.DEFAULT_CHARSET,
+                mainTailerListener,
+                delay,
+                tailFromEnd,
+                reOpenOnChunk,
+                Tailer.DEFAULT_BUFSIZE);
         
         if( stopAfter > 0 )
         {
@@ -265,7 +229,7 @@ public class LogCheckTail implements Callable<LogCheckResult>
 
         stopThreadExe.shutdown();
             
-        mainTailer.run();
+        mainTailer.call();
         
         /**
          * FIXME : We can choose to check the interrupted flag here.
