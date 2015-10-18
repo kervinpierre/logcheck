@@ -2,14 +2,20 @@ package com.sludev.logs.logcheckSampleApp.entities;
 
 import com.sludev.logs.logcheckSampleApp.enums.LCSAGeneratorType;
 import com.sludev.logs.logcheckSampleApp.enums.LCSAOutputType;
+import com.sludev.logs.logcheckSampleApp.utils.LogCheckAppException;
+import com.sludev.logs.logcheckSampleApp.utils.ParseNumberWithSuffix;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.concurrent.TimeUnit;
 
 /**
+ * Log Check Testing Applications configuration class.
+ *
  * Created by kervin on 2015-10-14.
  */
 public final class LogCheckAppConfig
@@ -18,17 +24,29 @@ public final class LogCheckAppConfig
 
     private final LCSAOutputType outputType;
     private final Path outputPath;
-    private final Long outputFrequency;
+    private final Pair<Long,TimeUnit> outputFrequency;
+    private final Long rotateAfterCount;
     private final LCSAGeneratorType outputGeneratorType;
     private final Boolean truncate;
     private final Boolean append;
+    private final Boolean deleteLogs;
 
     public Path getOutputPath()
     {
         return outputPath;
     }
 
-    public Long getOutputFrequency()
+    public Boolean getDeleteLogs()
+    {
+        return deleteLogs;
+    }
+
+    public Long getRotateAfterCount()
+    {
+        return rotateAfterCount;
+    }
+
+    public Pair<Long,TimeUnit> getOutputFrequency()
     {
         return outputFrequency;
     }
@@ -55,10 +73,12 @@ public final class LogCheckAppConfig
 
     private LogCheckAppConfig(final LCSAOutputType outputType,
                               final Path outputPath,
-                              final Long outputFrequency,
+                              final Pair<Long,TimeUnit> outputFrequency,
                               final LCSAGeneratorType outputGeneratorType,
+                              final Long rotateAfterCount,
                               final Boolean truncate,
-                              final Boolean append)
+                              final Boolean append,
+                              final Boolean deleteLogs)
     {
         if( outputType != null )
         {
@@ -69,6 +89,24 @@ public final class LogCheckAppConfig
             this.outputType = LCSAOutputType.BUFFEREDWRITER;
         }
 
+        if( rotateAfterCount != null )
+        {
+            this.rotateAfterCount = rotateAfterCount;
+        }
+        else
+        {
+            this.rotateAfterCount = null;
+        }
+
+        if( deleteLogs != null )
+        {
+            this.deleteLogs = deleteLogs;
+        }
+        else
+        {
+            this.deleteLogs = null;
+        }
+
         this.outputPath = outputPath;
 
         if( outputFrequency != null )
@@ -77,7 +115,7 @@ public final class LogCheckAppConfig
         }
         else
         {
-            this.outputFrequency = 1L;
+            this.outputFrequency = Pair.of(1L, TimeUnit.SECONDS);
         }
 
         if( outputGeneratorType != null )
@@ -114,17 +152,21 @@ public final class LogCheckAppConfig
 
     public static LogCheckAppConfig from(final LCSAOutputType outputType,
                                          final Path outputPath,
-                                         final Long outputFrequency,
+                                         final Pair<Long,TimeUnit> outputFrequency,
                                          final LCSAGeneratorType outputGeneratorType,
+                                         final Long rotateAfterCount,
                                          final Boolean truncate,
-                                         final Boolean append)
+                                         final Boolean append,
+                                         final Boolean deleteLogs)
     {
         LogCheckAppConfig res = new LogCheckAppConfig(outputType,
                                                         outputPath,
                                                         outputFrequency,
                                                         outputGeneratorType,
+                                                        rotateAfterCount,
                                                         truncate,
-                                                        append);
+                                                        append,
+                                                        deleteLogs);
 
         return res;
     }
@@ -133,12 +175,15 @@ public final class LogCheckAppConfig
                                          final String outputPath,
                                          final String outputFrequency,
                                          final String outputGeneratorType,
+                                         final String rotateAfterCount,
                                          final Boolean truncate,
-                                         final Boolean append)
+                                         final Boolean append,
+                                         final Boolean deleteLogs) throws LogCheckAppException
     {
         LCSAOutputType ot = null;
         Path op = null;
-        Long of = null;
+        Pair<Long,TimeUnit> of = null;
+        Long rac = null;
         LCSAGeneratorType gt = null;
 
         if( StringUtils.isNoneBlank(outputType) )
@@ -153,7 +198,7 @@ public final class LogCheckAppConfig
 
         if( StringUtils.isNoneBlank(outputFrequency) )
         {
-            of = Long.parseLong(outputFrequency);
+            of = ParseNumberWithSuffix.parseIntWithTimeUnits(outputFrequency);
         }
 
         if( StringUtils.isNoneBlank(outputGeneratorType) )
@@ -161,7 +206,12 @@ public final class LogCheckAppConfig
             gt = LCSAGeneratorType.from(outputGeneratorType);
         }
 
-        LogCheckAppConfig res = from(ot, op, of, gt, truncate, append);
+        if( StringUtils.isNoneBlank(rotateAfterCount) )
+        {
+            rac = ParseNumberWithSuffix.parseIntWithMagnitude(rotateAfterCount);
+        }
+
+        LogCheckAppConfig res = from(ot, op, of, gt, rac, truncate, append, deleteLogs);
 
         return res;
     }

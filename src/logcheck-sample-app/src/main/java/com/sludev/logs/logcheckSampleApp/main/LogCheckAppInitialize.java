@@ -3,6 +3,7 @@ package com.sludev.logs.logcheckSampleApp.main;
 import com.sludev.logs.logcheckSampleApp.entities.LogCheckAppConfig;
 import com.sludev.logs.logcheckSampleApp.utils.LogCheckAppConstants;
 import com.sludev.logs.logcheckSampleApp.utils.LogCheckAppException;
+import com.sun.org.apache.xpath.internal.operations.Bool;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -19,12 +20,12 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Iterator;
 
 /**
+ * Initialize the application configuration from the command-line and configuration files.
+ *
  * Created by kervin on 2015-10-13.
  */
 public final class LogCheckAppInitialize
@@ -41,8 +42,10 @@ public final class LogCheckAppInitialize
         String currOutputFile = null;
         String currOutputFrequency = null;
         String currOutputGenType = null;
+        String currRotateAfter = null;
         Boolean currAppend = null;
         Boolean currTruncate = null;
+        Boolean currDeleteLogs = null;
 
         Options options = ConfigureOptions();
 
@@ -168,6 +171,14 @@ public final class LogCheckAppInitialize
                         currTruncate = true;
                         break;
 
+                    case "delete-logs":
+                        currDeleteLogs = true;
+                        break;
+
+                    case "rotate-after-count":
+                        currRotateAfter = currOpt.getValue();
+                        break;
+
                     case "version":
                         System.out.println(
                                 String.format("logcheck-sample-app Version %s",
@@ -181,8 +192,10 @@ public final class LogCheckAppInitialize
                     currOutputFile,
                     currOutputFrequency,
                     currOutputGenType,
+                    currRotateAfter,
                     currAppend,
-                    currTruncate);
+                    currTruncate,
+                    currDeleteLogs);
         }
         catch (LogCheckAppException ex)
         {
@@ -214,6 +227,11 @@ public final class LogCheckAppInitialize
                 .hasArg()
                 .build());
 
+        options.addOption(Option.builder().longOpt("rotate-after-count")
+                .desc("Rotate the output file after the specified number of output writes. Suffix 'K', 'M' and 'G' are allowed.")
+                .hasArg()
+                .build());
+
         options.addOption( Option.builder().longOpt( "argfile" )
                 .desc( "The name of a file containing"
                         + " the list of command-line arguments.  Only the first uncommented line is read."
@@ -228,7 +246,10 @@ public final class LogCheckAppInitialize
                 .build());
 
         options.addOption(Option.builder().longOpt("output-frequency")
-                .desc("Specify the frequency of output")
+                .desc("Specify the frequency of output in number of "
+        + "'S' : Seconds, 'MS' : Milliseconds, 'M' : Minutes, 'H' : Hours, 'D' : Days"
+                        + ". E.g. '7S' for every seven seconds."
+                )
                 .hasArg()
                 .build());
 
@@ -243,6 +264,10 @@ public final class LogCheckAppInitialize
 
         options.addOption(Option.builder().longOpt("truncate")
                 .desc("Truncate the existing file")
+                .build());
+
+        options.addOption(Option.builder().longOpt("delete-logs")
+                .desc("Delete existing logs and log backups before running")
                 .build());
 
         options.addOption(Option.builder().longOpt("version")

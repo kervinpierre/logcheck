@@ -13,11 +13,12 @@ import org.apache.logging.log4j.Logger;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-
-import static java.util.concurrent.TimeUnit.SECONDS;
+import java.util.concurrent.TimeUnit;
 
 /**
  * 
@@ -44,23 +45,124 @@ public final class LogCheckAppMainRun implements Callable<LCSAResult>
     {
         LCSAResult res = LCSAResult.NONE;
 
-        ScheduledExecutorService schedulerExe = Executors.newScheduledThreadPool(1);
+        if( config.getDeleteLogs() != null
+                && config.getDeleteLogs() )
+        {
+            deleteLogs(config.getOutputPath());
+        }
 
-        setupLockFileShutdownHook();
+        IWriteFile wf = newWriteFile(config.getOutputPath());
 
-        final IWriteFile wf;
+        do
+        {
+            res = logFile(wf);
+            if(res == LCSAResult.COMPLETED_ROTATE_PENDING)
+            {
+                wf.closeFile();
+                Path bk = IWriteFile.rotateFile(config.getOutputPath());
+                wf = newWriteFile(config.getOutputPath());
+            }
+        }
+        while(res == LCSAResult.COMPLETED_ROTATE_PENDING);
+
+        return res;
+    }
+
+    private IWriteFile newWriteFile(Path output)
+    {
+        log.debug(String.format("newWriteFile() called on '%s'", output));
+
+        IWriteFile wf;
+
         switch( config.getOutputType() )
         {
             case BUFFEREDWRITER:
-                wf = new BufferedWriterWriteFile(config.getOutputPath(),
+                wf = new BufferedWriterWriteFile(output,
                         true,
                         config.getAppend(),
-                        config.getTruncate());
+                        config.getTruncate(),
+                        config.getRotateAfterCount());
                 break;
 
             default:
                 wf = null;
         }
+
+        return wf;
+    }
+
+    private LCSAResult deleteLogs(Path outFile) throws LogCheckAppException
+    {
+        LCSAResult res = LCSAResult.NONE;
+        Path parent = null;
+
+        if( outFile == null )
+        {
+            throw new LogCheckAppException("File path cannot be null");
+        }
+
+        try
+        {
+            parent = outFile.toAbsolutePath().getParent();
+        }
+        catch(Exception ex)
+        {
+            throw new LogCheckAppException(
+                    String.format("Failed retrieving parent directory '%s'", outFile), ex);
+        }
+
+        if(Files.notExists(parent))
+        {
+            String errMsg = String.format("Parent folder '%s' does not exist.", parent);
+
+            log.debug(errMsg);
+            throw new LogCheckAppException(errMsg);
+        }
+
+        try
+        {
+            Files.delete(outFile);
+        }
+        catch(IOException ex)
+        {
+            String errMsg = String.format("Error deleting '%s'", outFile);
+
+            log.debug(errMsg);
+        }
+
+        Path bakPath;
+        for(int i = 0; i <= 9999; i++)
+        {
+            String newName = String.format("%s.%04d.bak", outFile.getFileName().toString(), i);
+            bakPath = parent.resolve(newName);
+            if(Files.notExists(bakPath))
+            {
+                break;
+            }
+
+            try
+            {
+                Files.delete(bakPath);
+            }
+            catch(IOException ex)
+            {
+                String errMsg = String.format("Error deleting '%s'", outFile);
+
+                log.debug(errMsg);
+            }
+        }
+
+        return res;
+    }
+
+    private LCSAResult logFile(final IWriteFile wf)
+                            throws LogCheckAppException, IOException, InterruptedException
+    {
+        LCSAResult res = LCSAResult.NONE;
+
+        final ScheduledExecutorService schedulerExe = Executors.newScheduledThreadPool(1);
+
+        setupLockFileShutdownHook();
 
         if( wf == null )
         {
@@ -79,6 +181,8 @@ public final class LogCheckAppMainRun implements Callable<LCSAResult>
             default:
                 idg = null;
         }
+
+        final Set<LCSAResult> threadRes = new HashSet<>();
 
         schedulerExe.scheduleAtFixedRate(() ->
         {
@@ -100,13 +204,28 @@ public final class LogCheckAppMainRun implements Callable<LCSAResult>
 
             try
             {
-                wf.writeLine(currStr);
+                LCSAResult resWrite = wf.writeLine(currStr);
+
+                if( resWrite != LCSAResult.SUCCESS )
+                {
+                    threadRes.add(resWrite);
+                    schedulerExe.shutdown();
+                }
             }
             catch( IOException ex )
             {
                 log.debug("Failing writing file", ex);
             }
-        }, 1, config.getOutputFrequency(), SECONDS);
+        }, 1,
+            config.getOutputFrequency().getLeft(),
+            config.getOutputFrequency().getRight());
+
+        schedulerExe.awaitTermination(Long.MAX_VALUE, TimeUnit.DAYS);
+
+        if( threadRes.contains(LCSAResult.COMPLETED_ROTATE_PENDING))
+        {
+            res = LCSAResult.COMPLETED_ROTATE_PENDING;
+        }
 
         return res;
     }

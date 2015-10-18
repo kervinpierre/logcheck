@@ -2,4 +2,7 @@
 # --version
 
 # Simple continuous random write mainly using defaults
---output-file /tmp/logcheck-sample-app-output.txt
+# --output-file /tmp/logcheck-sample-app-output.txt
+
+# Windows test
+--output-file c:/tmp/logcheck-sample-app-output.txt --rotate-after-count 1K --delete-logs --output-frequency 5ms
