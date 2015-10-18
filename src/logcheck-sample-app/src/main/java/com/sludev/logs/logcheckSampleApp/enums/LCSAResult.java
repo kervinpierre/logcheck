@@ -7,5 +7,6 @@ public enum LCSAResult
 {
     NONE,
     SUCCESS,
-    FAIL
+    FAIL,
+    COMPLETED_ROTATE_PENDING
 }

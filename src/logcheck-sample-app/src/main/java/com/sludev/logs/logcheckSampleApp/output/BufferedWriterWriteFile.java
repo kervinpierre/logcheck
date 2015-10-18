@@ -1,22 +1,21 @@
 package com.sludev.logs.logcheckSampleApp.output;
 
+import com.sludev.logs.logcheckSampleApp.enums.LCSAResult;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 /**
+ * Write to a file using a BufferedWriter.
+ *
  * Created by kervin on 2015-10-14.
  */
 public final class BufferedWriterWriteFile implements IWriteFile
@@ -27,25 +26,59 @@ public final class BufferedWriterWriteFile implements IWriteFile
     private final Boolean createFile;
     private final Boolean append;
     private final Boolean truncate;
+    private final Long maxWriteCount;
+
+    //Mutable pointers
+    private Long writeCount;
 
     private BufferedWriter bufferedWriter;
+
+    @Override
+    public Long getWriteCount()
+    {
+        return writeCount;
+    }
 
     public BufferedWriterWriteFile(final Path file,
                                    final Boolean createFile,
                                    final Boolean append,
-                                   final Boolean truncate)
+                                   final Boolean truncate,
+                                   final Long maxWriteCount)
     {
         this.file = file;
         this.createFile = createFile;
         this.append = append;
         this.truncate = truncate;
+        this.writeCount = 0L;
+        this.maxWriteCount = maxWriteCount;
     }
 
     @Override
-    public void writeLine(String line) throws IOException
+    public LCSAResult writeLine(String line) throws IOException
     {
+        LCSAResult res =  LCSAResult.SUCCESS;
+
         bufferedWriter.write(line);
         bufferedWriter.flush();
+        if( maxWriteCount != null
+            && maxWriteCount > 0
+            && ++writeCount >= maxWriteCount )
+        {
+            res = LCSAResult.COMPLETED_ROTATE_PENDING;
+        }
+
+        return res;
+    }
+
+    @Override
+    public void closeFile() throws IOException
+    {
+        if( bufferedWriter == null )
+        {
+            return;
+        }
+
+        bufferedWriter.close();
     }
 
     @Override
