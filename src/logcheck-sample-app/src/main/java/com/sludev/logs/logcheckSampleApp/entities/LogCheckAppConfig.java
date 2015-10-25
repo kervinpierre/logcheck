@@ -26,10 +26,17 @@ public final class LogCheckAppConfig
     private final Path outputPath;
     private final Pair<Long,TimeUnit> outputFrequency;
     private final Long rotateAfterCount;
+    private final Long maxBackups;
     private final LCSAGeneratorType outputGeneratorType;
     private final Boolean truncate;
     private final Boolean append;
     private final Boolean deleteLogs;
+    private final Boolean confirmDeletes;
+
+    public Boolean getConfirmDeletes()
+    {
+        return confirmDeletes;
+    }
 
     public Path getOutputPath()
     {
@@ -44,6 +51,11 @@ public final class LogCheckAppConfig
     public Long getRotateAfterCount()
     {
         return rotateAfterCount;
+    }
+
+    public Long getMaxBackups()
+    {
+        return maxBackups;
     }
 
     public Pair<Long,TimeUnit> getOutputFrequency()
@@ -76,9 +88,11 @@ public final class LogCheckAppConfig
                               final Pair<Long,TimeUnit> outputFrequency,
                               final LCSAGeneratorType outputGeneratorType,
                               final Long rotateAfterCount,
+                              final Long maxBackups,
                               final Boolean truncate,
                               final Boolean append,
-                              final Boolean deleteLogs)
+                              final Boolean deleteLogs,
+                              final Boolean confirmDeletes)
     {
         if( outputType != null )
         {
@@ -96,6 +110,15 @@ public final class LogCheckAppConfig
         else
         {
             this.rotateAfterCount = null;
+        }
+
+        if( maxBackups != null )
+        {
+            this.maxBackups = maxBackups;
+        }
+        else
+        {
+            this.maxBackups = null;
         }
 
         if( deleteLogs != null )
@@ -136,6 +159,15 @@ public final class LogCheckAppConfig
             this.truncate = false;
         }
 
+        if( confirmDeletes != null )
+        {
+            this.confirmDeletes = confirmDeletes;
+        }
+        else
+        {
+            this.confirmDeletes = false;
+        }
+
         if( append != null )
         {
             this.append = append;
@@ -155,18 +187,22 @@ public final class LogCheckAppConfig
                                          final Pair<Long,TimeUnit> outputFrequency,
                                          final LCSAGeneratorType outputGeneratorType,
                                          final Long rotateAfterCount,
+                                         final Long maxBackups,
                                          final Boolean truncate,
                                          final Boolean append,
-                                         final Boolean deleteLogs)
+                                         final Boolean deleteLogs,
+                                         final Boolean confirmDeletes)
     {
         LogCheckAppConfig res = new LogCheckAppConfig(outputType,
                                                         outputPath,
                                                         outputFrequency,
                                                         outputGeneratorType,
                                                         rotateAfterCount,
+                                                        maxBackups,
                                                         truncate,
                                                         append,
-                                                        deleteLogs);
+                                                        deleteLogs,
+                                                        confirmDeletes);
 
         return res;
     }
@@ -176,14 +212,17 @@ public final class LogCheckAppConfig
                                          final String outputFrequency,
                                          final String outputGeneratorType,
                                          final String rotateAfterCount,
+                                         final String maxBackups,
                                          final Boolean truncate,
                                          final Boolean append,
-                                         final Boolean deleteLogs) throws LogCheckAppException
+                                         final Boolean deleteLogs,
+                                         final Boolean confirmDeletes) throws LogCheckAppException
     {
         LCSAOutputType ot = null;
         Path op = null;
         Pair<Long,TimeUnit> of = null;
         Long rac = null;
+        Long mbu = null;
         LCSAGeneratorType gt = null;
 
         if( StringUtils.isNoneBlank(outputType) )
@@ -211,7 +250,8 @@ public final class LogCheckAppConfig
             rac = ParseNumberWithSuffix.parseIntWithMagnitude(rotateAfterCount);
         }
 
-        LogCheckAppConfig res = from(ot, op, of, gt, rac, truncate, append, deleteLogs);
+        LogCheckAppConfig res = from(ot, op, of, gt, rac, mbu,
+                                        truncate, append, deleteLogs, confirmDeletes);
 
         return res;
     }

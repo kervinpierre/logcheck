@@ -1,6 +1,7 @@
 package com.sludev.logs.logcheckSampleApp.output;
 
 import com.sludev.logs.logcheckSampleApp.enums.LCSAResult;
+import com.sludev.logs.logcheckSampleApp.utils.LogCheckAppException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -82,7 +83,7 @@ public final class BufferedWriterWriteFile implements IWriteFile
     }
 
     @Override
-    public void openFile() throws IOException
+    public void openFile() throws IOException, LogCheckAppException
     {
         List<OpenOption> options = new ArrayList<>();
         OpenOption[] optionsArray;
@@ -107,6 +108,17 @@ public final class BufferedWriterWriteFile implements IWriteFile
         optionsArray = new OpenOption[options.size()];
         options.toArray(optionsArray);
 
-        bufferedWriter = Files.newBufferedWriter(file, optionsArray);
+        try
+        {
+            bufferedWriter = Files.newBufferedWriter(file, optionsArray);
+        }
+        catch(IOException ex)
+        {
+            String errMsg = String.format("Error opening file for writing '%s'", file);
+
+            log.debug(errMsg, ex);
+
+            throw new LogCheckAppException(errMsg, ex);
+        }
     }
 }

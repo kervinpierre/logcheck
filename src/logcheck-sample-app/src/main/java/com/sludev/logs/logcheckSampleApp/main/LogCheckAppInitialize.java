@@ -43,9 +43,11 @@ public final class LogCheckAppInitialize
         String currOutputFrequency = null;
         String currOutputGenType = null;
         String currRotateAfter = null;
+        String currMaxBackups = null;
         Boolean currAppend = null;
         Boolean currTruncate = null;
         Boolean currDeleteLogs = null;
+        Boolean currConfirmDeletes = null;
 
         Options options = ConfigureOptions();
 
@@ -175,8 +177,16 @@ public final class LogCheckAppInitialize
                         currDeleteLogs = true;
                         break;
 
+                    case "confirm-deletes":
+                        currDeleteLogs = true;
+                        break;
+
                     case "rotate-after-count":
                         currRotateAfter = currOpt.getValue();
+                        break;
+
+                    case "max-backups":
+                        currMaxBackups = currOpt.getValue();
                         break;
 
                     case "version":
@@ -193,9 +203,11 @@ public final class LogCheckAppInitialize
                     currOutputFrequency,
                     currOutputGenType,
                     currRotateAfter,
+                    currMaxBackups,
                     currAppend,
                     currTruncate,
-                    currDeleteLogs);
+                    currDeleteLogs,
+                    currConfirmDeletes);
         }
         catch (LogCheckAppException ex)
         {
@@ -258,6 +270,11 @@ public final class LogCheckAppInitialize
                 .hasArg()
                 .build());
 
+        options.addOption(Option.builder().longOpt("max-backups")
+                .desc("The maximum number of backup files to keep.")
+                .hasArg()
+                .build());
+
         options.addOption(Option.builder().longOpt("append")
                 .desc("Append to existing file")
                 .build());
@@ -268,6 +285,10 @@ public final class LogCheckAppInitialize
 
         options.addOption(Option.builder().longOpt("delete-logs")
                 .desc("Delete existing logs and log backups before running")
+                .build());
+
+        options.addOption(Option.builder().longOpt("confirm-deletes")
+                .desc("In some cases the application will confirm that files have really been deleted.")
                 .build());
 
         options.addOption(Option.builder().longOpt("version")
