@@ -1,6 +1,7 @@
 package com.sludev.logs.logcheckSampleApp.output;
 
 import com.sludev.logs.logcheckSampleApp.enums.LCSAResult;
+import com.sludev.logs.logcheckSampleApp.utils.LogCheckAppConstants;
 import com.sludev.logs.logcheckSampleApp.utils.LogCheckAppException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -33,7 +34,7 @@ public interface IWriteFile
         outChan.close();
     }
 
-    void openFile() throws IOException;
+    void openFile() throws IOException, LogCheckAppException;
     void closeFile() throws IOException;
 
     /**
@@ -41,7 +42,9 @@ public interface IWriteFile
      *
      * @return Path of the new backup file
      */
-    static Path rotateFile(Path file) throws LogCheckAppException
+    static Path rotateFile( final Path file,
+                            final Long maxBackups,
+                            final Boolean confirmDelete ) throws LogCheckAppException
     {
         log.debug(String.format("Rotating '%s'", file));
 
@@ -69,9 +72,23 @@ public interface IWriteFile
         //            currFileName = fpm.group(1);
         //        }
 
-        Path newPath = null;
-        for(int i = 0; i <= 9999; i++)
+        if( maxBackups != null
+                && ( maxBackups < 0
+                || maxBackups > LogCheckAppConstants.MAX_BACKUP_FILES ) )
         {
+            throw new LogCheckAppException(
+                    String.format("Invalid Maximum Backup-file count. %d needs to be between 0 and %d",
+                            maxBackups, LogCheckAppConstants.MAX_BACKUP_FILES));
+        }
+
+        Path newPath = null;
+        for(int i = 0; i < LogCheckAppConstants.MAX_BACKUP_FILES; i++)
+        {
+//            if( i >= maxBackups-1 )
+//            {
+//                ;
+//            }
+//
             String newName = String.format("%s.%04d.bak", file.getFileName().toString(), i);
             newPath = file.getParent().resolve(newName);
             if(Files.notExists(newPath))
@@ -107,23 +124,27 @@ public interface IWriteFile
             // Windows OS.
             Files.delete(file);
 
-            // Give the FS sometime to execute the delete
-  /*          try
+            if( confirmDelete != null
+                    && confirmDelete )
             {
-                Thread.sleep(2000);
-            }
-            catch(InterruptedException ex)
-            {
-                log.debug("Sleep interrupted", ex);
-            }*/
+                // Give the FS sometime to execute the delete
+      /*        try
+                {
+                    Thread.sleep(2000);
+                }
+                catch(InterruptedException ex)
+                {
+                    log.debug("Sleep interrupted", ex);
+                }*/
 
-            if(Files.exists(file) || Files.notExists(file) == false)
-            {
-                // Delete failed
-                String errMsg = String.format("Failed deleting '%s'", file);
+                if(Files.exists(file) || Files.notExists(file) == false)
+                {
+                    // Delete failed
+                    String errMsg = String.format("Failed deleting '%s'", file);
 
-                log.debug(errMsg);
-                throw new LogCheckAppException(errMsg);
+                    log.debug(errMsg);
+                    throw new LogCheckAppException(errMsg);
+                }
             }
 
             // FIXME : Make sure attributes stay the same
