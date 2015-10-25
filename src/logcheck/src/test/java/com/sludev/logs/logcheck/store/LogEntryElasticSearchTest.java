@@ -19,9 +19,9 @@ package com.sludev.logs.logcheck.store;
 
 import com.sludev.logs.logcheck.LogCheckProperties;
 import com.sludev.logs.logcheck.LogCheckTestWatcher;
-import com.sludev.logs.logcheck.enums.LogCheckLogLevel;
-import com.sludev.logs.logcheck.log.LogEntry;
-import com.sludev.logs.logcheck.utils.LogCheckResult;
+import com.sludev.logs.logcheck.enums.LCLogLevel;
+import com.sludev.logs.logcheck.model.LogEntry;
+
 import java.time.LocalDateTime;
 import java.util.Properties;
 import org.apache.logging.log4j.LogManager;
@@ -90,19 +90,19 @@ public class LogEntryElasticSearchTest
         
         String elasticsearchURL = testProperties.getProperty("logcheck.test0001.elasticsearchurl");
         
-        LogEntry le = new LogEntry();
+        LogEntry le = LogEntry.from(null);
         le.setHost("test-host");
         le.setTimeStamp(LocalDateTime.now());
-        le.setLevel(LogCheckLogLevel.DEBUG);
+        le.setLevel(LCLogLevel.DEBUG);
         le.setMessage(String.format("Message Message\nMessage Message Message\nMessage Message"));
         le.setException(String.format("Exception Exception\nException Exception Exception\nException Exception"));
         le.setLogger("com.example.test");
         
-        LogEntryElasticSearch instance = new LogEntryElasticSearch();
-        instance.setElasticsearchURL(elasticsearchURL);
-        instance.init();
+        //LogEntryElasticSearch instance = LogEntryElasticSearch.from();
+        //instance.setElasticsearchURL(elasticsearchURL);
+        //instance.init();
         
-        LogCheckResult result = instance.put(le);
+       // LogCheckResult result = instance.put(le);
     }
     
 }

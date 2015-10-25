@@ -38,7 +38,13 @@ NOTICE:  All information contained herein is, and remains
                         <xs:documentation>Local folder for keeping downloaded data.</xs:documentation>
                     </xs:annotation>
                 </xs:element>
-                
+
+                <xs:element name="logEntryBuilderType" type="LogEntryBuilderTypeType" minOccurs="0"  maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>The type of LogEntry Builder.</xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+
                 <xs:element name="pollInterval" type="xs:string" minOccurs="0"  maxOccurs="1">
                     <xs:annotation>
                         <xs:documentation>Seconds between polling the log file.</xs:documentation>
@@ -114,5 +120,13 @@ NOTICE:  All information contained herein is, and remains
             </xs:choice>
         </xs:complexType>
     </xs:element>
-    
+
+    <xs:simpleType name="LogEntryBuilderTypeType">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="none"/>
+            <xs:enumeration value="singleline"/>
+            <xs:enumeration value="multiline-delimited"/>
+        </xs:restriction>
+    </xs:simpleType>
+
 </xs:schema>

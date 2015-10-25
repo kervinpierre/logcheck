@@ -18,14 +18,20 @@
 package com.sludev.logs.logcheck.main;
 
 import com.sludev.logs.logcheck.config.LogCheckConfig;
-import com.sludev.logs.logcheck.enums.LogCheckResultStatus;
-import com.sludev.logs.logcheck.log.LogEntry;
+import com.sludev.logs.logcheck.enums.LCResultStatus;
+import com.sludev.logs.logcheck.log.ILogEntryBuilder;
+import com.sludev.logs.logcheck.log.impl.builder.NCSACommonLogBuilder;
+import com.sludev.logs.logcheck.log.impl.builder.SingleLineBuilder;
+import com.sludev.logs.logcheck.model.LogEntry;
 import com.sludev.logs.logcheck.log.ILogEntrySink;
 import com.sludev.logs.logcheck.log.ILogEntrySource;
-import com.sludev.logs.logcheck.log.LogEntryBuilder;
-import com.sludev.logs.logcheck.log.LogEntryQueueSink;
-import com.sludev.logs.logcheck.log.LogEntryQueueSource;
+import com.sludev.logs.logcheck.log.impl.builder.MultiLineDelimitedBuilder;
+import com.sludev.logs.logcheck.log.impl.LogEntryQueueSink;
+import com.sludev.logs.logcheck.log.impl.LogEntryQueueSource;
+import com.sludev.logs.logcheck.store.ILogEntryStore;
+import com.sludev.logs.logcheck.store.LogEntryConsole;
 import com.sludev.logs.logcheck.store.LogEntryElasticSearch;
+import com.sludev.logs.logcheck.utils.LogCheckConstants;
 import com.sludev.logs.logcheck.utils.LogCheckResult;
 import com.sludev.logs.logcheck.tail.LogCheckTail;
 import com.sludev.logs.logcheck.utils.LogCheckException;
@@ -34,6 +40,8 @@ import com.sludev.logs.logcheck.utils.LogCheckUtil;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -56,8 +64,6 @@ public class LogCheckRun implements Callable<LogCheckResult>
                              = LogManager.getLogger(LogCheckRun.class);
     
     private LogCheckConfig config;
-    private final ILogEntrySource logEntrySource;
-    private final ILogEntrySink logEntrySink;
     private Path lockFile;
     
     public Path getLockFile()
@@ -80,27 +86,19 @@ public class LogCheckRun implements Callable<LogCheckResult>
         this.config = config;
     }
 
-    public LogCheckRun()
-    {
-        // Use a thread-safe queue.  We enque/deque on different threads
-        BlockingDeque<LogEntry> currQ = new LinkedBlockingDeque<>();
-        
-        logEntrySource = new LogEntryQueueSource();
-        logEntrySink = new LogEntryQueueSink();
-        
-        logEntrySource.setCompletedLogEntries(currQ);
-        logEntrySink.setCompletedLogEntries(currQ);
-    }
-
     @Override
     public LogCheckResult call() throws Exception
     {
-        LogCheckResult res = new LogCheckResult();
+        // Use a thread-safe queue.  We enque/deque on different threads
+        BlockingDeque<LogEntry> currQ = new LinkedBlockingDeque<>();
+
+        LogCheckResult res = LogCheckResult.from(LCResultStatus.SUCCESS);
         
-        if( config.isShowVersion() )
+        if( config.getShowVersion() != null
+                && config.getShowVersion() )
         {
             LogCheckUtil.displayVersion();
-            res.setStatus(LogCheckResultStatus.SUCCESS);
+            res = LogCheckResult.from(LCResultStatus.SUCCESS);
             
             return res;
         }
@@ -110,36 +108,98 @@ public class LogCheckRun implements Callable<LogCheckResult>
         // Setup the acquiring and release of the lock file
         acquireLockFile( getLockFile() );
         setupLockFileShutdownHook( getLockFile() );
+
+        final ILogEntrySource logEntrySource = LogEntryQueueSource.from(currQ);
+        final ILogEntrySink logEntrySink = LogEntryQueueSink.from(currQ,
+                config.getLogDeduplicationDuration(),
+                config.getLogCutoffDate(),
+                config.getLogCutoffDuration(),
+                null);
+
+        ILogEntryBuilder currLogEntryBuilder = null;
+
+        switch(config.getLogEntryBuilder())
+        {
+            case MULTILINE_DELIMITED:
+                {
+                    // Log tailing related objects
+                    List<String> ignoreList = new ArrayList<>();
+                    ignoreList.add(LogCheckConstants.DEFAULT_MULTILINE_IGNORE_LINE);
+
+                    currLogEntryBuilder = MultiLineDelimitedBuilder.from(
+                            LogCheckConstants.DEFAULT_MULTILINE_ROW_START_PATTERN,
+                            LogCheckConstants.DEFAULT_MULTILINE_ROW_END_PATTERN,
+                            null,
+                            LogCheckConstants.DEFAULT_MULTILINE_COL_END_PATTERN,
+                            ignoreList,
+                            logEntrySink);
+                }
+                break;
+
+            case NCSACOMMONLOG:
+                {
+                    currLogEntryBuilder = NCSACommonLogBuilder.from(null, logEntrySink);
+                }
+                break;
+
+            case SINGLELINE:
+                {
+                    currLogEntryBuilder = SingleLineBuilder.from(null, logEntrySink);
+                }
+                break;
+
+            default:
+                String errMsg = String.format("Error creating LogEntry builder '%s'",
+                        config.getLogEntryBuilder());
+
+                log.debug(errMsg);
+                throw new LogCheckException(errMsg);
+        }
         
-        logEntrySink.setLogDeduplicationDuration(config.getLogDeduplicationDuration());
-        logEntrySink.setLogCutoffDate(config.getLogCutoffDate());
-        logEntrySink.setLogCutoffDuration(config.getLogCutoffDuration());
-        
-        // Log tailing related objects
-        LogEntryBuilder currLogEntryBuilder = new LogEntryBuilder();
-        currLogEntryBuilder.setCompletionCallback(logEntrySink);
-        
-        LogCheckTail lct = new LogCheckTail();
-        lct.setLogFile(config.getLogPath());
-        lct.setDelay(config.getPollIntervalSeconds());
-        lct.setTailFromEnd(config.isTailFromEnd());
-        lct.setMainLogEntryBuilder(currLogEntryBuilder);
-        
+        LogCheckTail lct = LogCheckTail.from(currLogEntryBuilder,
+                config.getLogPath(),
+                config.getPollIntervalSeconds(),
+                config.isTailFromEnd(),
+                null,
+                null,
+                null);
+
+        FutureTask<LogCheckResult> logStoreTask = null;
+        ILogEntryStore currStore = null;
+
         // Log storage related objects
-        LogEntryElasticSearch lees = new LogEntryElasticSearch();
-        lees.setMainLogEntrySource(logEntrySource);
-        lees.setElasticsearchURL(config.getElasticsearchURL());
-        lees.setElasticsearchIndexPrefix(config.getElasticsearchIndexPrefix());
-        lees.setElasticsearchIndexNameFormat(config.getElasticsearchIndexNameFormat());
-        lees.setElasticsearchIndexName(config.getElasticsearchIndexName());
-        lees.setElasticsearchLogType(config.getElasticsearchLogType());
-        
-        lees.init();
-        
+        if( config.getElasticsearchURL() != null )
+        {
+            // Elastic Search
+            LogEntryElasticSearch lees = LogEntryElasticSearch.from(logEntrySource);
+
+            lees.setElasticsearchURL(config.getElasticsearchURL());
+            lees.setElasticsearchIndexPrefix(config.getElasticsearchIndexPrefix());
+            lees.setElasticsearchIndexNameFormat(config.getElasticsearchIndexNameFormat());
+            lees.setElasticsearchIndexName(config.getElasticsearchIndexName());
+            lees.setElasticsearchLogType(config.getElasticsearchLogType());
+
+            currStore = lees;
+        }
+        else if( config.getPrintLog() != null
+                   && config.getPrintLog() )
+        {
+            LogEntryConsole lec = LogEntryConsole.from(logEntrySource);
+
+            currStore = lec;
+        }
+
+        if( currStore == null )
+        {
+            throw new LogCheckException("No valid log store found");
+        }
+
+        currStore.init();
+        logStoreTask = new FutureTask<>(currStore);
+
         // Start the relevant threads
         FutureTask<LogCheckResult> logFileTailTask = new FutureTask<>(lct);
-        FutureTask<LogCheckResult> logStoreTask = new FutureTask<>(lees);
-        
+
         BasicThreadFactory fileTailFactory = new BasicThreadFactory.Builder()
             .namingPattern("logpollthread-%d")
             .build();
@@ -200,14 +260,6 @@ public class LogCheckRun implements Callable<LogCheckResult>
         {
             fileTailExe.shutdownNow();
             logStoreExe.shutdownNow();
-            
-            // But work-around.  Interrupt Tailer object using a separate 'stop'
-            // thread.  This should not be necessary in Commons-IO 2.5+ since
-            // Tailer will stop on InterruptedException.
-            if( lct.getStopThreadExe() != null )
-            {
-                lct.getStopThreadExe().shutdownNow();
-            }
         }
         
         return res;

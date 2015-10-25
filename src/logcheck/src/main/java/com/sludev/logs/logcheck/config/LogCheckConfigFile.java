@@ -1,15 +1,33 @@
 /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+ *   SLU Dev Inc. CONFIDENTIAL
+ *   DO NOT COPY
+ *
+ *  Copyright (c) [2012] - [2015] SLU Dev Inc. <info@sludev.com>
+ *  All Rights Reserved.
+ *
+ *  NOTICE:  All information contained herein is, and remains
+ *   the property of SLU Dev Inc. and its suppliers,
+ *   if any.  The intellectual and technical concepts contained
+ *   herein are proprietary to SLU Dev Inc. and its suppliers and
+ *   may be covered by U.S. and Foreign Patents, patents in process,
+ *   and are protected by trade secret or copyright law.
+ *   Dissemination of this information or reproduction of this material
+ *   is strictly forbidden unless prior written permission is obtained
+ *   from SLU Dev Inc.
  */
 package com.sludev.logs.logcheck.config;
 
+import com.sludev.logs.logcheck.utils.FSSConfigurationFile;
 import com.sludev.logs.logcheck.utils.LogCheckException;
 import com.sludev.logs.logcheck.utils.LogCheckLSResourceResolver;
-import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
+
 import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -23,13 +41,8 @@ import javax.xml.validation.Validator;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
-import org.xml.sax.SAXException;
+import java.io.IOException;
+import java.nio.file.Path;
 
 /**
  *
@@ -39,53 +52,8 @@ public class LogCheckConfigFile
 {
     private static final Logger log 
                           = LogManager.getLogger(LogCheckConfigFile.class);
-    
-    private Path filePath;
-    private LogCheckConfig config;
 
-    private Document confDocument;
-        
-    public LogCheckConfig getConfig()
-    {
-        return config;
-    }
-
-    public void setConfig(LogCheckConfig c)
-    {
-        this.config = c;
-    }
-
-    public Document getConfDocument()
-    {
-        return confDocument;
-    }
-
-    public void setConfDocument(Document confDocument)
-    {
-        this.confDocument = confDocument;
-    }
-
-    public Path getFilePath()
-    {
-        return filePath;
-    }
-
-    public void setFilePath(Path f)
-    {
-        this.filePath = f;
-    }
-    
-    public void setFilePath(String f)
-    {
-        Path p = Paths.get(f);
-        this.filePath = p;
-    }
-
-    public LogCheckConfigFile()
-    {
-    }
-    
-    public void parse(Path conf) throws LogCheckException
+    public static void parse(Document confDocument, Path conf) throws LogCheckException
     {
         log.debug( String.format( "Configuration FilePath : '%s'\n", conf ) );
         
@@ -125,16 +93,19 @@ public class LogCheckConfigFile
         confDocument.getDocumentElement().normalize();
     }
     
-    public void read() throws LogCheckException
+    public static LogCheckConfig read(Path confPath) throws LogCheckException
     {
-        parse(filePath);
+        LogCheckConfig res;
+
+        FSSConfigurationFile conf = new FSSConfigurationFile();
+        Document doc = conf.read(confPath);
+
+        parse(doc, confPath);
         
         NodeList currElList;
         Element currEl;
         Element tempEl;
         Schema sch;
-
-        LogCheckConfig res = new LogCheckConfig();
         
         SchemaFactory factory = SchemaFactory
             .newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
@@ -143,7 +114,7 @@ public class LogCheckConfigFile
         factory.setResourceResolver(new LogCheckLSResourceResolver());
 
         // note that if your XML already declares the XSD to which it has to conform, then there's no need to create a validator from a Schema object
-        Source schemaFile = new StreamSource(getClass().getClassLoader()
+        Source schemaFile = new StreamSource(LogCheckConfigFile.class.getClassLoader()
                                     .getResourceAsStream("logcheckconfig.xsd"));
         
         Schema schema;
@@ -153,7 +124,7 @@ public class LogCheckConfigFile
                     Validator validator = schema.newValidator();
             try
             {
-                validator.validate(new DOMSource(getConfDocument()));
+                validator.validate(new DOMSource(doc));
             }
             catch (SAXException ex)
             {
@@ -178,32 +149,42 @@ public class LogCheckConfigFile
             throw new LogCheckException(errMsg, ex);
         }
         
-        currEl = getConfDocument().getDocumentElement();
+        currEl = doc.getDocumentElement();
         
         XPathFactory currXPathfactory = XPathFactory.newInstance();
         XPath currXPath = currXPathfactory.newXPath();
-        String holdFolderStr = null;
+        String holdingDirStr = null;
         String pollIntervalStr = null;
         String smtpServerStr = null;
         String smtpUserStr = null;
         String smtpPassStr = null;
         String smtpPortStr = null;
         String smtpProtocolStr = null;
-        String dryRunStr = null;
+        Boolean dryRun = null;
         String lockFileStr = null;
         String elasticsearchURLStr = null;
         String logFileStr = null;
         String statusFileStr = null;
+        String leBuilderType = null;
         
         try
         {
-            holdFolderStr = currXPath.compile("./holdingFolder").evaluate(currEl);
+            holdingDirStr = currXPath.compile("./holdingFolder").evaluate(currEl);
         }
         catch (XPathExpressionException ex)
         {
             log.debug("configuration parsing error.", ex);
         }
-        
+
+        try
+        {
+            leBuilderType = currXPath.compile("./logEntryBuilderType").evaluate(currEl);
+        }
+        catch (XPathExpressionException ex)
+        {
+            log.debug("configuration parsing error.", ex);
+        }
+
         try
         {
             pollIntervalStr = currXPath.compile("./pollInterval").evaluate(currEl);
@@ -260,11 +241,12 @@ public class LogCheckConfigFile
         
         try
         {
-            dryRunStr = currXPath.compile("./dryRun").evaluate(currEl);
+            String tempStr = currXPath.compile("./dryRun").evaluate(currEl);
+            dryRun = Boolean.parseBoolean(tempStr);
         }
-        catch (XPathExpressionException ex)
+        catch(Exception ex)
         {
-            log.debug("configuration parsing error.", ex);
+            log.debug("configuration parsing error 'dryRun'.", ex);
         }
         
         try
@@ -302,66 +284,35 @@ public class LogCheckConfigFile
         {
             log.debug("configuration parsing error.", ex);
         }
-        
-        if( StringUtils.isNoneBlank(holdFolderStr) )
-        {
-            config.setHoldingFolderPath(holdFolderStr);
-        }
-        
-        if( StringUtils.isNoneBlank(pollIntervalStr) )
-        {
-            config.setPollIntervalSeconds(pollIntervalStr);
-        }
-        
-        
-        if( StringUtils.isNoneBlank(smtpServerStr) )
-        {
-            config.setSmtpServer(smtpServerStr);
-        }
-        
-        if( StringUtils.isNoneBlank(smtpUserStr) )
-        {
-            config.setSmtpUser(smtpUserStr);
-        }
-        
-        if( StringUtils.isNoneBlank(smtpPassStr) )
-        {
-            config.setSmtpPass(smtpPassStr);
-        }
-        
-        if( StringUtils.isNoneBlank(smtpPortStr) )
-        {
-            config.setSmtpPort(smtpPortStr);
-        }
-        
-        if( StringUtils.isNoneBlank(smtpProtocolStr) )
-        {
-            config.setSmtpProto(smtpProtocolStr);
-        }
-        
-        if( StringUtils.isNoneBlank(dryRunStr) )
-        {
-            config.setDryRun(dryRunStr);
-        }
-        
-        if( StringUtils.isNoneBlank(lockFileStr) )
-        {
-            config.setLockFilePath(lockFileStr);
-        }
-        
-        if( StringUtils.isNoneBlank(logFileStr) )
-        {
-            config.setLogPath(logFileStr);
-        }
-        
-        if( StringUtils.isNoneBlank(elasticsearchURLStr) )
-        {
-            config.setElasticsearchURL(elasticsearchURLStr);
-        }
-        
-        if( StringUtils.isNoneBlank(statusFileStr) )
-        {
-            config.setStatusFilePath(statusFileStr);
-        }
+
+        res = LogCheckConfig.from(null,
+            null, // service,
+            null, // emailOnError,
+            smtpServerStr,
+            smtpPortStr,
+            smtpPassStr,
+            smtpUserStr,
+            smtpProtocolStr,
+            dryRun,
+            null, // showVersion,
+            null, // printLog,
+            null, // tailFromEnd,
+            lockFileStr,
+            logFileStr,
+            statusFileStr,
+            null, // configFilePath,
+            holdingDirStr,
+            elasticsearchURLStr,
+            null, // elasticsearchIndexName,
+            null, // elasticsearchIndexPrefix,
+            null, // elasticsearchLogType,
+            null, // elasticsearchIndexNameFormat,
+            null, // logCutoffDate,
+            null, // logCutoffDuration,
+            null, // logDeduplicationDuration,
+            pollIntervalStr,
+            leBuilderType);
+
+        return res;
     }
 }

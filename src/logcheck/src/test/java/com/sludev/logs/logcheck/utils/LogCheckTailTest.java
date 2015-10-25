@@ -17,24 +17,12 @@
  */
 package com.sludev.logs.logcheck.utils;
 
-import com.sludev.logs.logcheck.tail.LogCheckTail;
 import com.sludev.logs.logcheck.LogCheckProperties;
 import com.sludev.logs.logcheck.LogCheckTestWatcher;
-import com.sludev.logs.logcheck.config.LogCheckConfig;
-import com.sludev.logs.logcheck.log.ILogEntrySink;
-import com.sludev.logs.logcheck.log.LogEntry;
-import com.sludev.logs.logcheck.log.LogEntryBuilder;
-import com.sludev.logs.logcheck.log.LogEntryQueueSink;
 import com.sludev.logs.logcheck.store.LogEntryElasticSearchTest;
 import java.util.Properties;
-import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.FutureTask;
-import java.util.concurrent.LinkedBlockingDeque;
-import org.apache.commons.lang3.concurrent.BasicThreadFactory;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.After;
@@ -42,7 +30,6 @@ import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import static org.junit.Assert.*;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.rules.TestWatcher;
@@ -104,37 +91,37 @@ public class LogCheckTailTest
         
         String logFilePath = testProperties.getProperty("logcheck.test0001.logfile");
         
-        LogCheckConfig config = new LogCheckConfig();
-        ILogEntrySink logEntrySink = new LogEntryQueueSink();
-    
-        config.setLogPath(logFilePath);
+        //LogCheckConfig config = new LogCheckConfig(service, emailOnError, smtpServer, smtpPort, smtpPass, smtpUser, smtpProto, dryRun, showVersion, lockFilePath, logPath, statusFilePath, configFilePath, holdingFolderPath, elasticsearchURL, elasticsearchIndexName, logCutoffDate, logCutoffDuration, logDeduplicationDuration);
+//        ILogEntrySink logEntrySink = new LogEntryQueueSink();
+//
+//        //config.setLogPath(logFilePath);
+//
+//        BlockingDeque<LogEntry> currQ = new LinkedBlockingDeque<>();
+//        logEntrySink.setCompletedLogEntries(currQ);
+//
+//        MultiLineDelimitedBuilder currLogEntryBuilder = new MultiLineDelimitedBuilder(logRowStartPattern, logRowEndPattern, logColumnStartPattern, logColumnEndPattern, completionCallback);
+//        currLogEntryBuilder.setCompletionCallback(logEntrySink);
+//
+//        LogCheckTail lct = new LogCheckTail(mainLogEntryBuilder);
+//        //lct.setLogFile(config.getLogPath());
+//        lct.setTailFromEnd(false);
+//        lct.setMainLogEntryBuilder(currLogEntryBuilder);
+//        lct.setStopAfter(60);
         
-        BlockingDeque<LogEntry> currQ = new LinkedBlockingDeque<>();
-        logEntrySink.setCompletedLogEntries(currQ);
-        
-        LogEntryBuilder currLogEntryBuilder = new LogEntryBuilder();
-        currLogEntryBuilder.setCompletionCallback(logEntrySink);
-        
-        LogCheckTail lct = new LogCheckTail();
-        lct.setLogFile(config.getLogPath());
-        lct.setTailFromEnd(false);
-        lct.setMainLogEntryBuilder(currLogEntryBuilder);
-        lct.setStopAfter(60);
-        
-        FutureTask<LogCheckResult> logFileTailTask = new FutureTask<>(lct);
-        
-        BasicThreadFactory fileTailFactory = new BasicThreadFactory.Builder()
-            .namingPattern("logpollthread-%d")
-            .build();
-        
-        ExecutorService fileTailExe = Executors.newSingleThreadExecutor(fileTailFactory);
-        Future fileTailExeRes = fileTailExe.submit(logFileTailTask);
-        fileTailExe.shutdown();
-        
-        LogCheckResult fileTailRes;
-        fileTailRes = logFileTailTask.get();
-        
-        assertTrue( currQ.size() > 0 );
+//        FutureTask<LogCheckResult> logFileTailTask = new FutureTask<>(lct);
+//
+//        BasicThreadFactory fileTailFactory = new BasicThreadFactory.Builder()
+//            .namingPattern("logpollthread-%d")
+//            .build();
+//
+//        ExecutorService fileTailExe = Executors.newSingleThreadExecutor(fileTailFactory);
+//        Future fileTailExeRes = fileTailExe.submit(logFileTailTask);
+//        fileTailExe.shutdown();
+//
+//        LogCheckResult fileTailRes;
+//        fileTailRes = logFileTailTask.get();
+//
+//        assertTrue( currQ.size() > 0 );
     }
 
 }

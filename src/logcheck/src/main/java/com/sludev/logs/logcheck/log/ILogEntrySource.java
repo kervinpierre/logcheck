@@ -17,6 +17,8 @@
  */
 package com.sludev.logs.logcheck.log;
 
+import com.sludev.logs.logcheck.model.LogEntry;
+
 import java.util.concurrent.BlockingDeque;
 
 /**
@@ -27,5 +29,4 @@ import java.util.concurrent.BlockingDeque;
 public interface ILogEntrySource
 {
     public LogEntry next() throws InterruptedException;
-    public void setCompletedLogEntries(BlockingDeque<LogEntry> c);
 }

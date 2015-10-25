@@ -18,6 +18,7 @@
 package com.sludev.logs.logcheck.main;
 
 import com.sludev.logs.logcheck.config.LogCheckConfig;
+import com.sludev.logs.logcheck.enums.LCResultStatus;
 import com.sludev.logs.logcheck.utils.LogCheckException;
 import com.sludev.logs.logcheck.utils.LogCheckResult;
 import java.util.Arrays;
@@ -229,7 +230,7 @@ public class LogCheckMain
      */
     public static LogCheckResult processStop(LogCheckConfig config)
     {
-        LogCheckResult resp = new LogCheckResult();
+        LogCheckResult resp = LogCheckResult.from(LCResultStatus.SUCCESS);
         
         if( mainThreadExe != null )
         {

@@ -14,9 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.sludev.logs.logcheck.tail.tailer;
-
-import com.sludev.logs.logcheck.tail.tailer.Tailer;
+package com.sludev.logs.logcheck.tail;
 
 /**
  * Listener for events from a {@link Tailer}.
@@ -24,7 +22,8 @@ import com.sludev.logs.logcheck.tail.tailer.Tailer;
  * @version $Id$
  * @since 2.0
  */
-public interface TailerListener {
+public interface ITailerListener
+{
 
     /**
      * The tailer will call this method during construction,

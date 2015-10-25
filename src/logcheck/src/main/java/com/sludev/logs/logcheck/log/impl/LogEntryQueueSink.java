@@ -15,13 +15,17 @@
  *   is strictly forbidden unless prior written permission is obtained
  *   from SLU Dev Inc.
  */
-package com.sludev.logs.logcheck.log;
+package com.sludev.logs.logcheck.log.impl;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.time.LocalTime;
 import java.util.concurrent.BlockingDeque;
+
+import com.sludev.logs.logcheck.log.ILogEntrySink;
+import com.sludev.logs.logcheck.model.LogEntry;
+import com.sludev.logs.logcheck.model.LogEntryVO;
 import org.apache.commons.collections4.map.PassiveExpiringMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -32,7 +36,7 @@ import org.apache.logging.log4j.Logger;
  * 
  * @author kervin
  */
-public class LogEntryQueueSink implements ILogEntrySink
+public final class LogEntryQueueSink implements ILogEntrySink
 {
     private static final Logger log 
                              = LogManager.getLogger(LogEntryQueueSink.class);
@@ -41,7 +45,7 @@ public class LogEntryQueueSink implements ILogEntrySink
      * TODO : The 'Completed Entries' queue should be serialized on disk in case of an
      * application crash. Maybe http://www.mapdb.org/ helpful
      */
-    private BlockingDeque<LogEntry> completedLogEntries;
+    private final BlockingDeque<LogEntry> completedLogEntries;
     
     /**
      * TODO : Logs should not be duplicated for this duration.
@@ -49,83 +53,68 @@ public class LogEntryQueueSink implements ILogEntrySink
      * TODO : Duplication check should be allowed to ignore specified fields, 
      *         e.g. timestamp or exception stack or id fields.
      */
-    private Duration logDeduplicationDuration;
+    private final Duration logDeduplicationDuration;
     
     /**
      * TODO : The date that should be ignored when processing old logs
      */
-    private LocalTime logCutoffDate;
+    private final LocalTime logCutoffDate;
     
     /**
      * TODO : Do not process logs this duration in the past
      */
-    private Duration logCutoffDuration;
+    private final Duration logCutoffDuration;
     
     /**
      * TODO : Use SHA256 for log deduplication
      */
-    private MessageDigest mainDigest;
+    private final MessageDigest mainDigest;
     
     /**
      * Log Entry SHA256 hash and the last time an enqueue was attempted.
      */
     private PassiveExpiringMap<Byte[],LocalTime> sessionHashes;
-    
 
-    /**
-     *
-     * @param l
-     */
-    @Override
-    public void setLogCutoffDate(LocalTime l)
+    private LogEntryQueueSink( final BlockingDeque<LogEntry> completedLogEntries,
+                               final Duration logDeduplicationDuration,
+                               final LocalTime logCutoffDate,
+                               final Duration logCutoffDuration,
+                               final PassiveExpiringMap<Byte[], LocalTime> sessionHashes)
     {
-        this.logCutoffDate = l;
-    }
+        this.completedLogEntries = completedLogEntries;
+        this.logDeduplicationDuration = logDeduplicationDuration;
+        this.logCutoffDate = logCutoffDate;
+        this.logCutoffDuration = logCutoffDuration;
+        this.sessionHashes = sessionHashes;
 
-    /**
-     *
-     * @return
-     */
-    @Override
-    public Duration getLogCutoffDuration()
-    {
-        return logCutoffDuration;
-    }
-
-    /**
-     *
-     * @param l
-     */
-    @Override
-    public void setLogCutoffDuration(Duration l)
-    {
-        this.logCutoffDuration = l;
-    }
-
-    public BlockingDeque<LogEntry> getCompletedLogEntries()
-    {
-        return completedLogEntries;
-    }
-
-    @Override
-    public void setCompletedLogEntries(BlockingDeque<LogEntry> c)
-    {
-        this.completedLogEntries = c;
-    }
-       
-    public void LogEntryQueueSink()
-    {
+        MessageDigest tempDig = null;
         try
         {
-            mainDigest = MessageDigest.getInstance("SHA256");
+            tempDig  = MessageDigest.getInstance("SHA256");
         }
         catch (NoSuchAlgorithmException ex)
         {
-            mainDigest = null;
             log.error("Error creating 'SHA256' digest", ex);
         }
+
+        mainDigest = tempDig;
     }
-    
+
+    public static LogEntryQueueSink from( final BlockingDeque<LogEntry> completedLogEntries,
+                               final Duration logDeduplicationDuration,
+                               final LocalTime logCutoffDate,
+                               final Duration logCutoffDuration,
+                               final PassiveExpiringMap<Byte[], LocalTime> sessionHashes)
+    {
+        LogEntryQueueSink res = new LogEntryQueueSink(completedLogEntries,
+                logDeduplicationDuration,
+                logCutoffDate,
+                logCutoffDuration,
+                sessionHashes);
+
+        return res;
+    }
+
     /**
      * Put a log entry in this class store.
      * 
@@ -157,30 +146,11 @@ public class LogEntryQueueSink implements ILogEntrySink
         // Use the crypto-hash of the Value Object for deduplication
         // There are probably many other ways to do this.
         // TODO  : Investigate other hashing approaches
-        LogEntryVO currVO = LogEntryBuilder.logEntry2VO(le);
-        String voStr = LogEntryBuilder.vo2JS(currVO);
+        LogEntryVO currVO = LogEntry.toValueObject(le);
+        String voStr = LogEntryVO.toJSON(currVO);
         
        // byte[] currHash = mainDigest.digest(voStr.getBytes());
         
         return res;
     }
-
-    @Override
-    public Duration getLogDeduplicationDuration()
-    {
-        return logDeduplicationDuration;
-    }
-
-    @Override
-    public void setLogDeduplicationDuration(Duration d)
-    {
-        logDeduplicationDuration = d;
-    }
-
-    @Override
-    public LocalTime getLogCutoffDate()
-    {
-        return logCutoffDate;
-    }
-    
 }
