@@ -5,33 +5,36 @@
  */
 package com.sludev.logs.logcheck.utils;
 
-import com.sludev.logs.logcheck.enums.LogCheckResultStatus;
+import com.sludev.logs.logcheck.enums.LCResultStatus;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 /**
+ * Represents the state or status of a call or object.
  *
  * @author Administrator
  */
-public class LogCheckResult
+public final class LogCheckResult
 {
     private static final Logger log 
                       = LogManager.getLogger(LogCheckResult.class);
     
-    private LogCheckResultStatus status;
+    private final LCResultStatus status;
 
-    public LogCheckResultStatus getStatus()
+    public LCResultStatus getStatus()
     {
         return status;
     }
-
-    public void setStatus(LogCheckResultStatus s)
-    {
-        this.status = s;
-    }
     
-    public LogCheckResult()
+    private LogCheckResult(LCResultStatus status)
     {
-        status = LogCheckResultStatus.NONE;
+        this.status = status;
+    }
+
+    public static LogCheckResult from(LCResultStatus status)
+    {
+        LogCheckResult res = new LogCheckResult(status);
+
+        return res;
     }
 }

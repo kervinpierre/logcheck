@@ -21,11 +21,12 @@ package com.sludev.logs.logcheck.enums;
  *
  * @author kervin
  */
-public enum LogCheckResultStatus
+public enum LCLogLevel
 {
     NONE,
-    SUCCESS,
-    FAIL,
-    STARTED,
-    ALREADYRUNNING
+    ALL,
+    DEBUG,
+    INFO,
+    WARN,
+    ERROR
 }

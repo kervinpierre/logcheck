@@ -17,21 +17,18 @@
  */
 package com.sludev.logs.logcheck.tail;
 
-import com.sludev.logs.logcheck.tail.tailer.Tailer;
-import com.sludev.logs.logcheck.log.LogEntryBuilder;
+import com.sludev.logs.logcheck.enums.LCResultStatus;
+import com.sludev.logs.logcheck.log.ILogEntryBuilder;
+import com.sludev.logs.logcheck.tail.impl.LogCheckTailerListener;
 import com.sludev.logs.logcheck.utils.LogCheckConstants;
-import com.sludev.logs.logcheck.utils.LogCheckException;
 import com.sludev.logs.logcheck.utils.LogCheckResult;
-import java.io.File;
-import java.nio.file.Files;
+
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
-import static java.util.concurrent.TimeUnit.SECONDS;
-import org.apache.commons.lang3.concurrent.BasicThreadFactory;
+import java.util.concurrent.TimeUnit;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -40,139 +37,127 @@ import org.apache.logging.log4j.Logger;
  * 
  * @author kervin
  */
-public class LogCheckTail implements Callable<LogCheckResult>
+public final class LogCheckTail implements Callable<LogCheckResult>
 {
     private static final Logger log 
                              = LogManager.getLogger(LogCheckTail.class);
+
+    private final ILogEntryBuilder mainLogEntryBuilder;
     
-    private Tailer mainTailer;
-    private LogCheckTailerListener mainTailerListener;
-    private LogEntryBuilder mainLogEntryBuilder;
-    private ScheduledExecutorService schedulerExe;
-    private ScheduledExecutorService stopThreadExe;
-    
-    private Path logFile;
-    private long delay;
-    private boolean tailFromEnd;
-    private boolean reOpenOnChunk;
-    private int bufferSize;
-    private long stopAfter;
-    
-    public ScheduledExecutorService getStopThreadExe()
-    {
-        return stopThreadExe;
-    }
-    
-    public long getStopAfter()
-    {
-        return stopAfter;
-    }
+    private final Path logFile;
+    private final Long delay;
+    private final Boolean tailFromEnd;
+    private final Boolean reOpenOnChunk;
+    private final Integer bufferSize;
+    private final Long stopAfter;
 
-    public void setStopAfter(long s)
+    private LogCheckTail(final ILogEntryBuilder mainLogEntryBuilder,
+                         final Path logFile,
+                         final Long delay,
+                         final Boolean tailFromEnd,
+                         final Boolean reOpenOnChunk,
+                         final Integer bufferSize,
+                         final Long stopAfter)
     {
-        this.stopAfter = s;
-    }
-
-    public LogEntryBuilder getMainLogEntryBuilder()
-    {
-        return mainLogEntryBuilder;
-    }
-
-    public void setMainLogEntryBuilder(LogEntryBuilder m)
-    {
-        this.mainLogEntryBuilder = m;
-    }
-
-    public Tailer getMainTailer()
-    {
-        return mainTailer;
-    }
-
-    public LogCheckTailerListener getMainTailerListener()
-    {
-        return mainTailerListener;
-    }
-
-    public Path getLogFile()
-    {
-        return logFile;
-    }
-
-    public void setLogFile(Path l) throws LogCheckException
-    {
-        if( l == null || Files.exists(l) == false )
-        {
-            String errMsg = String.format("Log path '%s' is invalid.", l);
-            log.debug(errMsg);
-            
-            throw new LogCheckException(errMsg);
-        }
-        
-        this.logFile = l;
-    }
-    
-    public long getDelay()
-    {
-        return delay;
-    }
-
-    public void setDelay(long delay)
-    {
-        this.delay = delay;
-    }
-
-    public boolean isTailFromEnd()
-    {
-        return tailFromEnd;
-    }
-
-    public void setTailFromEnd(boolean tailFromEnd)
-    {
-        this.tailFromEnd = tailFromEnd;
-    }
-
-    public boolean isReOpenOnChunk()
-    {
-        return reOpenOnChunk;
-    }
-
-    public int getBufferSize()
-    {
-        return bufferSize;
-    }
-
-    public LogCheckTail()
-    {
+        this.mainLogEntryBuilder = mainLogEntryBuilder;
         // Don't bother with logs we missed earlier
-        tailFromEnd = true;
-        
-        reOpenOnChunk = false;
-        bufferSize = LogCheckConstants.DEFAULT_LOG_READ_BUFFER_SIZE_BYTES;
-        delay      = LogCheckConstants.DEFAULT_POLL_INTERVAL;
-        
-        mainTailer = null;
-        schedulerExe = null;
-        stopThreadExe = null;
-        
-        stopAfter = 0;
+
+        if( tailFromEnd != null )
+        {
+            this.tailFromEnd = tailFromEnd;
+        }
+        else
+        {
+            this.tailFromEnd = true;
+        }
+
+        if( reOpenOnChunk != null )
+        {
+            this.reOpenOnChunk = reOpenOnChunk;
+        }
+        else
+        {
+            this.reOpenOnChunk = false;
+        }
+
+        if( bufferSize != null )
+        {
+            this.bufferSize = bufferSize;
+        }
+        else
+        {
+            this.bufferSize = LogCheckConstants.DEFAULT_LOG_READ_BUFFER_SIZE_BYTES;
+        }
+
+        if( delay != null )
+        {
+            this.delay = delay;
+        }
+        else
+        {
+            this.delay = LogCheckConstants.DEFAULT_POLL_INTERVAL;
+        }
+
+        if( stopAfter != null )
+        {
+            this.stopAfter = stopAfter;
+        }
+        else
+        {
+            this.stopAfter = 0L;
+        }
+
+        if( logFile != null )
+        {
+            this.logFile = logFile;
+        }
+        else
+        {
+            this.logFile = null;
+        }
+    }
+
+    public static LogCheckTail from(final ILogEntryBuilder mainLogEntryBuilder,
+                                    final Path logFile,
+                                    final Long delay,
+                                    final Boolean tailFromEnd,
+                                    final Boolean reOpenOnChunk,
+                                    final Integer bufferSize,
+                                    final Long stopAfter)
+    {
+        LogCheckTail res = new LogCheckTail(mainLogEntryBuilder,
+                logFile,
+                delay,
+                tailFromEnd,
+                reOpenOnChunk,
+                bufferSize,
+                stopAfter);
+
+        return res;
     }
 
     @Override
     public LogCheckResult call()
     {
-        LogCheckResult res = new LogCheckResult();
-        
-        mainTailerListener = new LogCheckTailerListener();
-        mainTailerListener.setMainLogEntryBuilder(mainLogEntryBuilder);
-        mainTailer = Tailer.from(logFile,
+        LogCheckResult res = LogCheckResult.from(LCResultStatus.SUCCESS);
+
+        long currDelay = delay==null?0:delay;
+        boolean currTailFromEnd = tailFromEnd==null?false:tailFromEnd;
+        boolean currReOpenOnChunk = reOpenOnChunk==null?false:reOpenOnChunk;
+        final ScheduledExecutorService schedulerExe;
+
+        LogCheckTailerListener mainTailerListener = LogCheckTailerListener.from(mainLogEntryBuilder);
+
+        final Tailer mainTailer = Tailer.from(logFile,
                 Tailer.DEFAULT_CHARSET,
                 mainTailerListener,
-                delay,
-                tailFromEnd,
-                reOpenOnChunk,
+                currDelay,
+                currTailFromEnd,
+                currReOpenOnChunk,
                 Tailer.DEFAULT_BUFSIZE);
         
-        if( stopAfter > 0 )
+        if( stopAfter != null
+                && stopAfter > 0 )
         {
             schedulerExe = Executors.newScheduledThreadPool(1);
 
@@ -180,76 +165,40 @@ public class LogCheckTail implements Callable<LogCheckResult>
             {
               @Override
               public void run()
-              { 
-                  stop(); 
+              {
+                  if( mainTailer != null )
+                  {
+                      mainTailer.stop();
+                  }
+
+                  if( schedulerExe != null )
+                  {
+                      schedulerExe.shutdownNow();
+                  }
               }
-            }, stopAfter, SECONDS);
+            }, stopAfter, TimeUnit.SECONDS);
             
             schedulerExe.shutdown();
         }
-        
-        /**
-         * Commons-IO 2.4 BUG : Swallows InterruptExceptions
-         * 
-         * So create a 'stop thread' that listens for interrupts then calls
-         * 'stop()' on the mainTailer if necessary
-         */
-        BasicThreadFactory stopThreadFactory = new BasicThreadFactory.Builder()
-            .namingPattern("stopthread-%d")
-            .build();
-        
-        stopThreadExe = Executors.newSingleThreadScheduledExecutor(stopThreadFactory);
-        Future stopThreadExeRes = stopThreadExe.submit(new Callable<Integer>()
+        else
         {
-            @Override
-            public Integer call() throws Exception
-            {
-                try
-                {
-                    while(true)
-                    {
-                        // Sleep for a while, only to be interrupted
-                        Thread.sleep(60*1000);
-                    }
-                }
-                catch(InterruptedException ex)
-                {
-                    ;
-                }
-                finally
-                {
-                    // If this thread quits for any reason, stop the tailer too.
-                    stop();
-                }
-                
-                return 0;
-            }
-            
-        });
-
-        stopThreadExe.shutdown();
+            schedulerExe = null;
+        }
             
         mainTailer.call();
         
         /**
          * FIXME : We can choose to check the interrupted flag here.
          */
-        
-        stop();
-        
-        return res;
-    }
 
-    public void stop()
-    {
-        if( mainTailer != null )
-        {
-            mainTailer.stop();
-        }
-        
+        mainTailer.stop();
+
+
         if( schedulerExe != null )
         {
             schedulerExe.shutdownNow();
         }
+        
+        return res;
     }
 }

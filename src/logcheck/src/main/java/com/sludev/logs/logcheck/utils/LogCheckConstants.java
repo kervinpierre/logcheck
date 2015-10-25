@@ -17,7 +17,7 @@
  */
 package com.sludev.logs.logcheck.utils;
 
-import com.sludev.logs.logcheck.enums.LogCheckIndexNameFormat;
+import com.sludev.logs.logcheck.enums.LCIndexNameFormat;
 
 /**
  *
@@ -31,11 +31,22 @@ public class LogCheckConstants
     
     public static final long   DEFAULT_POLL_INTERVAL = 5;
     public static final String   DEFAULT_ELASTICSEARCH_URL = "http://127.0.0.1:9200";
-    
+
+    public static final String DEFAULT_MULTILINE_ROW_START_PATTERN
+            = "^[\\s]*([A-Z]+)[\\s]+\\[([\\p{Alnum}:,\\s-]+)\\][\\s]+([\\p{Alnum}\\.]+)[\\s]+([\\w\\.-]+)[\\s]*$";
+
+    public static final String DEFAULT_MULTILINE_ROW_END_PATTERN
+            = "^\\[logging row end\\]$";
+
+    public static final String DEFAULT_MULTILINE_COL_END_PATTERN
+            = "^\\[logging column end\\]$";
+
+    public static final String DEFAULT_MULTILINE_IGNORE_LINE = "^[=]{5,}$";
+
     public static final int    DEFAULT_LOG_READ_BUFFER_SIZE_BYTES = 80;
     
-    public static final LogCheckIndexNameFormat DEFAULT_ELASTICSEARCH_INDEX_NAME_FORMAT 
-                                        = LogCheckIndexNameFormat.PREFIX_DATE;
+    public static final LCIndexNameFormat DEFAULT_ELASTICSEARCH_INDEX_NAME_FORMAT
+                                        = LCIndexNameFormat.PREFIX_DATE;
     public static final String DEFAULT_ELASTICSEARCH_INDEX_PREFIX = "logstash-";
-    public static final String DEFAULT_ELASTICSEARCH_LOG_TYPE = "logcheck";
+    public static final String DEFAULT_LOG_TYPE = "logcheck";
 }

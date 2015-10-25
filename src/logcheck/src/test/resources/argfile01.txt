@@ -17,5 +17,10 @@
 #--lock-file c:/windows/temp/logcheck.lck --log-file c:/logs/webapp/fsastore.com/app.log --file-from-start --elasticsearch-url http://10.210.66.14:9200/
 
 # A04. Windows testing, new logs only
---log-file c:/logs/webapp/fsastore.com/app.log --elasticsearch-url http://10.210.66.14:9200/
+# --log-file c:/logs/webapp/fsastore.com/app.log --elasticsearch-url http://10.210.66.14:9200/
 
+# A05. Windows testing, new logs only
+# --log-file c:/logs/webapp/fsastore.com/app.log --print-logs
+
+# A06. Windows testing, new logs using sample app
+--log-file c:/tmp/logcheck-sample-app-output.txt --print-logs --log-entry-builder-type=singleline

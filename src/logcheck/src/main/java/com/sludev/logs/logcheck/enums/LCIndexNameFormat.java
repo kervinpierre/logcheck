@@ -17,13 +17,22 @@
  */
 package com.sludev.logs.logcheck.enums;
 
+import org.apache.commons.lang3.StringUtils;
+
 /**
  *
  * @author kervin
  */
-public enum LogCheckIndexNameFormat
+public enum LCIndexNameFormat
 {
     NONE,
     PREFIX_DATE,
-    PREFIX_DATETIME
+    PREFIX_DATETIME;
+
+    public static LCIndexNameFormat from(String f)
+    {
+        LCIndexNameFormat res = LCIndexNameFormat.valueOf(StringUtils.upperCase(StringUtils.trim(f)));
+
+        return res;
+    }
 }

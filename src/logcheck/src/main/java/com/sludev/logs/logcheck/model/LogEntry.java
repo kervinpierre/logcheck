@@ -15,13 +15,15 @@
  *   is strictly forbidden unless prior written permission is obtained
  *   from SLU Dev Inc.
  */
-package com.sludev.logs.logcheck.log;
+package com.sludev.logs.logcheck.model;
 
-import com.sludev.logs.logcheck.enums.LogCheckLogLevel;
+import com.sludev.logs.logcheck.enums.LCLogLevel;
 import com.sludev.logs.logcheck.utils.LogCheckConstants;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeFormatterBuilder;
+
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -29,32 +31,32 @@ import org.apache.logging.log4j.Logger;
  *
  * @author kervin
  */
-public class LogEntry
+public final class LogEntry
 {
     private static final Logger log 
                              = LogManager.getLogger(LogEntry.class);
     
-    private LogCheckLogLevel level;
+    private LCLogLevel level;
     private String logger;
     private String message;
     private String exception;
     private LocalDateTime timeStamp;
-    private String type;
+    private final String type;
     private String host;
 
-    public LogCheckLogLevel getLevel()
+    public LCLogLevel getLevel()
     {
         return level;
     }
 
-    public void setLevel(LogCheckLogLevel l)
+    public void setLevel(LCLogLevel l)
     {
         this.level = l;
     }
 
     public void setLevel(String s)
     {
-        LogCheckLogLevel l = LogCheckLogLevel.valueOf(s);
+        LCLogLevel l = LCLogLevel.valueOf(s);
         
         this.level = l;
     }
@@ -112,11 +114,6 @@ public class LogEntry
         return type;
     }
 
-    public void setType(String type)
-    {
-        this.type = type;
-    }
-
     public String getHost()
     {
         return host;
@@ -127,10 +124,53 @@ public class LogEntry
         this.host = host;
     }
 
-    public LogEntry()
+    private LogEntry(final String type)
     {
-        type = LogCheckConstants.DEFAULT_ELASTICSEARCH_LOG_TYPE;
+        if( type != null )
+        {
+            this.type = type;
+        }
+        else
+        {
+            this.type = LogCheckConstants.DEFAULT_LOG_TYPE;
+        }
     }
-    
-    
+
+    public static LogEntry from(final String type)
+    {
+        LogEntry logEntry = new LogEntry(type);
+
+        return logEntry;
+    }
+
+    @Override
+    public String toString()
+    {
+        String res = null;
+
+        res = ToStringBuilder.reflectionToString(this);
+
+        return res;
+    }
+
+    /**
+     * Create a new LogEntry Value Object from an existing LogEntry object.
+     *
+     * @param le
+     * @return The new value object
+     */
+    public static LogEntryVO toValueObject(LogEntry le)
+    {
+        LogEntryVO res = new LogEntryVO();
+
+        res.host      = StringUtils.defaultIfBlank(le.getHost(), "");
+        res.exception = StringUtils.defaultIfBlank(le.getException(), "");
+        res.level     = StringUtils.defaultIfBlank(le.getLevel()==null?null:le.getLevel().toString(), "");
+        res.logger    = StringUtils.defaultIfBlank(le.getLogger(), "");
+        res.message   = StringUtils.defaultIfBlank(le.getMessage(), "");
+        res.timeStamp = StringUtils.defaultIfBlank(le.getTimeStamp()==null?null:le.getTimeStamp().toString(), "");
+        res.type      = StringUtils.defaultIfBlank(le.getType(), "");
+
+        return res;
+    }
 }

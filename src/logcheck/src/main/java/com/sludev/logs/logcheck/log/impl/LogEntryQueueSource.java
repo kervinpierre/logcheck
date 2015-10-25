@@ -15,9 +15,12 @@
  *   is strictly forbidden unless prior written permission is obtained
  *   from SLU Dev Inc.
  */
-package com.sludev.logs.logcheck.log;
+package com.sludev.logs.logcheck.log.impl;
 
 import java.util.concurrent.BlockingDeque;
+
+import com.sludev.logs.logcheck.log.ILogEntrySource;
+import com.sludev.logs.logcheck.model.LogEntry;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -25,24 +28,25 @@ import org.apache.logging.log4j.Logger;
  *
  * @author kervin
  */
-public class LogEntryQueueSource implements ILogEntrySource
+public final class LogEntryQueueSource implements ILogEntrySource
 {
     private static final Logger log 
                              = LogManager.getLogger(LogEntryQueueSource.class);
     
-    private BlockingDeque<LogEntry> completedLogEntries;
-    
-    public BlockingDeque<LogEntry> getCompletedLogEntries()
+    private final BlockingDeque<LogEntry> completedLogEntries;
+
+    private LogEntryQueueSource(final BlockingDeque<LogEntry> completedLogEntries)
     {
-        return completedLogEntries;
+        this.completedLogEntries = completedLogEntries;
     }
 
-    @Override
-    public void setCompletedLogEntries(BlockingDeque<LogEntry> c)
+    public static LogEntryQueueSource from(final BlockingDeque<LogEntry> completedLogEntries)
     {
-        this.completedLogEntries = c;
+        LogEntryQueueSource res = new LogEntryQueueSource(completedLogEntries);
+
+        return res;
     }
-        
+
     /**
      * Get a log entry from this class store.  Blocks until one is available.
      * 

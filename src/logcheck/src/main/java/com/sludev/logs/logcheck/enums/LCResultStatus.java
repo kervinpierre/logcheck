@@ -15,22 +15,17 @@
  *   is strictly forbidden unless prior written permission is obtained
  *   from SLU Dev Inc.
  */
-package com.sludev.logs.logcheck.log;
-
-import java.io.Serializable;
-
+package com.sludev.logs.logcheck.enums;
 
 /**
  *
  * @author kervin
  */
-public class LogEntryVO implements Serializable
+public enum LCResultStatus
 {
-    public String level;
-    public String logger;
-    public String message;
-    public String exception;
-    public String timeStamp;
-    public String type;
-    public String host;
+    NONE,
+    SUCCESS,
+    FAIL,
+    STARTED,
+    ALREADYRUNNING
 }

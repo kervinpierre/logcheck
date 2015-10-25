@@ -57,8 +57,29 @@ public class LogCheckInitialize
     {  
         CommandLineParser parser = new DefaultParser();
         Options options = configureOptions();
-        LogCheckConfig config = new LogCheckConfig();
-        
+        LogCheckConfig config = null;
+
+        Boolean currService = null;
+        Boolean currDryRun = null;
+        Boolean currShowVersion = null;
+        Boolean currTailFromEnd = null;
+        Boolean currPrintLogs = null;
+        String currPollIntervalSeconds = null;
+        String currEmailOnError = null;
+        String currSmtpServer = null;
+        String currSmtpPort = null;
+        String currSmtpUser = null;
+        String currSmtpPass = null;
+        String currSmtpProto = null;
+        String currLogDeduplicationDuration = null;
+        String currLockFile = null;
+        String currLogPath = null;
+        String currLogCutoffDuration = null;
+        String currLogCutoffDate = null;
+        String currElasticsearchUrl = null;
+        String currStatusFile = null;
+        String currLEBuilderType = null;
+
         try
         {
             // Get the command line argument list from the OS
@@ -79,9 +100,9 @@ public class LogCheckInitialize
             //
             // NB: You can't use command line arguments AND argfile at the same
             //     time
-            if (line.hasOption("arg-file"))
+            if (line.hasOption("argfile"))
             {
-                String argfile = line.getOptionValue("arg-file");
+                String argfile = line.getOptionValue("argfile");
                 
                 try
                 {
@@ -105,8 +126,7 @@ public class LogCheckInitialize
                     {
                         argArray = argLine.split("\\s+");
                     }
-                    
-                            
+
                     log.debug( String.format("LogCheckMain main() : Argfile parsed : %s\n", 
                             Arrays.toString(argArray)) );
         
@@ -146,17 +166,8 @@ public class LogCheckInitialize
                         String.format("Invalid configuration file '%s'.",
                                         configfile));
                 }
-                
-                config.setConfigFilePath(configfile);
-                
-                if( config.getConfigFilePath() != null )
-                {
-                    LogCheckConfigFile confFile = new LogCheckConfigFile();
-                    confFile.setFilePath(config.getConfigFilePath());
-                    confFile.setConfig(config);
 
-                    confFile.read();
-                }
+                config = LogCheckConfigFile.read( Paths.get(configfile) );
             }
             
             if( line.getOptions().length < 1 )
@@ -177,95 +188,134 @@ public class LogCheckInitialize
                 {
                     case "service":
                         // Run as a service
-                        config.setService(true);
+                        currService = true;
                         break;
                       
                     case "poll-interval":
                         // File polling interval
-                        config.setPollIntervalSeconds(currOpt.getValue());
+                        currPollIntervalSeconds = currOpt.getValue();
                         break;
                       
                     case "email-on-error":
                         // Send an email when we have an error
-                        config.setEmailOnError(currOpt.getValue());
+                        currEmailOnError = null;
                         break;
                       
                     case "smtp-server":
                         // SMTP host server
-                        config.setSmtpServer(currOpt.getValue());
+                        currSmtpServer = currOpt.getValue();
                         break;
                     
                     case "smtp-port":
                         // SMTP server port
-                        config.setSmtpPort(currOpt.getValue());
+                        currSmtpPort = currOpt.getValue();
                         break;
                         
                     case "smtp-user":
                         // SMTP Login user
-                        config.setSmtpUser(currOpt.getValue());
+                        currSmtpUser = currOpt.getValue();
                         break;
                         
                     case "smtp-pass":
                         // SMTP Login password
-                        config.setSmtpPass(currOpt.getValue());
+                        currSmtpPass = currOpt.getValue();
                         break;
                         
                     case "smtp-proto":
                         // STMP Protocol type
-                        config.setSmtpProto(currOpt.getValue());
+                        currSmtpProto = currOpt.getValue();
                         break;
                         
                     case "dry-run":
                         // For testing, do not update the database
-                        config.setDryRun(true);
+                        currDryRun = true;
                         break;
                         
                     case "version":
                         // Show the application version and exit
-                        config.setShowVersion(true);
+                        currShowVersion = true;
                         break;
                         
                      case "log-deduplication-duration":
                         // Don't send the same log twice
-                        config.setLogDeduplicationDuration(currOpt.getValue());
+                        currLogDeduplicationDuration = currOpt.getValue();
                         break;
                         
                     case "lock-file":
                         // Write a file preventing multiple instances
-                        config.setLockFilePath(currOpt.getValue());
+                        currLockFile = currOpt.getValue();
                         break;
                         
                     case "log-file":
                         // Log file for monitoring
-                        config.setLogPath(currOpt.getValue());
+                        currLogPath = currOpt.getValue();
                         break;
                         
                     case "log-cutoff-duration":
                         // Do not process before specified period
-                        config.setLogCutoffDuration(currOpt.getValue());
+                        currLogCutoffDuration = currOpt.getValue();
                         break;
                         
                      case "log-cutoff-date":
                         // Do not process before specified period
-                        config.setLogCutoffDate(currOpt.getValue());
+                        currLogCutoffDate = currOpt.getValue();
                         break;
                          
                     case "file-from-start":
                         // Process the specified log file from its start
-                        config.setTailFromEnd(false);
+                        currTailFromEnd = false;
                         break;
                         
                     case "elasticsearch-url":
                         // The Elasticsearch URL
-                        config.setElasticsearchURL(currOpt.getValue());
+                        currElasticsearchUrl = currOpt.getValue();
                         break;
                         
                     case "status-file":
                         // Write session data
-                        config.setStatusFilePath(currOpt.getValue());
+                        currStatusFile = currOpt.getValue();
                         break;
+
+                    case "print-logs":
+                        // Print logs to console
+                        currPrintLogs = true;
+                        break;
+
+                    case "log-entry-builder-type":
+                        // Specify the log entry builder type to use
+                        currLEBuilderType = currOpt.getValue();
+                        break;
+
                 }
             }
+
+            config = LogCheckConfig.from( null,
+                    currService, // service,
+                    currEmailOnError, // emailOnError,
+                    currSmtpServer,
+                    currSmtpPort,
+                    currSmtpPass,
+                    currSmtpUser,
+                    currSmtpProto,
+                    currDryRun,
+                    currShowVersion, // showVersion,
+                    currPrintLogs, // printLog,
+                    currTailFromEnd, // tailFromEnd,
+                    currLockFile,
+                    currLogPath,
+                    currStatusFile,
+                    null, // configFilePath,
+                    null, // holdingDir
+                    currElasticsearchUrl,
+                    null, // elasticsearchIndexName,
+                    null, // elasticsearchIndexPrefix,
+                    null, // elasticsearchLogType,
+                    null, // elasticsearchIndexNameFormat,
+                    currLogCutoffDate, // logCutoffDate,
+                    currLogCutoffDuration, // logCutoffDuration,
+                    currLogDeduplicationDuration, // logDeduplicationDuration,
+                    currPollIntervalSeconds,
+                    currLEBuilderType);
         }
         catch (LogCheckException ex)
         {
@@ -302,7 +352,7 @@ public class LogCheckInitialize
                                 .desc( "Run as a background service" )
                                 .build() );
 
-        options.addOption( Option.builder().longOpt( "arg-file" )
+        options.addOption( Option.builder().longOpt( "argfile" )
                                 .desc( "Command-line argument file." )
                                 .hasArg()
                                 .argName("ARGFILE")
@@ -410,8 +460,14 @@ public class LogCheckInitialize
                                 .hasArg()
                                 .argName("STATUSFILE")
                                 .build() );
-        
-        
+
+        options.addOption( Option.builder().longOpt( "log-entry-builder-type" )
+                .desc( "The method for parsing log entries as they come in. Options are 'single', 'multiline-delimited'" ).hasArg().argName("LCLEBUILDERTYPE").build() );
+
+        options.addOption( Option.builder().longOpt( "print-logs" )
+                .desc( "Output the logs to the standard out. Mainly for testing." )
+                .build() );
+
         return options;
     }
 }

@@ -17,11 +17,11 @@
  */
 package com.sludev.logs.logcheck.store;
 
-import com.sludev.logs.logcheck.enums.LogCheckIndexNameFormat;
+import com.sludev.logs.logcheck.enums.LCIndexNameFormat;
+import com.sludev.logs.logcheck.enums.LCResultStatus;
 import com.sludev.logs.logcheck.log.ILogEntrySource;
-import com.sludev.logs.logcheck.log.LogEntry;
-import com.sludev.logs.logcheck.log.LogEntryBuilder;
-import com.sludev.logs.logcheck.log.LogEntryVO;
+import com.sludev.logs.logcheck.model.LogEntry;
+import com.sludev.logs.logcheck.model.LogEntryVO;
 import com.sludev.logs.logcheck.utils.LogCheckConstants;
 import com.sludev.logs.logcheck.utils.LogCheckException;
 import com.sludev.logs.logcheck.utils.LogCheckResult;
@@ -38,21 +38,22 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 /**
+ * Store log entries in a Elastic Search server.
  *
  * @author kervin
  */
-public class LogEntryElasticSearch implements ILogEntryStore
+public final class LogEntryElasticSearch implements ILogEntryStore
 {
     private static final Logger log 
                              = LogManager.getLogger(LogEntryElasticSearch.class);
 
-    private ILogEntrySource mainLogEntrySource;
+    private final ILogEntrySource mainLogEntrySource;
     private JestClient esClient;
     private URL elasticsearchURL;
     private String elasticsearchIndexName;
     private String elasticsearchIndexPrefix;
     private String elasticsearchLogType;
-    private LogCheckIndexNameFormat elasticsearchIndexNameFormat;
+    private LCIndexNameFormat elasticsearchIndexNameFormat;
 
     public String getElasticsearchLogType()
     {
@@ -64,19 +65,19 @@ public class LogEntryElasticSearch implements ILogEntryStore
         this.elasticsearchLogType = e;
     }
 
-    public LogCheckIndexNameFormat getElasticsearchIndexNameFormat()
+    public LCIndexNameFormat getElasticsearchIndexNameFormat()
     {
         return elasticsearchIndexNameFormat;
     }
 
-    public void setElasticsearchIndexNameFormat(LogCheckIndexNameFormat e)
+    public void setElasticsearchIndexNameFormat(LCIndexNameFormat e)
     {
         this.elasticsearchIndexNameFormat = e;
     }
 
     public void setElasticsearchIndexNameFormat(String e)
     {
-        LogCheckIndexNameFormat lcinf = LogCheckIndexNameFormat.valueOf(e);
+        LCIndexNameFormat lcinf = LCIndexNameFormat.valueOf(e);
         this.elasticsearchIndexNameFormat = lcinf;
     }
     
@@ -126,20 +127,28 @@ public class LogEntryElasticSearch implements ILogEntryStore
         this.elasticsearchURL = u;
     }
     
-    public LogEntryElasticSearch()
+    private LogEntryElasticSearch(ILogEntrySource mainLogEntrySource)
     {
-        mainLogEntrySource = null;
+        this.mainLogEntrySource = mainLogEntrySource;
+
         esClient = null;
         elasticsearchIndexNameFormat 
                 = LogCheckConstants.DEFAULT_ELASTICSEARCH_INDEX_NAME_FORMAT;
         elasticsearchLogType 
-                = LogCheckConstants.DEFAULT_ELASTICSEARCH_LOG_TYPE;
+                = LogCheckConstants.DEFAULT_LOG_TYPE;
         elasticsearchIndexPrefix
                 = LogCheckConstants.DEFAULT_ELASTICSEARCH_INDEX_PREFIX;
         
         setElasticsearchURL(LogCheckConstants.DEFAULT_ELASTICSEARCH_URL);
     }
-    
+
+    public static LogEntryElasticSearch from(ILogEntrySource mainLogEntrySource)
+    {
+        LogEntryElasticSearch res = new LogEntryElasticSearch(mainLogEntrySource);
+
+        return res;
+    }
+
     public String getIndex()
     {
         String indx = null;
@@ -174,41 +183,32 @@ public class LogEntryElasticSearch implements ILogEntryStore
     @Override
     public LogCheckResult call() throws Exception
     {
-        LogCheckResult res = new LogCheckResult();
-        LogEntry currEntry;
-        
-        while(true)
-        {       
-            // Block until the next log entry
-            currEntry = mainLogEntrySource.next();
-            
-            LogCheckResult putRes = put(currEntry);
-            if( putRes == null )
-            {
-                break;
-            }
-        }
+        LogCheckResult res;
+
+        res = ILogEntryStore.process(mainLogEntrySource, this);
         
         return res;
     }
-    
-    @Override
-    public void setMainLogEntrySource(ILogEntrySource src)
-    {
-        mainLogEntrySource = src;
-    }
 
+    /**
+     * Put a log entry into the backend store, which is Elastic Search in this case.
+     *
+     * @param le The log entry that needs to be stored.
+     * @return
+     * @throws InterruptedException
+     * @throws LogCheckException
+     */
     @Override
     public LogCheckResult put(LogEntry le) throws InterruptedException, LogCheckException
     {
         log.debug( String.format("put() for logEntry '%s'\n", le.getTimeStamp()));
         
-        LogCheckResult res = new LogCheckResult();
+        LogCheckResult res = LogCheckResult.from(LCResultStatus.SUCCESS);
         
-        LogEntryVO currVO = LogEntryBuilder.logEntry2VO(le);
+        LogEntryVO currVO = LogEntry.toValueObject(le);
         String currIndex = getIndex();
         String currLogType = getElasticsearchLogType();
-        String currJSON = LogEntryBuilder.vo2JS(currVO);
+        String currJSON = LogEntryVO.toJSON(currVO);
         
         Index index = new Index.Builder(currJSON).index(currIndex).type(currLogType).build();
 
