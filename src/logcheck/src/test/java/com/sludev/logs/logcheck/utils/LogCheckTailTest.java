@@ -91,7 +91,7 @@ public class LogCheckTailTest
         
         String logFilePath = testProperties.getProperty("logcheck.test0001.logfile");
         
-        //LogCheckConfig config = new LogCheckConfig(service, emailOnError, smtpServer, smtpPort, smtpPass, smtpUser, smtpProto, dryRun, showVersion, lockFilePath, logPath, statusFilePath, configFilePath, holdingFolderPath, elasticsearchURL, elasticsearchIndexName, logCutoffDate, logCutoffDuration, logDeduplicationDuration);
+        //LogCheckConfigParser config = new LogCheckConfigParser(service, emailOnError, smtpServer, smtpPort, smtpPass, smtpUser, smtpProto, dryRun, showVersion, lockFilePath, logPath, statusFilePath, configFilePath, holdingFolderPath, elasticsearchURL, elasticsearchIndexName, logCutoffDate, logCutoffDuration, logDeduplicationDuration);
 //        ILogEntrySink logEntrySink = new LogEntryQueueSink();
 //
 //        //config.setLogPath(logFilePath);

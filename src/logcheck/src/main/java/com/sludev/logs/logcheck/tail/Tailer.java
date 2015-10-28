@@ -74,6 +74,8 @@ public final class Tailer implements Callable<Long>
      */
     private final boolean reOpen;
 
+    private final TailerStatistics statistics;
+
     // Mutable
 
     /**
@@ -111,6 +113,7 @@ public final class Tailer implements Callable<Long>
         listener.init(this);
         this.reOpen = reOpen;
         this.cset = cset;
+        this.statistics = TailerStatistics.from(this.file);
     }
 
     public static Tailer from(final Path file,
@@ -154,23 +157,13 @@ public final class Tailer implements Callable<Long>
     }
 
     /**
-     * Return the delay in milliseconds.
-     *
-     * @return the delay in milliseconds.
-     */
-    public long getDelay()
-    {
-        return delayMillis;
-    }
-
-    /**
      * Follows changes in the file, calling the ITailerListener's handle method
      * for each new line.
      */
     @Override
     public Long call()
     {
-        log.debug("Starting Tailer");
+        log.debug(String.format("Starting Tailer on '%s'", file));
 
         FileChannel reader = null;
         try
@@ -178,9 +171,9 @@ public final class Tailer implements Callable<Long>
             long position = 0; // position within the file
 
             // Open the file
-            while( getRun() && reader == null )
+            if( run )
             {
-                reader = FileChannel.open(getFile(), StandardOpenOption.READ);
+                reader = FileChannel.open(file, StandardOpenOption.READ);
 
                 // The current position in the file
                 position = end ? reader.size() : 0;
@@ -188,7 +181,7 @@ public final class Tailer implements Callable<Long>
                 reader.position(position);
             }
 
-            while( getRun() )
+            while( run )
             {
                 // Check the file length to see if it was rotated
                 /*final long length = Files.size(getFile());
@@ -229,10 +222,12 @@ public final class Tailer implements Callable<Long>
                 {
                     IOUtils.closeQuietly(reader);
                 }
+
                 Thread.sleep(delayMillis);
-                if( getRun() && reOpen )
+
+                if( run && reOpen )
                 {
-                    reader = FileChannel.open(getFile(), StandardOpenOption.READ);
+                    reader = FileChannel.open(file, StandardOpenOption.READ);
                     reader.position(position);
                 }
             }
@@ -281,26 +276,23 @@ public final class Tailer implements Callable<Long>
         ByteArrayOutputStream lineBuf = new ByteArrayOutputStream(64);
         long pos = reader.position();
         long rePos = pos; // position to re-read
-        int num;
         boolean seenCR = false;
         ByteBuffer buffer = ByteBuffer.allocate(64);
 
         int bytesRead;
-        while (getRun() && ((bytesRead  = reader.read(buffer))!= -1))
+        while( run && ((bytesRead  = reader.read(buffer))!= -1))
         {
             buffer.flip();
 
-            int i = 0;
-            while(buffer.hasRemaining())
+            for(int i = 0; i<buffer.limit(); i++)
             {
                 final byte ch = buffer.get();
+                boolean doHandle = false;
                 switch (ch)
                 {
                     case '\n':
                         seenCR = false; // swallow CR before LF
-                        listener.handle(new String(lineBuf.toByteArray(), cset));
-                        lineBuf.reset();
-                        rePos = pos + i + 1;
+                        doHandle = true;
                         break;
 
                     case '\r':
@@ -315,14 +307,20 @@ public final class Tailer implements Callable<Long>
                         if (seenCR)
                         {
                             seenCR = false; // swallow final CR
-                            listener.handle(new String(lineBuf.toByteArray(), cset));
-                            lineBuf.reset();
-                            rePos = pos + i + 1;
+                            doHandle = true;
                         }
                         lineBuf.write(ch);
                 }
 
-                i++;
+                if( doHandle )
+                {
+                    listener.handle(new String(lineBuf.toByteArray(), cset));
+                    lineBuf.reset();
+                    rePos = pos + i + 1;
+
+                    // Collect statistics
+                    statistics.setLastProcessedPosition(pos);
+                }
             }
 
             pos = reader.position();

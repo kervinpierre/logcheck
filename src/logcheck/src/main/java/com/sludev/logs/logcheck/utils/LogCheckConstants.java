@@ -49,4 +49,6 @@ public class LogCheckConstants
                                         = LCIndexNameFormat.PREFIX_DATE;
     public static final String DEFAULT_ELASTICSEARCH_INDEX_PREFIX = "logstash-";
     public static final String DEFAULT_LOG_TYPE = "logcheck";
+
+    public static int MAX_ID_BLOCK_SIZE = 10000000;
 }

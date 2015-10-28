@@ -51,6 +51,7 @@ public class LogCheckTailerListener implements ITailerListener
 
         return res;
     }
+
     @Override
     public void init(Tailer t)
     {
@@ -75,10 +76,7 @@ public class LogCheckTailerListener implements ITailerListener
     public void handle(String str)
     {
         log.debug( String.format("handle() : '%s'\n", str));
-        
-        /**
-         * BUG : Commons-IO 2.4 ignores InterruptedException but we should not
-         */
+
         try
         {
             mainLogEntryBuilder.handleLogLine(str);

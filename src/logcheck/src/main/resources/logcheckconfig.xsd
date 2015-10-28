@@ -17,7 +17,7 @@ NOTICE:  All information contained herein is, and remains
  from SLU Dev Inc.
 -->
 
-<!-- Main 'MsSQLRestore' configuration file.  This file specifies the config -->
+<!-- Main 'LogCheck' configuration file.  This file specifies the config -->
 <!-- for its main parameters. -->
 <xs:schema version="1.0"
            xmlns:xs="http://www.w3.org/2001/XMLSchema"
@@ -87,12 +87,18 @@ NOTICE:  All information contained herein is, and remains
                     </xs:annotation>
                 </xs:element>
                 
-                <xs:element name="dryRun" type="xs:string" minOccurs="0"  maxOccurs="1">
+                <xs:element name="dryRun" type="xs:boolean" minOccurs="0"  maxOccurs="1">
                     <xs:annotation>
                         <xs:documentation>Do not update the database.</xs:documentation>
                     </xs:annotation>
                 </xs:element>
-                
+
+                <xs:element name="saveState" type="xs:boolean" minOccurs="0"  maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>Save the completed job to a state file for future continuation.</xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+
                 <xs:element name="lockFilePath" type="xs:string" minOccurs="0" maxOccurs="1">
                     <xs:annotation>
                         <xs:documentation>Prevent multiple instances of the service from running.</xs:documentation>
@@ -107,10 +113,16 @@ NOTICE:  All information contained herein is, and remains
                 
                 <xs:element name="statusFilePath" type="xs:string" minOccurs="0" maxOccurs="1">
                     <xs:annotation>
-                        <xs:documentation>Session data file</xs:documentation>
+                        <xs:documentation>Session data file for running jobs</xs:documentation>
                     </xs:annotation>
                 </xs:element>
-                
+
+                <xs:element name="stateFilePath" type="xs:string" minOccurs="0" maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>State data file for complated jobs</xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+
                 <xs:element name="elasticsearchURL" type="xs:string" minOccurs="0" maxOccurs="1">
                     <xs:annotation>
                         <xs:documentation>Elasticsearch server where logs are stored.  Including protocol and port.</xs:documentation>

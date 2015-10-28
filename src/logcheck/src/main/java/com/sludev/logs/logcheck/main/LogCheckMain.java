@@ -17,7 +17,7 @@
  */
 package com.sludev.logs.logcheck.main;
 
-import com.sludev.logs.logcheck.config.LogCheckConfig;
+import com.sludev.logs.logcheck.config.entities.LogCheckConfig;
 import com.sludev.logs.logcheck.enums.LCResultStatus;
 import com.sludev.logs.logcheck.utils.LogCheckException;
 import com.sludev.logs.logcheck.utils.LogCheckResult;
