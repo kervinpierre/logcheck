@@ -19,6 +19,10 @@ package com.sludev.logs.logcheck.config;
 
 import com.sludev.logs.logcheck.LogCheckProperties;
 import com.sludev.logs.logcheck.LogCheckTestWatcher;
+import com.sludev.logs.logcheck.config.entities.LogCheckConfig;
+import com.sludev.logs.logcheck.config.parsers.LogCheckConfigParser;
+import com.sludev.logs.logcheck.config.parsers.ParserUtil;
+import com.sludev.logs.logcheck.enums.LCFileFormats;
 import com.sludev.logs.logcheck.utils.LogCheckException;
 
 import java.nio.file.Paths;
@@ -81,7 +85,7 @@ public class LogCheckConfigFileTest
     }
 
     /**
-     * Test of read method, of class LogCheckConfigFile.
+     * Test of read method, of class LogCheckConfigParser.
      * @throws LogCheckException
      */
     @Test
@@ -92,7 +96,9 @@ public class LogCheckConfigFileTest
         
         String confPathString = testProperties.getProperty("logcheck.test0001.conffile");
         
-        LogCheckConfig config = LogCheckConfigFile.read(Paths.get(confPathString));
+        LogCheckConfig config = LogCheckConfigParser.readConfig(
+                ParserUtil.readConfig(Paths.get(confPathString),
+                        LCFileFormats.LCCONFIG));
 
         Assert.assertNotNull(config);
     }

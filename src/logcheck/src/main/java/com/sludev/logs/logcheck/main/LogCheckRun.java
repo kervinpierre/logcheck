@@ -17,7 +17,7 @@
  */
 package com.sludev.logs.logcheck.main;
 
-import com.sludev.logs.logcheck.config.LogCheckConfig;
+import com.sludev.logs.logcheck.config.entities.LogCheckConfig;
 import com.sludev.logs.logcheck.enums.LCResultStatus;
 import com.sludev.logs.logcheck.log.ILogEntryBuilder;
 import com.sludev.logs.logcheck.log.impl.builder.NCSACommonLogBuilder;
@@ -89,7 +89,7 @@ public class LogCheckRun implements Callable<LogCheckResult>
     @Override
     public LogCheckResult call() throws Exception
     {
-        // Use a thread-safe queue.  We enque/deque on different threads
+        // Use a thread-safe queue.  We enqueue/dequeue on different threads
         BlockingDeque<LogEntry> currQ = new LinkedBlockingDeque<>();
 
         LogCheckResult res = LogCheckResult.from(LCResultStatus.SUCCESS);

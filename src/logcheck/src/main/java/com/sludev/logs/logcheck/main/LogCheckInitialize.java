@@ -17,8 +17,10 @@
  */
 package com.sludev.logs.logcheck.main;
 
-import com.sludev.logs.logcheck.config.LogCheckConfig;
-import com.sludev.logs.logcheck.config.LogCheckConfigFile;
+import com.sludev.logs.logcheck.config.entities.LogCheckConfig;
+import com.sludev.logs.logcheck.config.parsers.LogCheckConfigParser;
+import com.sludev.logs.logcheck.config.parsers.ParserUtil;
+import com.sludev.logs.logcheck.enums.LCFileFormats;
 import com.sludev.logs.logcheck.utils.LogCheckException;
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
@@ -64,6 +66,8 @@ public class LogCheckInitialize
         Boolean currShowVersion = null;
         Boolean currTailFromEnd = null;
         Boolean currPrintLogs = null;
+        Boolean currSaveState = null;
+        Boolean currContinue = null;
         String currPollIntervalSeconds = null;
         String currEmailOnError = null;
         String currSmtpServer = null;
@@ -78,6 +82,7 @@ public class LogCheckInitialize
         String currLogCutoffDate = null;
         String currElasticsearchUrl = null;
         String currStatusFile = null;
+        String currStateFile = null;
         String currLEBuilderType = null;
 
         try
@@ -167,7 +172,9 @@ public class LogCheckInitialize
                                         configfile));
                 }
 
-                config = LogCheckConfigFile.read( Paths.get(configfile) );
+                config = LogCheckConfigParser.readConfig(
+                                ParserUtil.readConfig(Paths.get(configfile),
+                                        LCFileFormats.LCCONFIG));
             }
             
             if( line.getOptions().length < 1 )
@@ -270,7 +277,13 @@ public class LogCheckInitialize
                         // The Elasticsearch URL
                         currElasticsearchUrl = currOpt.getValue();
                         break;
-                        
+
+                    case "state-file":
+                        // Save the full state of a completed job for future
+                        // continuation
+                        currStateFile = currOpt.getValue();
+                        break;
+
                     case "status-file":
                         // Write session data
                         currStatusFile = currOpt.getValue();
@@ -281,6 +294,16 @@ public class LogCheckInitialize
                         currPrintLogs = true;
                         break;
 
+                    case "continue":
+                        // Continue the last job
+                        currContinue = true;
+                        break;
+
+                    case "save-state":
+                        // Continue the last job
+                        currSaveState = true;
+                        break;
+
                     case "log-entry-builder-type":
                         // Specify the log entry builder type to use
                         currLEBuilderType = currOpt.getValue();
@@ -289,7 +312,7 @@ public class LogCheckInitialize
                 }
             }
 
-            config = LogCheckConfig.from( null,
+            config = LogCheckConfig.from(null,
                     currService, // service,
                     currEmailOnError, // emailOnError,
                     currSmtpServer,
@@ -301,9 +324,12 @@ public class LogCheckInitialize
                     currShowVersion, // showVersion,
                     currPrintLogs, // printLog,
                     currTailFromEnd, // tailFromEnd,
+                    currSaveState,
+                    currContinue,
                     currLockFile,
                     currLogPath,
                     currStatusFile,
+                    currStateFile,
                     null, // configFilePath,
                     null, // holdingDir
                     currElasticsearchUrl,
@@ -347,7 +373,14 @@ public class LogCheckInitialize
                                 .hasArg()
                                 .argName("CONFFILE")
                                 .build() );
-        
+
+        options.addOption( Option.builder().longOpt("state-file")
+                .desc( "Application state file. Save the full state of a completed job for future\n" +
+                        " continuation" )
+                .hasArg()
+                .argName("STATEFILE")
+                .build() );
+
         options.addOption( Option.builder().longOpt( "service" )
                                 .desc( "Run as a background service" )
                                 .build() );
@@ -466,6 +499,14 @@ public class LogCheckInitialize
 
         options.addOption( Option.builder().longOpt( "print-logs" )
                 .desc( "Output the logs to the standard out. Mainly for testing." )
+                .build() );
+
+        options.addOption( Option.builder().longOpt( "continue" )
+                .desc( "Continue that last job if there is one." )
+                .build() );
+
+        options.addOption( Option.builder().longOpt( "save-state" )
+                .desc( "Save the job state after completion." )
                 .build() );
 
         return options;

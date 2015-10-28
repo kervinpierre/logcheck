@@ -15,7 +15,7 @@
  *   is strictly forbidden unless prior written permission is obtained
  *   from SLU Dev Inc.
  */
-package com.sludev.logs.logcheck.config;
+package com.sludev.logs.logcheck.config.entities;
 
 import com.sludev.logs.logcheck.enums.LCIndexNameFormat;
 import com.sludev.logs.logcheck.enums.LCLogEntryBuilderType;
@@ -46,16 +46,19 @@ public final class LogCheckConfig
     private final String emailOnError;
     private final String smtpServer;
     private final String smtpPort;
-    private final  String smtpPass;
-    private final  String smtpUser;
+    private final String smtpPass;
+    private final String smtpUser;
     private final String smtpProto;
     private final Boolean dryRun;
     private final Boolean showVersion;
     private final Boolean tailFromEnd;
     private final Boolean printLog;
+    private final Boolean saveState;
+    private final Boolean continueState;
     private final Path lockFilePath;
     private final Path logPath;
     private final Path statusFilePath;
+    private final Path stateFilePath;
     private final Path configFilePath;
     private final Path holdingDirPath;
     private final URL elasticsearchURL;
@@ -67,6 +70,21 @@ public final class LogCheckConfig
     private final Duration logDeduplicationDuration;
     private final LCIndexNameFormat elasticsearchIndexNameFormat;
     private final LCLogEntryBuilderType logEntryBuilder;
+
+    public Boolean getSaveState()
+    {
+        return saveState;
+    }
+
+    public Boolean getContinueState()
+    {
+        return continueState;
+    }
+
+    public Path getStateFilePath()
+    {
+        return stateFilePath;
+    }
 
     public LCLogEntryBuilderType getLogEntryBuilder()
     {
@@ -220,9 +238,12 @@ public final class LogCheckConfig
                             final Boolean showVersion,
                             final Boolean printLog,
                             final Boolean tailFromEnd,
+                            final Boolean saveState,
+                            final Boolean continueState,
                             final Path lockFilePath,
                             final Path logPath,
                             final Path statusFilePath,
+                            final Path stateFilePath,
                             final Path configFilePath,
                             final Path holdingDirPath,
                             final URL elasticsearchURL,
@@ -497,6 +518,19 @@ public final class LogCheckConfig
             this.statusFilePath = null;
         }
 
+        if( stateFilePath != null )
+        {
+            this.stateFilePath = stateFilePath;
+        }
+        else if( orig != null && orig.getStateFilePath() != null )
+        {
+            this.stateFilePath = orig.getStateFilePath();
+        }
+        else
+        {
+            this.stateFilePath = null;
+        }
+
         if( configFilePath != null )
         {
             this.configFilePath = configFilePath;
@@ -577,6 +611,32 @@ public final class LogCheckConfig
             this.printLog = null;
         }
 
+        if( saveState != null )
+        {
+            this.saveState = saveState;
+        }
+        else if( orig != null && orig.getSaveState() != null )
+        {
+            this.saveState = orig.getSaveState();
+        }
+        else
+        {
+            this.saveState = null;
+        }
+
+        if( continueState != null )
+        {
+            this.continueState = continueState;
+        }
+        else if( orig != null && orig.getContinueState() != null )
+        {
+            this.continueState = orig.getContinueState();
+        }
+        else
+        {
+            this.continueState = null;
+        }
+
         if( pollIntervalSeconds != null )
         {
             this.pollIntervalSeconds = pollIntervalSeconds;
@@ -604,7 +664,12 @@ public final class LogCheckConfig
         }
     }
 
-    public static LogCheckConfig from( final LogCheckConfig orig,
+    /**
+     * Create a new instance of the LogCheck configuration.
+     *
+     * Parse most of the options from strings.
+    **/
+     public static LogCheckConfig from( final LogCheckConfig orig,
                                        final Boolean service,
                                        final String emailOnError,
                                        final String smtpServer,
@@ -616,9 +681,12 @@ public final class LogCheckConfig
                                        final Boolean showVersion,
                                        final Boolean printLog,
                                        final Boolean tailFromEnd,
+                                       final Boolean saveState,
+                                       final Boolean continueState,
                                        final String lockFilePathStr,
                                        final String logPathStr,
                                        final String statusFilePathStr,
+                                       final String stateFilePathStr,
                                        final String configFilePathStr,
                                        final String holdingDirPathStr,
                                        final String elasticsearchURLStr,
@@ -635,6 +703,7 @@ public final class LogCheckConfig
         Path lockFilePath = null;
         Path logPath = null;
         Path statusFilePath = null;
+        Path stateFilePath = null;
         Path configFilePath = null;
         Path holdingDirPath = null;
         URL elasticsearchURL = null;
@@ -658,6 +727,11 @@ public final class LogCheckConfig
         if(StringUtils.isNoneBlank(statusFilePathStr))
         {
             statusFilePath = Paths.get(statusFilePathStr);
+        }
+
+        if(StringUtils.isNoneBlank(stateFilePathStr))
+        {
+            stateFilePath = Paths.get(stateFilePathStr);
         }
 
         if(StringUtils.isNoneBlank(configFilePathStr))
@@ -728,10 +802,13 @@ public final class LogCheckConfig
                 dryRun,
                 showVersion,
                 printLog,
+                saveState,
+                continueState,
                 tailFromEnd,
                 lockFilePath,
                 logPath,
                 statusFilePath,
+                stateFilePath,
                 configFilePath,
                 holdingDirPath,
                 elasticsearchURL,
@@ -760,9 +837,12 @@ public final class LogCheckConfig
                             final Boolean showVersion,
                             final Boolean printLog,
                             final Boolean tailFromEnd,
+                            final Boolean saveState,
+                            final Boolean continueState,
                             final Path lockFilePath,
                             final Path logPath,
                             final Path statusFilePath,
+                            final Path stateFilePath,
                             final Path configFilePath,
                             final Path holdingDirPath,
                             final URL elasticsearchURL,
@@ -787,10 +867,13 @@ public final class LogCheckConfig
                 dryRun,
                 showVersion,
                 printLog,
+                saveState,
+                continueState,
                 tailFromEnd,
                 lockFilePath,
                 logPath,
                 statusFilePath,
+                stateFilePath,
                 configFilePath,
                 holdingDirPath,
                 elasticsearchURL,
