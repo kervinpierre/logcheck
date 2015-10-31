@@ -1,0 +1,64 @@
+<?xml version="1.0"?>
+<!--
+ SLU Dev Inc. CONFIDENTIAL
+ DO NOT COPY
+
+Copyright (c) [2012] - [2015] SLU Dev Inc. <info@sludev.com>
+All Rights Reserved.
+
+NOTICE:  All information contained herein is, and remains
+ the property of SLU Dev Inc. and its suppliers,
+ if any.  The intellectual and technical concepts contained
+ herein are proprietary to SLU Dev Inc. and its suppliers and
+ may be covered by U.S. and Foreign Patents, patents in process,
+ and are protected by trade secret or copyright law.
+ Dissemination of this information or reproduction of this material
+ is strictly forbidden unless prior written permission is obtained
+ from SLU Dev Inc.
+-->
+
+<!-- Job error logFile. Should list the errors that occurred while running a job. -->
+<xs:schema version="1.0"
+           xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           elementFormDefault="qualified">
+
+    <xs:complexType name="LogCheckErrorListType">
+        <xs:choice minOccurs="0" maxOccurs="unbounded">
+            <xs:element name="error" type="ErrorType" maxOccurs="unbounded" />
+        </xs:choice>
+    </xs:complexType>
+
+    <xs:complexType name="ErrorType">
+        <xs:choice minOccurs="0" maxOccurs="unbounded">
+            <xs:element name="logCheckStateId" type="xs:string" minOccurs="1" maxOccurs="1" />
+            <xs:element name="errorId" type="xs:string" minOccurs="1" maxOccurs="1" />
+            <xs:element name="disposition" type="DispositionType" minOccurs="1" maxOccurs="1" />
+            <xs:element name="errorCode" type="xs:integer" minOccurs="0" maxOccurs="1" />
+            <xs:element name="errorCodeType" type="xs:string" minOccurs="0" maxOccurs="1" />
+            <xs:element name="logFilePath" type="xs:string" minOccurs="0" maxOccurs="1" />
+            <xs:element name="text" type="xs:string" minOccurs="1" maxOccurs="1" />
+            <xs:element name="summary" type="xs:string" minOccurs="1" maxOccurs="1" />
+            <xs:element name="timestamp" type="xs:dateTime" minOccurs="1" maxOccurs="1" />
+            <xs:element name="exception" type="xs:string" minOccurs="1" maxOccurs="1" />
+        </xs:choice>
+    </xs:complexType>
+
+    <xs:simpleType name="DispositionType">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="none"/>
+            <xs:enumeration value="debug"/>
+            <xs:enumeration value="info"/>
+            <xs:enumeration value="warn"/>
+            <xs:enumeration value="error"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:element name="LogCheckError">
+        <xs:complexType>
+            <xs:choice minOccurs="0" maxOccurs="unbounded">
+                <xs:element name="errors" type="LogCheckErrorListType" minOccurs="1" maxOccurs="1" />
+            </xs:choice>
+        </xs:complexType>
+    </xs:element>
+
+</xs:schema>

@@ -61,7 +61,11 @@ public class LogCheckConfigParser
         String logFileStr = null;
         String statusFileStr = null;
         String stateFileStr = null;
+        String errorFileStr = null;
         String leBuilderType = null;
+        String idBlockSize = null;
+        String idBlockHashType = null;
+        String setName = null;
         
         try
         {
@@ -200,6 +204,42 @@ public class LogCheckConfigParser
             log.debug("configuration parsing error.", ex);
         }
 
+        try
+        {
+            errorFileStr = currXPath.compile("./errorFilePath").evaluate(currEl);
+        }
+        catch (XPathExpressionException ex)
+        {
+            log.debug("configuration parsing error.", ex);
+        }
+
+        try
+        {
+            idBlockHashType = currXPath.compile("./idBlockHashType").evaluate(currEl);
+        }
+        catch (XPathExpressionException ex)
+        {
+            log.debug("configuration parsing error.", ex);
+        }
+
+        try
+        {
+            idBlockSize = currXPath.compile("./idBlockSize").evaluate(currEl);
+        }
+        catch (XPathExpressionException ex)
+        {
+            log.debug("configuration parsing error.", ex);
+        }
+
+        try
+        {
+            setName = currXPath.compile("./setName").evaluate(currEl);
+        }
+        catch (XPathExpressionException ex)
+        {
+            log.debug("configuration parsing error.", ex);
+        }
+
         res = LogCheckConfig.from(null,
                 null, // service,
                 null, // emailOnError,
@@ -208,6 +248,7 @@ public class LogCheckConfigParser
                 smtpPassStr,
                 smtpUserStr,
                 smtpProtocolStr,
+                setName,
                 dryRun,
                 null, // showVersion,
                 null, // printLog,
@@ -218,6 +259,7 @@ public class LogCheckConfigParser
                 logFileStr,
                 statusFileStr,
                 stateFileStr,
+                errorFileStr,
                 null, // configFilePath,
                 holdingDirStr,
                 elasticsearchURLStr,
@@ -229,7 +271,9 @@ public class LogCheckConfigParser
                 null, // logCutoffDuration,
                 null, // logDeduplicationDuration,
                 pollIntervalStr,
-                leBuilderType);
+                idBlockHashType,
+                leBuilderType,
+                idBlockSize);
 
         return res;
     }

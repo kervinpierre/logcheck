@@ -161,8 +161,14 @@ public class LogCheckRun implements Callable<LogCheckResult>
                 config.getPollIntervalSeconds(),
                 config.isTailFromEnd(),
                 null,
+                config.getSaveState(),
                 null,
-                null);
+                null,
+                config.getIdBlockHashType(),
+                config.getIdBlockSize(),
+                config.getSetName(),
+                config.getStateFilePath(),
+                config.getErrorFilePath());
 
         FutureTask<LogCheckResult> logStoreTask = null;
         ILogEntryStore currStore = null;

@@ -17,6 +17,7 @@
  */
 package com.sludev.logs.logcheck.config.entities;
 
+import com.sludev.logs.logcheck.enums.LCHashType;
 import com.sludev.logs.logcheck.enums.LCIndexNameFormat;
 import com.sludev.logs.logcheck.enums.LCLogEntryBuilderType;
 import com.sludev.logs.logcheck.utils.LogCheckConstants;
@@ -43,12 +44,14 @@ public final class LogCheckConfig
     
     private final Boolean service;
     private final Long pollIntervalSeconds;
+    private final Integer idBlockSize;
     private final String emailOnError;
     private final String smtpServer;
     private final String smtpPort;
     private final String smtpPass;
     private final String smtpUser;
     private final String smtpProto;
+    private final String setName;
     private final Boolean dryRun;
     private final Boolean showVersion;
     private final Boolean tailFromEnd;
@@ -59,6 +62,7 @@ public final class LogCheckConfig
     private final Path logPath;
     private final Path statusFilePath;
     private final Path stateFilePath;
+    private final Path errorFilePath;
     private final Path configFilePath;
     private final Path holdingDirPath;
     private final URL elasticsearchURL;
@@ -70,6 +74,22 @@ public final class LogCheckConfig
     private final Duration logDeduplicationDuration;
     private final LCIndexNameFormat elasticsearchIndexNameFormat;
     private final LCLogEntryBuilderType logEntryBuilder;
+    private final LCHashType idBlockHashType;
+
+    public Path getErrorFilePath()
+    {
+        return errorFilePath;
+    }
+
+    public Integer getIdBlockSize()
+    {
+        return idBlockSize;
+    }
+
+    public LCHashType getIdBlockHashType()
+    {
+        return idBlockHashType;
+    }
 
     public Boolean getSaveState()
     {
@@ -139,6 +159,11 @@ public final class LogCheckConfig
     public LCIndexNameFormat getElasticsearchIndexNameFormat()
     {
         return elasticsearchIndexNameFormat;
+    }
+
+    public String getSetName()
+    {
+        return setName;
     }
 
     public String getElasticsearchIndexName()
@@ -226,36 +251,40 @@ public final class LogCheckConfig
         return elasticsearchURL;
     }
     
-    private LogCheckConfig( final LogCheckConfig orig,
-                            final Boolean service,
-                            final String emailOnError,
-                            final String smtpServer,
-                            final String smtpPort,
-                            final String smtpPass,
-                            final String smtpUser,
-                            final String smtpProto,
-                            final Boolean dryRun,
-                            final Boolean showVersion,
-                            final Boolean printLog,
-                            final Boolean tailFromEnd,
-                            final Boolean saveState,
-                            final Boolean continueState,
-                            final Path lockFilePath,
-                            final Path logPath,
-                            final Path statusFilePath,
-                            final Path stateFilePath,
-                            final Path configFilePath,
-                            final Path holdingDirPath,
-                            final URL elasticsearchURL,
-                            final String elasticsearchIndexName,
-                            final String elasticsearchIndexPrefix,
-                            final String elasticsearchLogType,
-                            final LCIndexNameFormat elasticsearchIndexNameFormat,
-                            final LocalTime logCutoffDate,
-                            final Duration logCutoffDuration,
-                            final Duration logDeduplicationDuration,
-                            final Long pollIntervalSeconds,
-                            final LCLogEntryBuilderType logEntryBuilder) throws LogCheckException
+    private LogCheckConfig(final LogCheckConfig orig,
+                           final Boolean service,
+                           final String emailOnError,
+                           final String smtpServer,
+                           final String smtpPort,
+                           final String smtpPass,
+                           final String smtpUser,
+                           final String smtpProto,
+                           final String setName,
+                           final Boolean dryRun,
+                           final Boolean showVersion,
+                           final Boolean printLog,
+                           final Boolean tailFromEnd,
+                           final Boolean saveState,
+                           final Boolean continueState,
+                           final Path lockFilePath,
+                           final Path logPath,
+                           final Path statusFilePath,
+                           final Path stateFilePath,
+                           final Path errorFilePath,
+                           final Path configFilePath,
+                           final Path holdingDirPath,
+                           final URL elasticsearchURL,
+                           final String elasticsearchIndexName,
+                           final String elasticsearchIndexPrefix,
+                           final String elasticsearchLogType,
+                           final LCIndexNameFormat elasticsearchIndexNameFormat,
+                           final LocalTime logCutoffDate,
+                           final Duration logCutoffDuration,
+                           final Duration logDeduplicationDuration,
+                           final Long pollIntervalSeconds,
+                           final Integer idBlockSize,
+                           final LCLogEntryBuilderType logEntryBuilder,
+                           final LCHashType idBlockHashType) throws LogCheckException
     {
         if( service != null )
         {
@@ -268,6 +297,32 @@ public final class LogCheckConfig
         else
         {
             this.service = false;
+        }
+
+        if( idBlockSize != null )
+        {
+            this.idBlockSize = idBlockSize;
+        }
+        else if( orig != null && orig.getIdBlockSize() != null )
+        {
+            this.idBlockSize = orig.getIdBlockSize();
+        }
+        else
+        {
+            this.idBlockSize = LogCheckConstants.DEFAULT_ID_BLOCK_SIZE;
+        }
+
+        if( idBlockHashType != null )
+        {
+            this.idBlockHashType = idBlockHashType;
+        }
+        else if( orig != null && orig.getIdBlockHashType() != null )
+        {
+            this.idBlockHashType = orig.getIdBlockHashType();
+        }
+        else
+        {
+            this.idBlockHashType = LCHashType.SHA1;
         }
 
         if( logEntryBuilder != null )
@@ -453,6 +508,19 @@ public final class LogCheckConfig
             this.smtpProto = null;
         }
 
+        if( setName != null )
+        {
+            this.setName = setName;
+        }
+        else if( orig != null && orig.getSetName() != null )
+        {
+            this.setName = orig.getSetName();
+        }
+        else
+        {
+            this.setName = null;
+        }
+
         if( dryRun != null )
         {
             this.dryRun = dryRun;
@@ -529,6 +597,19 @@ public final class LogCheckConfig
         else
         {
             this.stateFilePath = null;
+        }
+
+        if( errorFilePath != null )
+        {
+            this.errorFilePath = errorFilePath;
+        }
+        else if( orig != null && orig.getErrorFilePath() != null )
+        {
+            this.errorFilePath = orig.getErrorFilePath();
+        }
+        else
+        {
+            this.errorFilePath = null;
         }
 
         if( configFilePath != null )
@@ -677,6 +758,7 @@ public final class LogCheckConfig
                                        final String smtpPass,
                                        final String smtpUser,
                                        final String smtpProto,
+                                       final String setName,
                                        final Boolean dryRun,
                                        final Boolean showVersion,
                                        final Boolean printLog,
@@ -687,6 +769,7 @@ public final class LogCheckConfig
                                        final String logPathStr,
                                        final String statusFilePathStr,
                                        final String stateFilePathStr,
+                                       final String errorFilePathStr,
                                        final String configFilePathStr,
                                        final String holdingDirPathStr,
                                        final String elasticsearchURLStr,
@@ -698,12 +781,15 @@ public final class LogCheckConfig
                                        final String logCutoffDurationStr,
                                        final String logDeduplicationDurationStr,
                                        final String pollIntervalSecondsStr,
-                                       final String logEntryBuilderStr) throws LogCheckException
+                                       final String idBlockSizeStr,
+                                       final String logEntryBuilderStr,
+                                       final String idBlockHashTypeStr) throws LogCheckException
     {
         Path lockFilePath = null;
         Path logPath = null;
         Path statusFilePath = null;
         Path stateFilePath = null;
+        Path errorFilePath = null;
         Path configFilePath = null;
         Path holdingDirPath = null;
         URL elasticsearchURL = null;
@@ -713,6 +799,8 @@ public final class LogCheckConfig
         Duration logDeduplicationDuration = null;
         Long pollIntervalSeconds = null;
         LCLogEntryBuilderType logEntryBuilder  = null;
+        Integer idBlockSize = null;
+        LCHashType idBlockHash = null;
 
         if(StringUtils.isNoneBlank(lockFilePathStr))
         {
@@ -732,6 +820,11 @@ public final class LogCheckConfig
         if(StringUtils.isNoneBlank(stateFilePathStr))
         {
             stateFilePath = Paths.get(stateFilePathStr);
+        }
+
+        if(StringUtils.isNoneBlank(errorFilePathStr))
+        {
+            errorFilePath = Paths.get(errorFilePathStr);
         }
 
         if(StringUtils.isNoneBlank(configFilePathStr))
@@ -791,6 +884,16 @@ public final class LogCheckConfig
             logEntryBuilder = LCLogEntryBuilderType.from(logEntryBuilderStr);
         }
 
+        if(StringUtils.isNoneBlank(idBlockHashTypeStr))
+        {
+            idBlockHash = LCHashType.from(idBlockHashTypeStr);
+        }
+
+        if(StringUtils.isNoneBlank(idBlockSizeStr))
+        {
+            idBlockSize = Integer.parseInt(idBlockSizeStr);
+        }
+
         LogCheckConfig res = new LogCheckConfig(orig,
                 service,
                 emailOnError,
@@ -799,6 +902,7 @@ public final class LogCheckConfig
                 smtpPass,
                 smtpUser,
                 smtpProto,
+                setName,
                 dryRun,
                 showVersion,
                 printLog,
@@ -809,6 +913,7 @@ public final class LogCheckConfig
                 logPath,
                 statusFilePath,
                 stateFilePath,
+                errorFilePath,
                 configFilePath,
                 holdingDirPath,
                 elasticsearchURL,
@@ -820,7 +925,9 @@ public final class LogCheckConfig
                 logCutoffDuration,
                 logDeduplicationDuration,
                 pollIntervalSeconds,
-                logEntryBuilder);
+                idBlockSize,
+                logEntryBuilder,
+                idBlockHash);
 
         return res;
     }
@@ -833,6 +940,7 @@ public final class LogCheckConfig
                             final String smtpPass,
                             final String smtpUser,
                             final String smtpProto,
+                            final String setName,
                             final Boolean dryRun,
                             final Boolean showVersion,
                             final Boolean printLog,
@@ -843,6 +951,7 @@ public final class LogCheckConfig
                             final Path logPath,
                             final Path statusFilePath,
                             final Path stateFilePath,
+                            final Path errorFilePath,
                             final Path configFilePath,
                             final Path holdingDirPath,
                             final URL elasticsearchURL,
@@ -854,7 +963,9 @@ public final class LogCheckConfig
                             final Duration logCutoffDuration,
                             final Duration logDeduplicationDuration,
                             final Long pollIntervalSeconds,
-                            final LCLogEntryBuilderType logEntryBuilder) throws LogCheckException
+                           final Integer idBlockSize,
+                           final LCLogEntryBuilderType logEntryBuilder,
+                           final LCHashType idBlockHashType) throws LogCheckException
     {
         LogCheckConfig res = new LogCheckConfig(orig,
                 service,
@@ -864,6 +975,7 @@ public final class LogCheckConfig
                 smtpPass,
                 smtpUser,
                 smtpProto,
+                setName,
                 dryRun,
                 showVersion,
                 printLog,
@@ -874,6 +986,7 @@ public final class LogCheckConfig
                 logPath,
                 statusFilePath,
                 stateFilePath,
+                errorFilePath,
                 configFilePath,
                 holdingDirPath,
                 elasticsearchURL,
@@ -885,7 +998,9 @@ public final class LogCheckConfig
                 logCutoffDuration,
                 logDeduplicationDuration,
                 pollIntervalSeconds,
-                logEntryBuilder);
+                idBlockSize,
+                logEntryBuilder,
+                idBlockHashType);
 
         return res;
     }

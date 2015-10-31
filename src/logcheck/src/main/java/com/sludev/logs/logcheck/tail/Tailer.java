@@ -16,6 +16,10 @@
  */
 package com.sludev.logs.logcheck.tail;
 
+import com.sludev.logs.logcheck.config.entities.LogCheckState;
+import com.sludev.logs.logcheck.config.entities.LogFileState;
+import com.sludev.logs.logcheck.config.writers.LogCheckStateWriter;
+import com.sludev.logs.logcheck.utils.LogCheckException;
 import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -27,6 +31,9 @@ import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.time.Instant;
+import java.time.LocalTime;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 
 /**
@@ -102,7 +109,8 @@ public final class Tailer implements Callable<Long>
                    final long delayMillis,
                    final boolean end,
                    final boolean reOpen,
-                   final int bufSize)
+                   final int bufSize,
+                   final TailerStatistics stats)
     {
         this.file = file;
         this.delayMillis = delayMillis;
@@ -113,7 +121,7 @@ public final class Tailer implements Callable<Long>
         listener.init(this);
         this.reOpen = reOpen;
         this.cset = cset;
-        this.statistics = TailerStatistics.from(this.file);
+        this.statistics = stats;
     }
 
     public static Tailer from(final Path file,
@@ -122,7 +130,10 @@ public final class Tailer implements Callable<Long>
                        final long delayMillis,
                        final boolean end,
                        final boolean reOpen,
-                       final int bufSize)
+                       final int bufSize,
+                       final TailerStatistics stats,
+                       final String setName,
+                       final Path stateFile)
     {
         Tailer res = new Tailer(file,
                 cset,
@@ -130,7 +141,8 @@ public final class Tailer implements Callable<Long>
                 delayMillis,
                 end,
                 reOpen,
-                bufSize);
+                bufSize,
+                stats);
 
         return res;
     }
@@ -165,7 +177,9 @@ public final class Tailer implements Callable<Long>
     {
         log.debug(String.format("Starting Tailer on '%s'", file));
 
+        Long res = 0L;
         FileChannel reader = null;
+
         try
         {
             long position = 0; // position within the file
@@ -247,7 +261,7 @@ public final class Tailer implements Callable<Long>
             IOUtils.closeQuietly(reader);
         }
 
-        return 0L;
+        return res;
     }
 
     private void stop(final Exception e)
@@ -271,7 +285,7 @@ public final class Tailer implements Callable<Long>
      * @return The new position after the lines have been read
      * @throws java.io.IOException if an I/O error occurs.
      */
-    private long readLines(final FileChannel reader) throws IOException
+    private long readLines(final FileChannel reader) throws IOException, LogCheckException
     {
         ByteArrayOutputStream lineBuf = new ByteArrayOutputStream(64);
         long pos = reader.position();
