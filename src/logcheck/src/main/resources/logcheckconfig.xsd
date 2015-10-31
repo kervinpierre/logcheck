@@ -93,6 +93,18 @@ NOTICE:  All information contained herein is, and remains
                     </xs:annotation>
                 </xs:element>
 
+                <xs:element name="idBlockHashType" type="HashType" minOccurs="0"  maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>Type of hash algorithm.</xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+
+                <xs:element name="idBlockSize" type="xs:integer" minOccurs="0"  maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>ID Block size.</xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+
                 <xs:element name="saveState" type="xs:boolean" minOccurs="0"  maxOccurs="1">
                     <xs:annotation>
                         <xs:documentation>Save the completed job to a state file for future continuation.</xs:documentation>
@@ -138,6 +150,15 @@ NOTICE:  All information contained herein is, and remains
             <xs:enumeration value="none"/>
             <xs:enumeration value="singleline"/>
             <xs:enumeration value="multiline-delimited"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="HashType">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="none"/>
+            <xs:enumeration value="md5"/>
+            <xs:enumeration value="sha1"/>
+            <xs:enumeration value="sha2"/>
         </xs:restriction>
     </xs:simpleType>
 

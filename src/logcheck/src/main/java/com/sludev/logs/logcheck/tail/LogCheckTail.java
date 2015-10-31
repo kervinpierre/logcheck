@@ -17,18 +17,26 @@
  */
 package com.sludev.logs.logcheck.tail;
 
+import com.sludev.logs.logcheck.config.entities.LogCheckState;
+import com.sludev.logs.logcheck.enums.LCHashType;
 import com.sludev.logs.logcheck.enums.LCResultStatus;
 import com.sludev.logs.logcheck.log.ILogEntryBuilder;
 import com.sludev.logs.logcheck.tail.impl.LogCheckTailerListener;
 import com.sludev.logs.logcheck.utils.LogCheckConstants;
+import com.sludev.logs.logcheck.utils.LogCheckException;
 import com.sludev.logs.logcheck.utils.LogCheckResult;
 
 import java.nio.file.Path;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.FutureTask;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.commons.lang3.concurrent.BasicThreadFactory;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -48,18 +56,33 @@ public final class LogCheckTail implements Callable<LogCheckResult>
     private final Long delay;
     private final Boolean tailFromEnd;
     private final Boolean reOpenOnChunk;
+    private final Boolean saveState;
     private final Integer bufferSize;
     private final Long stopAfter;
+    private final LCHashType idBlockHash;
+    private final Integer idBlockSize;
+    private final String setName;
+    private final Path stateFile;
+    private final Path errorFile;
 
     private LogCheckTail(final ILogEntryBuilder mainLogEntryBuilder,
                          final Path logFile,
                          final Long delay,
                          final Boolean tailFromEnd,
                          final Boolean reOpenOnChunk,
+                         final Boolean saveState,
                          final Integer bufferSize,
-                         final Long stopAfter)
+                         final Long stopAfter,
+                         final LCHashType idBlockHash,
+                         final Integer idBlockSize,
+                         final String setName,
+                         final Path stateFile,
+                         final Path errorFile)
     {
         this.mainLogEntryBuilder = mainLogEntryBuilder;
+        this.idBlockHash = idBlockHash;
+        this.idBlockSize = idBlockSize;
+        this.setName = setName;
         // Don't bother with logs we missed earlier
 
         if( tailFromEnd != null )
@@ -69,6 +92,15 @@ public final class LogCheckTail implements Callable<LogCheckResult>
         else
         {
             this.tailFromEnd = true;
+        }
+
+        if( saveState != null )
+        {
+            this.saveState = saveState;
+        }
+        else
+        {
+            this.saveState = false;
         }
 
         if( reOpenOnChunk != null )
@@ -115,6 +147,24 @@ public final class LogCheckTail implements Callable<LogCheckResult>
         {
             this.logFile = null;
         }
+
+        if( stateFile != null )
+        {
+            this.stateFile = stateFile;
+        }
+        else
+        {
+            this.stateFile = null;
+        }
+
+        if( errorFile != null )
+        {
+            this.errorFile = errorFile;
+        }
+        else
+        {
+            this.errorFile = null;
+        }
     }
 
     public static LogCheckTail from(final ILogEntryBuilder mainLogEntryBuilder,
@@ -122,16 +172,28 @@ public final class LogCheckTail implements Callable<LogCheckResult>
                                     final Long delay,
                                     final Boolean tailFromEnd,
                                     final Boolean reOpenOnChunk,
+                                    final Boolean saveState,
                                     final Integer bufferSize,
-                                    final Long stopAfter)
+                                    final Long stopAfter,
+                                    final LCHashType idBlockHash,
+                                    final Integer idBlockSize,
+                                    final String setName,
+                                    final Path stateFile,
+                                    final Path errorFile)
     {
         LogCheckTail res = new LogCheckTail(mainLogEntryBuilder,
                 logFile,
                 delay,
                 tailFromEnd,
                 reOpenOnChunk,
+                saveState,
                 bufferSize,
-                stopAfter);
+                stopAfter,
+                idBlockHash,
+                idBlockSize,
+                setName,
+                stateFile,
+                errorFile);
 
         return res;
     }
@@ -144,9 +206,19 @@ public final class LogCheckTail implements Callable<LogCheckResult>
         long currDelay = delay==null?0:delay;
         boolean currTailFromEnd = tailFromEnd==null?false:tailFromEnd;
         boolean currReOpenOnChunk = reOpenOnChunk==null?false:reOpenOnChunk;
-        final ScheduledExecutorService schedulerExe;
 
-        LogCheckTailerListener mainTailerListener = LogCheckTailerListener.from(mainLogEntryBuilder);
+        final ScheduledExecutorService stopSchedulerExe;
+        final ScheduledExecutorService statsSchedulerExe;
+
+        TailerStatistics stats = TailerStatistics.from(logFile,
+                stateFile,
+                errorFile,
+                idBlockHash,
+                idBlockSize,
+                setName);
+
+        LogCheckTailerListener mainTailerListener
+                            = LogCheckTailerListener.from(mainLogEntryBuilder);
 
         final Tailer mainTailer = Tailer.from(logFile,
                 Tailer.DEFAULT_CHARSET,
@@ -154,51 +226,115 @@ public final class LogCheckTail implements Callable<LogCheckResult>
                 currDelay,
                 currTailFromEnd,
                 currReOpenOnChunk,
-                Tailer.DEFAULT_BUFSIZE);
+                Tailer.DEFAULT_BUFSIZE,
+                stats,
+                setName,
+                stateFile);
         
         if( stopAfter != null
                 && stopAfter > 0 )
         {
-            schedulerExe = Executors.newScheduledThreadPool(1);
+            stopSchedulerExe = Executors.newScheduledThreadPool(1);
 
-            schedulerExe.schedule(new Runnable() 
+            stopSchedulerExe.schedule(() ->
             {
-              @Override
-              public void run()
-              {
-                  if( mainTailer != null )
-                  {
-                      mainTailer.stop();
-                  }
+                if( mainTailer != null )
+                {
+                    mainTailer.stop();
+                }
 
-                  if( schedulerExe != null )
-                  {
-                      schedulerExe.shutdownNow();
-                  }
-              }
+                stopSchedulerExe.shutdownNow();
             }, stopAfter, TimeUnit.SECONDS);
             
-            schedulerExe.shutdown();
+            stopSchedulerExe.shutdown();
         }
         else
         {
-            schedulerExe = null;
+            stopSchedulerExe = null;
         }
-            
-        mainTailer.call();
-        
-        /**
-         * FIXME : We can choose to check the interrupted flag here.
-         */
 
-        mainTailer.stop();
-
-
-        if( schedulerExe != null )
+        if( saveState != null
+                && saveState )
         {
-            schedulerExe.shutdownNow();
+            statsSchedulerExe = Executors.newScheduledThreadPool(1);
+
+            statsSchedulerExe.schedule(() ->
+            {
+                try
+                {
+                    stats.save();
+                }
+                catch( LogCheckException ex )
+                {
+                    log.debug("Error saving the logger state", ex);
+                }
+            }, LogCheckConstants.DEFAULT_SAVE_STATE_INTERVAL_SECONDS,
+                    TimeUnit.SECONDS );
+
+            statsSchedulerExe.shutdown();
         }
-        
+        else
+        {
+            statsSchedulerExe = null;
+        }
+
+        BasicThreadFactory tailerFactory = new BasicThreadFactory.Builder()
+                .namingPattern("tailerthread-%d")
+                .build();
+
+        ExecutorService tailerExe = Executors.newSingleThreadExecutor(tailerFactory);
+        FutureTask<Long> mainTailerTask = new FutureTask<>(mainTailer);
+
+        Future tailerExeRes = tailerExe.submit(mainTailer);
+
+        tailerExe.shutdown();
+
+        Long tailerRes = null;
+
+        try
+        {
+            while( tailerRes == null )
+            {
+                if( tailerExeRes.isDone() )
+                {
+                    // Log polling thread has completed.  Generally this should
+                    // not happen until we're shutting down.
+                    tailerRes = mainTailerTask.get();
+                }
+
+                // At this point we can block/wait on all threads but I'll
+                // sleep for now until there's some processing to be done on
+                // the main thread.
+                Thread.sleep(2000);
+            }
+        }
+        catch (InterruptedException ex)
+        {
+            log.error("Application 'run' thread was interrupted", ex);
+
+            // We don't have to do much here because the interrupt got us out
+            // of the while loop.
+
+        }
+        catch (ExecutionException ex)
+        {
+            log.error("Application 'run' execution error", ex);
+        }
+        finally
+        {
+            tailerExe.shutdownNow();
+
+            if( stopSchedulerExe != null )
+            {
+                stopSchedulerExe.shutdownNow();
+            }
+
+            if( statsSchedulerExe != null )
+            {
+                statsSchedulerExe.shutdownNow();
+            }
+        }
+
         return res;
     }
 }

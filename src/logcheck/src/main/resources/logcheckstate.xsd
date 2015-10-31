@@ -53,7 +53,7 @@ NOTICE:  All information contained herein is, and remains
             <xs:element name="startPosition" type="xs:integer" minOccurs="0" maxOccurs="1" />
             <xs:element name="size" type="xs:integer" minOccurs="1" maxOccurs="1" />
             <xs:element name="hashType" type="HashType" minOccurs="1" maxOccurs="1" />
-            <xs:element name="hashValue" type="xs:string" minOccurs="1" maxOccurs="1" />
+            <xs:element name="hashDigest" type="xs:string" minOccurs="1" maxOccurs="1" />
         </xs:choice>
     </xs:complexType>
 

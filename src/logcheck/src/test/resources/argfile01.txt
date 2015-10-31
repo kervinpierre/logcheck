@@ -23,4 +23,7 @@
 # --log-file c:/logs/webapp/fsastore.com/app.log --print-logs
 
 # A06. Windows testing, new logs using sample app
---log-file c:/tmp/logcheck-sample-app-output.txt --print-logs --log-entry-builder-type=singleline --save-state --state-file c:/tmp/current-state.xml
+# --log-file c:/tmp/logcheck-sample-app-output.txt --print-logs --log-entry-builder-type=singleline --save-state --state-file c:/tmp/current-state.xml
+
+# A07. Unix
+--log-logFile /tmp/logcheck-sample-app-output.txt --print-logs --log-entry-builder-type=singleline --save-state --state-logFile /tmp/current-state.xml --error-file /tmp/current-errors.xml

@@ -83,7 +83,11 @@ public class LogCheckInitialize
         String currElasticsearchUrl = null;
         String currStatusFile = null;
         String currStateFile = null;
+        String currErrorFile = null;
         String currLEBuilderType = null;
+        String currIdBlockHashtype = null;
+        String currIdBlockSize = null;
+        String currSetName = null;
 
         try
         {
@@ -284,6 +288,12 @@ public class LogCheckInitialize
                         currStateFile = currOpt.getValue();
                         break;
 
+                    case "error-file":
+                        // Save the full state of a completed job for future
+                        // continuation
+                        currErrorFile = currOpt.getValue();
+                        break;
+
                     case "status-file":
                         // Write session data
                         currStatusFile = currOpt.getValue();
@@ -304,6 +314,21 @@ public class LogCheckInitialize
                         currSaveState = true;
                         break;
 
+                    case "id-block-hashtype":
+                        //
+                        currIdBlockHashtype = currOpt.getValue();
+                        break;
+
+                    case "id-block-size":
+                        //
+                        currIdBlockSize = currOpt.getValue();
+                        break;
+
+                    case "set-name":
+                        //
+                        currSetName = currOpt.getValue();
+                        break;
+
                     case "log-entry-builder-type":
                         // Specify the log entry builder type to use
                         currLEBuilderType = currOpt.getValue();
@@ -320,6 +345,7 @@ public class LogCheckInitialize
                     currSmtpPass,
                     currSmtpUser,
                     currSmtpProto,
+                    currSetName,
                     currDryRun,
                     currShowVersion, // showVersion,
                     currPrintLogs, // printLog,
@@ -330,6 +356,7 @@ public class LogCheckInitialize
                     currLogPath,
                     currStatusFile,
                     currStateFile,
+                    currErrorFile,
                     null, // configFilePath,
                     null, // holdingDir
                     currElasticsearchUrl,
@@ -341,7 +368,9 @@ public class LogCheckInitialize
                     currLogCutoffDuration, // logCutoffDuration,
                     currLogDeduplicationDuration, // logDeduplicationDuration,
                     currPollIntervalSeconds,
-                    currLEBuilderType);
+                    currLEBuilderType,
+                    currIdBlockHashtype,
+                    currIdBlockSize);
         }
         catch (LogCheckException ex)
         {
@@ -379,6 +408,12 @@ public class LogCheckInitialize
                         " continuation" )
                 .hasArg()
                 .argName("STATEFILE")
+                .build() );
+
+        options.addOption( Option.builder().longOpt( "error-file" )
+                .desc( "Log application errrors." )
+                .hasArg()
+                .argName("ERRORFILE")
                 .build() );
 
         options.addOption( Option.builder().longOpt( "service" )
@@ -487,13 +522,6 @@ public class LogCheckInitialize
                                 .argName("ELASTICSEARCHURL")
                                 .build() );
 
-        
-        options.addOption( Option.builder().longOpt( "status-file" )
-                                .desc( "Status file used for session data." )
-                                .hasArg()
-                                .argName("STATUSFILE")
-                                .build() );
-
         options.addOption( Option.builder().longOpt( "log-entry-builder-type" )
                 .desc( "The method for parsing log entries as they come in. Options are 'single', 'multiline-delimited'" ).hasArg().argName("LCLEBUILDERTYPE").build() );
 
@@ -507,6 +535,27 @@ public class LogCheckInitialize
 
         options.addOption( Option.builder().longOpt( "save-state" )
                 .desc( "Save the job state after completion." )
+                .build() );
+
+        options.addOption( Option.builder().longOpt("id-block-hashtype")
+                .desc("Hash type to use when ID'ing blocks. 'SHA1', 'SHA256', 'MD5'.")
+                .hasArg()
+                .build());
+
+        options.addOption(Option.builder().longOpt( "id-block-size" )
+                .desc( "Size of blocks used for ID'ing file position." )
+                .hasArg()
+                .build() );
+
+        options.addOption( Option.builder().longOpt( "status-file" )
+                .desc( "Status file used for session data." )
+                .hasArg()
+                .argName("STATUSFILE")
+                .build() );
+
+        options.addOption( Option.builder().longOpt( "set-name" )
+                .desc( "Optional short id for this job." )
+                .hasArg()
                 .build() );
 
         return options;

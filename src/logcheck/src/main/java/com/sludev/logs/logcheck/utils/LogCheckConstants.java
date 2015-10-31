@@ -51,4 +51,7 @@ public class LogCheckConstants
     public static final String DEFAULT_LOG_TYPE = "logcheck";
 
     public static int MAX_ID_BLOCK_SIZE = 10000000;
+    public static int DEFAULT_ID_BLOCK_SIZE = 1000;
+
+    public static int DEFAULT_SAVE_STATE_INTERVAL_SECONDS = 60;
 }
