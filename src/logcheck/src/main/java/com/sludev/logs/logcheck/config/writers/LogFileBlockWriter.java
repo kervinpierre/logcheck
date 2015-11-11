@@ -64,7 +64,7 @@ public final class LogFileBlockWriter
         currElem = doc.createElement("hashDigest");
         currElem.appendChild(
                 doc.createTextNode(
-                        String.format("%064x", new java.math.BigInteger(1, currHashData))));
+                        String.format("%x", new java.math.BigInteger(1, currHashData))));
         res.appendChild(currElem);
 
         return res;

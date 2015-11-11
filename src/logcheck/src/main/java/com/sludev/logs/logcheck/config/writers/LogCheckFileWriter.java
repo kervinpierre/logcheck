@@ -41,7 +41,7 @@ public final class LogCheckFileWriter
         Instant currInst = lcf.getLastProcessedTimeStart();
         if( currInst == null )
         {
-            throw new LogCheckException("Missing Start");
+            throw new LogCheckException("Missing 'lastProcessedStart' tag.");
         }
         currElem = doc.createElement("lastProcessedStart");
         currElem.appendChild(doc.createTextNode( currInst.toString() ));
@@ -51,7 +51,7 @@ public final class LogCheckFileWriter
         currInst = lcf.getLastProcessedTimeEnd();
         if( currInst == null )
         {
-            log.debug("Missing <end /> tag."); // throw new LogCheckException("Missing End");
+            log.debug("Missing 'lastProcessedEnd' tag."); // throw new LogCheckException("Missing End");
         }
         else
         {
@@ -64,21 +64,27 @@ public final class LogCheckFileWriter
         Long currLong = lcf.getLastProcessedLineNumber();
         if( currLong == null )
         {
-            throw new LogCheckException("Missing file line number");
+            ; // throw new LogCheckException("Missing file line number");
         }
-        currElem = doc.createElement("lastProcessedLineNumber");
-        currElem.appendChild(doc.createTextNode( currLong.toString() ));
-        res.appendChild(currElem);
+        else
+        {
+            currElem = doc.createElement("lastProcessedLineNumber");
+            currElem.appendChild(doc.createTextNode(currLong.toString()));
+            res.appendChild(currElem);
+        }
 
         // char num
         currLong = lcf.getLastProcessedCharNumber();
         if( currLong == null )
         {
-            throw new LogCheckException("Missing file line number");
+            ; // throw new LogCheckException("Missing file line number");
         }
-        currElem = doc.createElement("lastProcessedCharNumber");
-        currElem.appendChild(doc.createTextNode( currLong.toString() ));
-        res.appendChild(currElem);
+        else
+        {
+            currElem = doc.createElement("lastProcessedCharNumber");
+            currElem.appendChild(doc.createTextNode(currLong.toString()));
+            res.appendChild(currElem);
+        }
 
         // position
         currLong = lcf.getLastProcessedPosition();

@@ -180,6 +180,8 @@ public final class Tailer implements Callable<Long>
         Long res = 0L;
         FileChannel reader = null;
 
+        statistics.setLastProcessedTimeStart( Instant.now() );
+
         try
         {
             long position = 0; // position within the file

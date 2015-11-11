@@ -26,6 +26,7 @@ import java.util.concurrent.BlockingDeque;
 import com.sludev.logs.logcheck.log.ILogEntrySink;
 import com.sludev.logs.logcheck.model.LogEntry;
 import com.sludev.logs.logcheck.model.LogEntryVO;
+import com.sludev.logs.logcheck.utils.LogCheckException;
 import org.apache.commons.collections4.map.PassiveExpiringMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -79,7 +80,7 @@ public final class LogEntryQueueSink implements ILogEntrySink
                                final Duration logDeduplicationDuration,
                                final LocalTime logCutoffDate,
                                final Duration logCutoffDuration,
-                               final PassiveExpiringMap<Byte[], LocalTime> sessionHashes)
+                               final PassiveExpiringMap<Byte[], LocalTime> sessionHashes) throws LogCheckException
     {
         this.completedLogEntries = completedLogEntries;
         this.logDeduplicationDuration = logDeduplicationDuration;
@@ -90,11 +91,13 @@ public final class LogEntryQueueSink implements ILogEntrySink
         MessageDigest tempDig = null;
         try
         {
-            tempDig  = MessageDigest.getInstance("SHA256");
+            tempDig  = MessageDigest.getInstance("SHA-256");
         }
         catch (NoSuchAlgorithmException ex)
         {
-            log.error("Error creating 'SHA256' digest", ex);
+            log.debug("Error creating 'SHA-256' digest", ex);
+
+            throw new LogCheckException("Error creating 'SHA-256' digest", ex);
         }
 
         mainDigest = tempDig;
@@ -104,7 +107,7 @@ public final class LogEntryQueueSink implements ILogEntrySink
                                final Duration logDeduplicationDuration,
                                final LocalTime logCutoffDate,
                                final Duration logCutoffDuration,
-                               final PassiveExpiringMap<Byte[], LocalTime> sessionHashes)
+                               final PassiveExpiringMap<Byte[], LocalTime> sessionHashes) throws LogCheckException
     {
         LogEntryQueueSink res = new LogEntryQueueSink(completedLogEntries,
                 logDeduplicationDuration,

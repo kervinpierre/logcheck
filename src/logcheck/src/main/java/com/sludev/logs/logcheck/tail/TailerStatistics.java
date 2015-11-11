@@ -11,8 +11,10 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
+import java.nio.file.CopyOption;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -124,8 +126,17 @@ public class TailerStatistics
 
     public LogFileBlock getLastBlock() throws LogCheckException
     {
+        long pos = lastProcessedPosition - idBlockSize;
+        if( pos < 0 )
+        {
+            log.debug(String.format("Not enough data. Last Position = %d, ID Block Size = %d",
+                    lastProcessedPosition, idBlockSize));
+
+            return null;
+        }
+
         LogFileBlock res = LogFileBlock.from(logFile,
-                lastProcessedPosition,
+                pos,
                 idBlockSize,
                 hashType);
 
@@ -139,6 +150,8 @@ public class TailerStatistics
 
     public static void save(LogCheckState state, Path stateFile, Path errorFile) throws LogCheckException
     {
+        log.debug(String.format("Saving statistics to '%s'.", stateFile));
+
         Pair<Path,Path> files = null;
 
         // Serialize state
@@ -157,7 +170,7 @@ public class TailerStatistics
         {
             try
             {
-                Files.copy(files.getLeft(), stateFile);
+                Files.move(files.getLeft(), stateFile, StandardCopyOption.REPLACE_EXISTING);
             }
             catch( IOException ex )
             {
@@ -174,7 +187,7 @@ public class TailerStatistics
         {
             try
             {
-                Files.copy(files.getRight(), errorFile);
+                Files.move(files.getRight(), errorFile, StandardCopyOption.REPLACE_EXISTING);
             }
             catch( IOException ex )
             {

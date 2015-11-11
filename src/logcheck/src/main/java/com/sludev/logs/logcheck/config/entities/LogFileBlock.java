@@ -83,6 +83,25 @@ public final class LogFileBlock
                                     final LCHashType hashType,
                                     final byte[] block) throws LogCheckException
     {
+        if( block == null || block.length < 1 )
+        {
+            throw new LogCheckException("Invalid block");
+        }
+
+        if( log.isDebugEnabled() )
+        {
+            if( block.length > LogCheckConstants.MAX_ID_BLOCK_SIZE )
+            {
+                log.debug(String.format("Block size is greater than ID max. Size = %d",
+                        block.length));
+            }
+            else
+            {
+                log.debug(String.format("Block size %d : \n=======\n%s\n=======\n",
+                        block.length, new String(block)));
+            }
+        }
+
         LogFileBlock res;
 
         MessageDigest md = null;
@@ -96,7 +115,7 @@ public final class LogFileBlock
                 }
                 catch( NoSuchAlgorithmException ex )
                 {
-                    log.debug("", ex);
+                    log.debug("Failed getting SHA-1 Hash", ex);
                 }
                 break;
 
@@ -107,7 +126,7 @@ public final class LogFileBlock
                 }
                 catch( NoSuchAlgorithmException ex )
                 {
-                    log.debug("", ex);
+                    log.debug("Failed getting SHA-256 Hash", ex);
                 }
                 break;
 
@@ -123,6 +142,11 @@ public final class LogFileBlock
         md.update(block);
 
         byte[] value = md.digest();
+
+        if( log.isDebugEnabled() )
+        {
+            log.debug(String.format("Hash '%s' : %x", hashType, new java.math.BigInteger(1, value)));
+        }
 
         res = from(startPosition,
                 block.length,

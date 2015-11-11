@@ -350,7 +350,7 @@ public class LogCheckInitialize
                     currShowVersion, // showVersion,
                     currPrintLogs, // printLog,
                     currTailFromEnd, // tailFromEnd,
-                    currSaveState,
+                    currSaveState,  // saveState
                     currContinue,
                     currLockFile,
                     currLogPath,
@@ -368,9 +368,9 @@ public class LogCheckInitialize
                     currLogCutoffDuration, // logCutoffDuration,
                     currLogDeduplicationDuration, // logDeduplicationDuration,
                     currPollIntervalSeconds,
+                    currIdBlockSize,
                     currLEBuilderType,
-                    currIdBlockHashtype,
-                    currIdBlockSize);
+                    currIdBlockHashtype);
         }
         catch (LogCheckException ex)
         {

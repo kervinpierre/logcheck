@@ -26,4 +26,4 @@
 # --log-file c:/tmp/logcheck-sample-app-output.txt --print-logs --log-entry-builder-type=singleline --save-state --state-file c:/tmp/current-state.xml
 
 # A07. Unix
---log-logFile /tmp/logcheck-sample-app-output.txt --print-logs --log-entry-builder-type=singleline --save-state --state-logFile /tmp/current-state.xml --error-file /tmp/current-errors.xml
+--log-file /tmp/logcheck-sample-app-output.txt --print-logs --log-entry-builder-type=singleline --save-state --state-file /tmp/current-state.xml --error-file /tmp/current-errors.xml

@@ -256,9 +256,13 @@ public final class LogCheckTail implements Callable<LogCheckResult>
         if( saveState != null
                 && saveState )
         {
-            statsSchedulerExe = Executors.newScheduledThreadPool(1);
+            BasicThreadFactory tailerSaveFactory = new BasicThreadFactory.Builder()
+                    .namingPattern("tailerSaveThread-%d")
+                    .build();
 
-            statsSchedulerExe.schedule(() ->
+            statsSchedulerExe = Executors.newScheduledThreadPool(1, tailerSaveFactory);
+
+            statsSchedulerExe.scheduleWithFixedDelay(() ->
             {
                 try
                 {
@@ -269,9 +273,8 @@ public final class LogCheckTail implements Callable<LogCheckResult>
                     log.debug("Error saving the logger state", ex);
                 }
             }, LogCheckConstants.DEFAULT_SAVE_STATE_INTERVAL_SECONDS,
-                    TimeUnit.SECONDS );
-
-            statsSchedulerExe.shutdown();
+               LogCheckConstants.DEFAULT_SAVE_STATE_INTERVAL_SECONDS,
+               TimeUnit.SECONDS );
         }
         else
         {
@@ -285,6 +288,7 @@ public final class LogCheckTail implements Callable<LogCheckResult>
         ExecutorService tailerExe = Executors.newSingleThreadExecutor(tailerFactory);
         FutureTask<Long> mainTailerTask = new FutureTask<>(mainTailer);
 
+        // Tailer start
         Future tailerExeRes = tailerExe.submit(mainTailer);
 
         tailerExe.shutdown();
