@@ -118,6 +118,7 @@ public class LogCheckRun implements Callable<LogCheckResult>
 
         ILogEntryBuilder currLogEntryBuilder = null;
 
+        // Choose the correct Log Entry Builder
         switch(config.getLogEntryBuilder())
         {
             case MULTILINE_DELIMITED:
@@ -155,7 +156,9 @@ public class LogCheckRun implements Callable<LogCheckResult>
                 log.debug(errMsg);
                 throw new LogCheckException(errMsg);
         }
-        
+
+        // Create the main Tailer.
+        // And pass into it the previously selected Log Entry Builder.
         LogCheckTail lct = LogCheckTail.from(currLogEntryBuilder,
                 config.getLogPath(),
                 config.getPollIntervalSeconds(),
@@ -204,23 +207,23 @@ public class LogCheckRun implements Callable<LogCheckResult>
         logStoreTask = new FutureTask<>(currStore);
 
         // Start the relevant threads
-        FutureTask<LogCheckResult> logFileTailTask = new FutureTask<>(lct);
+        FutureTask<LogCheckResult> logCheckTailerTask = new FutureTask<>(lct);
 
-        BasicThreadFactory fileTailFactory = new BasicThreadFactory.Builder()
-            .namingPattern("logpollthread-%d")
+        BasicThreadFactory logCheckTailerFactory = new BasicThreadFactory.Builder()
+            .namingPattern("logCheckTailerThread-%d")
             .build();
         
         BasicThreadFactory logStoreFactory = new BasicThreadFactory.Builder()
             .namingPattern("logstorethread-%d")
             .build();
         
-        ExecutorService fileTailExe = Executors.newSingleThreadExecutor(fileTailFactory);
+        ExecutorService logCheckTailerExe = Executors.newSingleThreadExecutor(logCheckTailerFactory);
         ExecutorService logStoreExe = Executors.newSingleThreadExecutor(logStoreFactory);
         
-        Future fileTailExeRes = fileTailExe.submit(logFileTailTask);
+        Future fileTailExeRes = logCheckTailerExe.submit(logCheckTailerTask);
         Future logStoreExeRes = logStoreExe.submit(logStoreTask);
         
-        fileTailExe.shutdown();
+        logCheckTailerExe.shutdown();
         logStoreExe.shutdown();
         
         LogCheckResult fileTailRes = null;
@@ -234,7 +237,7 @@ public class LogCheckRun implements Callable<LogCheckResult>
                 {
                     // Log polling thread has completed.  Generally this should
                     // not happen until we're shutting down.
-                    fileTailRes = logFileTailTask.get();
+                    fileTailRes = logCheckTailerTask.get();
                 }
                 
                 if( logStoreExeRes.isDone() )
@@ -264,7 +267,7 @@ public class LogCheckRun implements Callable<LogCheckResult>
         }
         finally
         {
-            fileTailExe.shutdownNow();
+            logCheckTailerExe.shutdownNow();
             logStoreExe.shutdownNow();
         }
         

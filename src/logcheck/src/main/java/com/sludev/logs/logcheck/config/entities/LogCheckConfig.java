@@ -508,17 +508,17 @@ public final class LogCheckConfig
             this.smtpProto = null;
         }
 
-        if( setName != null )
+        if( StringUtils.isNoneBlank(setName) )
         {
             this.setName = setName;
         }
-        else if( orig != null && orig.getSetName() != null )
+        else if( orig != null && StringUtils.isNoneBlank(orig.getSetName()) )
         {
             this.setName = orig.getSetName();
         }
         else
         {
-            this.setName = null;
+            this.setName = LogCheckConstants.DEFAULT_SET_NAME;
         }
 
         if( dryRun != null )
@@ -876,7 +876,17 @@ public final class LogCheckConfig
 
         if(StringUtils.isNoneBlank(pollIntervalSecondsStr))
         {
-            pollIntervalSeconds = Long.parseLong(pollIntervalSecondsStr);
+            try
+            {
+                pollIntervalSeconds = Long.parseLong(pollIntervalSecondsStr);
+            }
+            catch( NumberFormatException ex )
+            {
+                String errMsg = String.format("Error parsing long '%s'", pollIntervalSecondsStr);
+
+                log.debug(errMsg, ex);
+                throw new LogCheckException(errMsg, ex);
+            }
         }
 
         if(StringUtils.isNoneBlank(logEntryBuilderStr))
@@ -891,7 +901,17 @@ public final class LogCheckConfig
 
         if(StringUtils.isNoneBlank(idBlockSizeStr))
         {
-            idBlockSize = Integer.parseInt(idBlockSizeStr);
+            try
+            {
+                idBlockSize = Integer.parseInt(idBlockSizeStr);
+            }
+            catch( NumberFormatException ex )
+            {
+                String errMsg = String.format("Error parsing integer '%s'", idBlockSizeStr);
+
+                log.debug(errMsg, ex);
+                throw new LogCheckException(errMsg, ex);
+            }
         }
 
         LogCheckConfig res = new LogCheckConfig(orig,
@@ -906,9 +926,9 @@ public final class LogCheckConfig
                 dryRun,
                 showVersion,
                 printLog,
+                tailFromEnd,
                 saveState,
                 continueState,
-                tailFromEnd,
                 lockFilePath,
                 logPath,
                 statusFilePath,
