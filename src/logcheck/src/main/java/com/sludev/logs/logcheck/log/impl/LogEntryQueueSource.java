@@ -20,7 +20,7 @@ package com.sludev.logs.logcheck.log.impl;
 import java.util.concurrent.BlockingDeque;
 
 import com.sludev.logs.logcheck.log.ILogEntrySource;
-import com.sludev.logs.logcheck.model.LogEntry;
+import com.sludev.logs.logcheck.log.LogEntry;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 

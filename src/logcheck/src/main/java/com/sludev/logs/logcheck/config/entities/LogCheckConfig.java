@@ -65,6 +65,7 @@ public final class LogCheckConfig
     private final Path errorFilePath;
     private final Path configFilePath;
     private final Path holdingDirPath;
+    private final Path deDupeDirPath;
     private final URL elasticsearchURL;
     private final String elasticsearchIndexName;
     private final String elasticsearchIndexPrefix;
@@ -191,6 +192,11 @@ public final class LogCheckConfig
         return configFilePath;
     }
 
+    public Path getDeDupeDirPath()
+    {
+        return deDupeDirPath;
+    }
+
     public Boolean isService()
     {
         return service;
@@ -273,6 +279,7 @@ public final class LogCheckConfig
                            final Path errorFilePath,
                            final Path configFilePath,
                            final Path holdingDirPath,
+                           final Path deDupeDirPath,
                            final URL elasticsearchURL,
                            final String elasticsearchIndexName,
                            final String elasticsearchIndexPrefix,
@@ -638,6 +645,19 @@ public final class LogCheckConfig
             this.holdingDirPath = null;
         }
 
+        if( deDupeDirPath != null )
+        {
+            this.deDupeDirPath = deDupeDirPath;
+        }
+        else if( orig != null && orig.getDeDupeDirPath() != null )
+        {
+            this.deDupeDirPath = orig.getDeDupeDirPath();
+        }
+        else
+        {
+            this.deDupeDirPath = null;
+        }
+
         if( logCutoffDate != null )
         {
             this.logCutoffDate = logCutoffDate;
@@ -772,6 +792,7 @@ public final class LogCheckConfig
                                        final String errorFilePathStr,
                                        final String configFilePathStr,
                                        final String holdingDirPathStr,
+                                       final String deDupeDirPathStr,
                                        final String elasticsearchURLStr,
                                        final String elasticsearchIndexName,
                                        final String elasticsearchIndexPrefix,
@@ -792,6 +813,7 @@ public final class LogCheckConfig
         Path errorFilePath = null;
         Path configFilePath = null;
         Path holdingDirPath = null;
+        Path deDupeDirPath = null;
         URL elasticsearchURL = null;
         LCIndexNameFormat elasticsearchIndexNameFormat = null;
         LocalTime logCutoffDate = null;
@@ -835,6 +857,11 @@ public final class LogCheckConfig
         if(StringUtils.isNoneBlank(holdingDirPathStr))
         {
             holdingDirPath = Paths.get(holdingDirPathStr);
+        }
+
+        if(StringUtils.isNoneBlank(deDupeDirPathStr))
+        {
+            deDupeDirPath = Paths.get(deDupeDirPathStr);
         }
 
         if(StringUtils.isNoneBlank(elasticsearchURLStr))
@@ -914,7 +941,7 @@ public final class LogCheckConfig
             }
         }
 
-        LogCheckConfig res = new LogCheckConfig(orig,
+        LogCheckConfig res = LogCheckConfig.from(orig,
                 service,
                 emailOnError,
                 smtpServer,
@@ -936,6 +963,7 @@ public final class LogCheckConfig
                 errorFilePath,
                 configFilePath,
                 holdingDirPath,
+                deDupeDirPath,
                 elasticsearchURL,
                 elasticsearchIndexName,
                 elasticsearchIndexPrefix,
@@ -974,6 +1002,7 @@ public final class LogCheckConfig
                             final Path errorFilePath,
                             final Path configFilePath,
                             final Path holdingDirPath,
+                            final Path deDupeDirPath,
                             final URL elasticsearchURL,
                             final String elasticsearchIndexName,
                             final String elasticsearchIndexPrefix,
@@ -1009,6 +1038,7 @@ public final class LogCheckConfig
                 errorFilePath,
                 configFilePath,
                 holdingDirPath,
+                deDupeDirPath,
                 elasticsearchURL,
                 elasticsearchIndexName,
                 elasticsearchIndexPrefix,

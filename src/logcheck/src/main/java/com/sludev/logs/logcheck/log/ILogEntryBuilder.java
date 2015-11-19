@@ -1,10 +1,5 @@
 package com.sludev.logs.logcheck.log;
 
-import com.sludev.logs.logcheck.model.LogEntry;
-import com.sludev.logs.logcheck.model.LogEntryVO;
-import org.apache.commons.lang3.StringEscapeUtils;
-import org.apache.commons.lang3.StringUtils;
-
 import java.util.List;
 import java.util.regex.Pattern;
 

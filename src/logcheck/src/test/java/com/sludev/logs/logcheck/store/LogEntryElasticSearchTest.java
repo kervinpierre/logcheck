@@ -20,7 +20,7 @@ package com.sludev.logs.logcheck.store;
 import com.sludev.logs.logcheck.LogCheckProperties;
 import com.sludev.logs.logcheck.LogCheckTestWatcher;
 import com.sludev.logs.logcheck.enums.LCLogLevel;
-import com.sludev.logs.logcheck.model.LogEntry;
+import com.sludev.logs.logcheck.log.LogEntry;
 
 import java.time.LocalDateTime;
 import java.util.Properties;

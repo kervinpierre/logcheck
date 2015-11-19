@@ -26,6 +26,8 @@ import java.util.List;
 import java.util.UUID;
 
 /**
+ * The state of the Log Check job at a specific point in time.
+ *
  * Created by kervin on 10/27/2015.
  */
 public class LogCheckState

@@ -55,5 +55,9 @@ public class LogCheckConstants
     public static int MAX_ID_BLOCK_SIZE = 10000000;
     public static int DEFAULT_ID_BLOCK_SIZE = 1000;
 
+    public static int MAX_DEDUPE_LOG_FILES = 1000;
+
+    public static String DEFAULT_DEDUPE_LOG_FILE_NAME = "LogEntryDeDupe";
+
     public static int DEFAULT_SAVE_STATE_INTERVAL_SECONDS = 15;
 }

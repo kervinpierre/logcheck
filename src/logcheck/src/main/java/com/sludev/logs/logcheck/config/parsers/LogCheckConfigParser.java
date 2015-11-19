@@ -66,6 +66,7 @@ public class LogCheckConfigParser
         String idBlockSize = null;
         String idBlockHashType = null;
         String setName = null;
+        String deDupeDir = null;
         
         try
         {
@@ -240,6 +241,15 @@ public class LogCheckConfigParser
             log.debug("configuration parsing error.", ex);
         }
 
+        try
+        {
+            deDupeDir = currXPath.compile("./deDuplicationLogDir").evaluate(currEl);
+        }
+        catch (XPathExpressionException ex)
+        {
+            log.debug("configuration parsing error.", ex);
+        }
+
         res = LogCheckConfig.from(null,
                 null, // service,
                 null, // emailOnError,
@@ -262,6 +272,7 @@ public class LogCheckConfigParser
                 errorFileStr,
                 null, // configFilePath,
                 holdingDirStr,
+                deDupeDir,
                 elasticsearchURLStr,
                 null, // elasticsearchIndexName,
                 null, // elasticsearchIndexPrefix,

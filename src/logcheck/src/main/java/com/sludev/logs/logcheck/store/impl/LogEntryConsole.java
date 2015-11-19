@@ -2,8 +2,7 @@ package com.sludev.logs.logcheck.store;
 
 import com.sludev.logs.logcheck.enums.LCResultStatus;
 import com.sludev.logs.logcheck.log.ILogEntrySource;
-import com.sludev.logs.logcheck.model.LogEntry;
-import com.sludev.logs.logcheck.model.LogEntryVO;
+import com.sludev.logs.logcheck.config.entities.LogEntryVO;
 import com.sludev.logs.logcheck.utils.LogCheckException;
 import com.sludev.logs.logcheck.utils.LogCheckResult;
 import org.apache.logging.log4j.LogManager;
@@ -21,6 +20,7 @@ public final class LogEntryConsole implements ILogEntryStore
 
     private final ILogEntrySource mainLogEntrySource;
 
+    @Override
     public ILogEntrySource getMainLogEntrySource()
     {
         return mainLogEntrySource;
@@ -45,22 +45,12 @@ public final class LogEntryConsole implements ILogEntryStore
     }
 
     @Override
-    public LogCheckResult put(LogEntry le) throws InterruptedException, LogCheckException
+    public LogCheckResult put(LogEntryVO le) throws InterruptedException, LogCheckException
     {
         LogCheckResult res
                 = LogCheckResult.from(LCResultStatus.SUCCESS);
 
-        System.out.println(LogEntryVO.toJSON(LogEntry.toValueObject(le)));
-
-        return res;
-    }
-
-    @Override
-    public LogCheckResult call() throws Exception
-    {
-        LogCheckResult res;
-
-        res = ILogEntryStore.process(mainLogEntrySource, this);
+        System.out.println(LogEntryVO.toJSON(le));
 
         return res;
     }

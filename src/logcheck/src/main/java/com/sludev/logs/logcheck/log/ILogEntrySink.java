@@ -17,7 +17,11 @@
  */
 package com.sludev.logs.logcheck.log;
 
-import com.sludev.logs.logcheck.model.LogEntry;
+import com.sludev.logs.logcheck.config.entities.LogCheckDeDupeLog;
+import com.sludev.logs.logcheck.config.writers.LogCheckDeDupeLogWriter;
+import com.sludev.logs.logcheck.utils.LogCheckException;
+
+import java.nio.file.Path;
 
 /**
  *

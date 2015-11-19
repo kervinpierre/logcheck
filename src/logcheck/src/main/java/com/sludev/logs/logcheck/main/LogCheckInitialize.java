@@ -17,6 +17,7 @@
  */
 package com.sludev.logs.logcheck.main;
 
+import com.opencsv.CSVReader;
 import com.sludev.logs.logcheck.config.entities.LogCheckConfig;
 import com.sludev.logs.logcheck.config.parsers.LogCheckConfigParser;
 import com.sludev.logs.logcheck.config.parsers.ParserUtil;
@@ -27,11 +28,16 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.StringReader;
 import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -39,6 +45,7 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -88,6 +95,7 @@ public class LogCheckInitialize
         String currIdBlockHashtype = null;
         String currIdBlockSize = null;
         String currSetName = null;
+        String currDeDupeDirPath = null;
 
         try
         {
@@ -128,13 +136,9 @@ public class LogCheckInitialize
                     }
                     while(  argLine != null 
                                 && (argLine.length() < 1 ||  argLine.startsWith("#")) );
-                    
-                    String[] argArray = new String[0];
-                    
-                    if( argLine != null )
-                    {
-                        argArray = argLine.split("\\s+");
-                    }
+
+                    CSVReader cread = new CSVReader(new StringReader(argLine+"\n"), ' ', '"', '\\');
+                    String[] argArray = cread.readNext();
 
                     log.debug( String.format("LogCheckMain main() : Argfile parsed : %s\n", 
                             Arrays.toString(argArray)) );
@@ -326,7 +330,12 @@ public class LogCheckInitialize
 
                     case "set-name":
                         //
-                        currSetName = currOpt.getValue();
+                        currSetName = StringUtils.removeStart(currOpt.getValue(), "\"");
+                        break;
+
+                    case "dedupe-dir-path":
+                        //
+                        currDeDupeDirPath = currOpt.getValue();
                         break;
 
                     case "log-entry-builder-type":
@@ -359,6 +368,7 @@ public class LogCheckInitialize
                     currErrorFile,
                     null, // configFilePath,
                     null, // holdingDir
+                    currDeDupeDirPath,
                     currElasticsearchUrl,
                     null, // elasticsearchIndexName,
                     null, // elasticsearchIndexPrefix,
@@ -398,10 +408,10 @@ public class LogCheckInitialize
         Options options = new Options();
 
         options.addOption( Option.builder().longOpt("config-file")
-                                .desc( "Configuration file." )
-                                .hasArg()
-                                .argName("CONFFILE")
-                                .build() );
+                .desc( "Configuration file." )
+                .hasArg()
+                .argName("CONFFILE")
+                .build() );
 
         options.addOption( Option.builder().longOpt("state-file")
                 .desc( "Application state file. Save the full state of a completed job for future\n" +
@@ -417,110 +427,110 @@ public class LogCheckInitialize
                 .build() );
 
         options.addOption( Option.builder().longOpt( "service" )
-                                .desc( "Run as a background service" )
-                                .build() );
+                .desc( "Run as a background service" )
+                .build() );
 
         options.addOption( Option.builder().longOpt( "argfile" )
-                                .desc( "Command-line argument file." )
-                                .hasArg()
-                                .argName("ARGFILE")
-                                .build() );
+                .desc( "Command-line argument file." )
+                .hasArg()
+                .argName("ARGFILE")
+                .build() );
         
         options.addOption( Option.builder().longOpt( "holding-folder" )
-                                .desc( "Local folder for keeping downloaded data." )
-                                .hasArg()
-                                .argName("LOGFILE")
-                                .build() );
+                .desc( "Local folder for keeping downloaded data." )
+                .hasArg()
+                .argName("LOGFILE")
+                .build() );
         
         options.addOption( Option.builder().longOpt( "poll-interval" )
-                                .desc( "Seconds between polling the log file." )
-                                .hasArg()
-                                .argName("POLLINTERVAL")
-                                .build() );
+                .desc( "Seconds between polling the log file." )
+                .hasArg()
+                .argName("POLLINTERVAL")
+                .build() );
         
         options.addOption( Option.builder().longOpt( "email-on-error" )
-                                .desc( "Send an email to this person on failure" )
-                                .hasArg()
-                                .argName("EMAILONERROR")
-                                .build() );
+                .desc( "Send an email to this person on failure" )
+                .hasArg()
+                .argName("EMAILONERROR")
+                .build() );
         
         options.addOption( Option.builder().longOpt( "smtp-server" )
-                                .desc( "SMTP Server name" )
-                                .hasArg()
-                                .argName("SMTPSERVERNAME")
-                                .build() );
+                .desc( "SMTP Server name" )
+                .hasArg()
+                .argName("SMTPSERVERNAME")
+                .build() );
         
         options.addOption( Option.builder().longOpt( "smtp-port" )
-                                .desc( "SMTP Server Port" )
-                                .hasArg()
-                                .argName("SMTPSERVERPORT")
-                                .build() );
+                .desc( "SMTP Server Port" )
+                .hasArg()
+                .argName("SMTPSERVERPORT")
+                .build() );
         
         options.addOption( Option.builder().longOpt( "smtp-user" )
-                                .desc( "SMTP User" )
-                                .hasArg()
-                                .argName("SMTPUSER")
-                                .build() );
+                .desc( "SMTP User" )
+                .hasArg()
+                .argName("SMTPUSER")
+                .build() );
         
         options.addOption( Option.builder().longOpt( "smtp-pass" )
-                                .desc( "SMTP User password" )
-                                .hasArg()
-                                .argName("SMTPUSERPASS")
-                                .build() );
+                .desc( "SMTP User password" )
+                .hasArg()
+                .argName("SMTPUSERPASS")
+                .build() );
         
         options.addOption( Option.builder().longOpt( "smtp-proto" )
-                                .desc( "SMTP Protocol" )
-                                .hasArg()
-                                .argName("SMTPPROTO")
-                                .build() );
+                .desc( "SMTP Protocol" )
+                .hasArg()
+                .argName("SMTPPROTO")
+                .build() );
         
         options.addOption( Option.builder().longOpt( "dry-run" )
-                                .desc( "Do not update the database" )
-                                .build() );
+                .desc( "Do not update the database" )
+                .build() );
         
         options.addOption( Option.builder().longOpt( "version" )
-                                .desc( "Show the application version" )
-                                .build() );
+                .desc( "Show the application version" )
+                .build() );
         
         options.addOption( Option.builder().longOpt( "lock-file" )
-                                .desc( "Prevent multiple instances of the service from running." )
-                                .hasArg()
-                                .argName("LOCKFILE")
-                                .build() );
+                .desc( "Prevent multiple instances of the service from running." )
+                .hasArg()
+                .argName("LOCKFILE")
+                .build() );
         
         options.addOption( Option.builder().longOpt( "log-file" )
-                                .desc( "Log file required for checking." )
-                                .hasArg()
-                                .argName("LOGFILE")
-                                .build() );
-        
+                .desc( "Log file required for checking." )
+                .hasArg()
+                .argName("LOGFILE")
+                .build() );
+
         options.addOption( Option.builder().longOpt( "log-cutoff-duration" )
-                                .desc( "Do not process logs older than this duration. E.g. \"P2DT3H4M\"  becomes \"2 days, 3 hours and 4 minutes\"" )
-                                .hasArg()
-                                .argName("LOGCUTOFFPERIOD")
-                                .build() );
+                .desc( "Do not process logs older than this duration. E.g. \"P2DT3H4M\"  becomes \"2 days, 3 hours and 4 minutes\"" )
+                .hasArg()
+                .argName("LOGCUTOFFPERIOD")
+                .build() );
         
         options.addOption( Option.builder().longOpt( "log-cutoff-date" )
-                                .desc( "Do not process logs older than this date. YYYYMMDD-hhmmss" )
-                                .hasArg()
-                                .argName("LOGCUTOFFDATE")
-                                .build() );
+                .desc( "Do not process logs older than this date. YYYYMMDD-hhmmss" )
+                .hasArg()
+                .argName("LOGCUTOFFDATE")
+                .build() );
         
         options.addOption( Option.builder().longOpt( "log-deduplicate-duration" )
-                                .desc( "Do not not send the same log entry more than once per session for the specified duration. See 'log-cutoff-duration" )
-                                .hasArg()
-                                .argName("LOGDEDUP")
-                                .build() );
+                .desc( "Do not not send the same log entry more than once per session for the specified duration. See 'log-cutoff-duration" )
+                .hasArg()
+                .argName("LOGDEDUP")
+                .build() );
         
         options.addOption( Option.builder().longOpt( "file-from-start" )
-                                .desc( "Process all records already in the log file." )
-                                .build() );
+                .desc( "Process all records already in the log file." )
+                .build() );
         
         options.addOption( Option.builder().longOpt( "elasticsearch-url" )
-                                .desc( "Elasticsearch URL, including protocol and port." )
-                                .hasArg()
-                                .argName("ELASTICSEARCHURL")
-                                .build() );
+                .desc( "Elasticsearch URL, including protocol and port." )
+                .hasArg()
+                .argName("ELASTICSEARCHURL")
+                .build() );
 
         options.addOption( Option.builder().longOpt( "log-entry-builder-type" )
                 .desc( "The method for parsing log entries as they come in. Options are 'single', 'multiline-delimited'" ).hasArg().argName("LCLEBUILDERTYPE").build() );
@@ -555,6 +565,11 @@ public class LogCheckInitialize
 
         options.addOption( Option.builder().longOpt( "set-name" )
                 .desc( "Optional short id for this job." )
+                .hasArg()
+                .build() );
+
+        options.addOption( Option.builder().longOpt( "dedupe-dir-path" )
+                .desc( "For storing all the deduplication logs." )
                 .hasArg()
                 .build() );
 

@@ -22,7 +22,7 @@ import com.sludev.logs.logcheck.enums.LCResultStatus;
 import com.sludev.logs.logcheck.log.ILogEntryBuilder;
 import com.sludev.logs.logcheck.log.impl.builder.NCSACommonLogBuilder;
 import com.sludev.logs.logcheck.log.impl.builder.SingleLineBuilder;
-import com.sludev.logs.logcheck.model.LogEntry;
+import com.sludev.logs.logcheck.log.LogEntry;
 import com.sludev.logs.logcheck.log.ILogEntrySink;
 import com.sludev.logs.logcheck.log.ILogEntrySource;
 import com.sludev.logs.logcheck.log.impl.builder.MultiLineDelimitedBuilder;
@@ -31,6 +31,7 @@ import com.sludev.logs.logcheck.log.impl.LogEntryQueueSource;
 import com.sludev.logs.logcheck.store.ILogEntryStore;
 import com.sludev.logs.logcheck.store.LogEntryConsole;
 import com.sludev.logs.logcheck.store.LogEntryElasticSearch;
+import com.sludev.logs.logcheck.store.LogEntryStore;
 import com.sludev.logs.logcheck.utils.LogCheckConstants;
 import com.sludev.logs.logcheck.utils.LogCheckResult;
 import com.sludev.logs.logcheck.tail.LogCheckTail;
@@ -42,6 +43,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -89,6 +91,8 @@ public class LogCheckRun implements Callable<LogCheckResult>
     @Override
     public LogCheckResult call() throws Exception
     {
+        UUID currRunUUID = UUID.randomUUID();
+
         // Use a thread-safe queue.  We enqueue/dequeue on different threads
         BlockingDeque<LogEntry> currQ = new LinkedBlockingDeque<>();
 
@@ -204,7 +208,13 @@ public class LogCheckRun implements Callable<LogCheckResult>
         }
 
         currStore.init();
-        logStoreTask = new FutureTask<>(currStore);
+
+        LogEntryStore storeWrapper = LogEntryStore.from(currStore,
+                config.getDeDupeDirPath(),
+                config.getSetName(),
+                currRunUUID);
+
+        logStoreTask = new FutureTask<>(storeWrapper);
 
         // Start the relevant threads
         FutureTask<LogCheckResult> logCheckTailerTask = new FutureTask<>(lct);
