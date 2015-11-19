@@ -45,27 +45,37 @@ public final class LogEntryStore implements Callable<LogCheckResult>
     private final Path deDupeLogOutputPath;
     private final String jobName;
     private final UUID runUUID;
+    private final Integer deDupeMaxLogsBeforeWrite;
+    private final Integer deDupeMaxLogsPerFile;
 
     private LogEntryStore(final ILogEntryStore entryStore,
                           final Path deDupeLogOutputPath,
                           final String jobName,
-                          final UUID runUUID)
+                          final UUID runUUID,
+                          final Integer deDupeMaxLogsBeforeWrite,
+                          final Integer deDupeMaxLogsPerFile)
     {
         this.entryStore = entryStore;
         this.deDupeLogOutputPath = deDupeLogOutputPath;
         this.jobName = jobName;
         this.runUUID = runUUID;
+        this.deDupeMaxLogsBeforeWrite = deDupeMaxLogsBeforeWrite;
+        this.deDupeMaxLogsPerFile = deDupeMaxLogsPerFile;
     }
 
     public static LogEntryStore from(final ILogEntryStore entryStore,
                                      final Path deDupeLogOutputPath,
                                      final String jobName,
-                                     final UUID runUUID)
+                                     final UUID runUUID,
+                                     final Integer deDupeMaxLogsBeforeWrite,
+                                     final Integer deDupeMaxLogsPerFile)
     {
         LogEntryStore store = new LogEntryStore(entryStore,
                 deDupeLogOutputPath,
                 jobName,
-                runUUID);
+                runUUID,
+                deDupeMaxLogsBeforeWrite,
+                deDupeMaxLogsPerFile);
 
         return store;
     }
@@ -108,7 +118,9 @@ public final class LogEntryStore implements Callable<LogCheckResult>
         res = ILogEntryStore.process(entryStore.getMainLogEntrySource(),
                 entryStore,
                 currDeDupePath,
-                runUUID);
+                runUUID,
+                deDupeMaxLogsBeforeWrite,
+                deDupeMaxLogsPerFile);
 
         return res;
     }

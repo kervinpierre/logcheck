@@ -212,7 +212,9 @@ public class LogCheckRun implements Callable<LogCheckResult>
         LogEntryStore storeWrapper = LogEntryStore.from(currStore,
                 config.getDeDupeDirPath(),
                 config.getSetName(),
-                currRunUUID);
+                currRunUUID,
+                config.getDeDupeMaxLogsBeforeWrite(),
+                config.getDeDupeMaxLogsPerFile());
 
         logStoreTask = new FutureTask<>(storeWrapper);
 

@@ -147,6 +147,19 @@ NOTICE:  All information contained herein is, and remains
                     </xs:annotation>
                 </xs:element>
 
+                <xs:element name="deDuplicationMaxLogsPerFile" type="xs:integer" minOccurs="0" maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>The maximum number of log entries per deduplication log file.</xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+
+                <xs:element name="deDuplicationMaxLogsBeforeWrite" type="xs:integer" minOccurs="0" maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>The number of log entries that should be stored before the
+                            deduplication information is written to disk.</xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+
             </xs:choice>
         </xs:complexType>
     </xs:element>

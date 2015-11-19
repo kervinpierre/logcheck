@@ -34,7 +34,6 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.util.UUID;
-import java.util.concurrent.Callable;
 
 /**
  *
@@ -51,7 +50,9 @@ public interface ILogEntryStore
     public static LogCheckResult process( final ILogEntrySource src,
                                           final ILogEntryStore dst,
                                           final Path deDupeDirPath,
-                                          final UUID runUUID ) throws InterruptedException, LogCheckException
+                                          final UUID runUUID,
+                                          final Integer deDupeMaxLogsBeforeWrite,
+                                          final Integer deDupeMaxLogsPerFile) throws InterruptedException, LogCheckException
     {
         LogCheckResult res = LogCheckResult.from(LCResultStatus.SUCCESS);
         LogEntry currEntry;
@@ -62,33 +63,42 @@ public interface ILogEntryStore
         Path deDupeFileName = null;
         LogCheckDeDupeLog currDeDupeLog = null;
 
-        if( deDupeDirPath != null )
+        try
         {
-            deDupeFileName = LogCheckDeDupeLog.nextFileName(deDupeDirPath);
-            currDeDupeLog = LogCheckDeDupeLog.from(runUUID, Instant.now(), null);
-            try
-            {
-                md = MessageDigest.getInstance("SHA-256");
-            }
-            catch( NoSuchAlgorithmException ex )
-            {
-                log.debug("Failed getting SHA-256 Hash", ex);
-            }
+            md = MessageDigest.getInstance("SHA-256");
+        }
+        catch( NoSuchAlgorithmException ex )
+        {
+            log.debug("Failed getting SHA-256 Hash", ex);
         }
 
-        while(true)
+        boolean shouldWrite = false;
+        do
         {
+            // Setup the deduplication directory if we need it.
+            // Rotate the log file after a certain number of log stores.
+            if( deDupeDirPath != null
+                    && (logCount == 0
+                        || (deDupeMaxLogsPerFile != null
+                            && deDupeMaxLogsPerFile > 0
+                            && logCount % deDupeMaxLogsPerFile == 0)) )
+            {
+                if( shouldWrite )
+                {
+                    // We should write out the final log entries
+                    LogCheckDeDupeLogWriter.write(currDeDupeLog, deDupeFileName);
+                }
+
+                deDupeFileName = LogCheckDeDupeLog.nextFileName(deDupeDirPath);
+                currDeDupeLog = LogCheckDeDupeLog.from(runUUID, Instant.now(), null);
+            }
+
             // Block until the next log entry
             currEntry = src.next();
             currEntryVO = LogEntry.toValueObject(currEntry);
 
             LogCheckResult putRes = dst.put(currEntryVO);
-
             logCount++;
-
-            // TODO : Make sure each run has its own deduplication log subdirectory.
-
-            //  FIXME : Rotate the log file after a certain number of log stores.
 
             // Update deduplication statistics
             if( currDeDupeLog != null
@@ -105,12 +115,24 @@ public interface ILogEntryStore
                         Instant.now());
 
                 currDeDupeLog.getLogEntryDeDupes().add(currLEDD);
+                shouldWrite = true;
 
-                // Log here
-                // FIXME : Obviously, we can't rewrite the log file on each log store.
+                boolean doWrite = true;
+                if( putRes != null
+                        && deDupeMaxLogsBeforeWrite != null
+                        && deDupeMaxLogsBeforeWrite > 0
+                        && logCount % deDupeMaxLogsBeforeWrite != 0 )
+                {
+                    doWrite = false;
+                }
 
-                // FIXME : Make the number of log entries stored before writing out this log configurable.
-                LogCheckDeDupeLogWriter.write(currDeDupeLog, deDupeFileName);
+                if( doWrite )
+                {
+                    // Obviously, we can't rewrite the log file on each log store.
+                    // log entries stored before writing out this log is configurable.
+                    LogCheckDeDupeLogWriter.write(currDeDupeLog, deDupeFileName);
+                    shouldWrite = false;
+                }
             }
 
             if( putRes == null )
@@ -118,6 +140,7 @@ public interface ILogEntryStore
                 break;
             }
         }
+        while( true );
 
         return res;
     }
