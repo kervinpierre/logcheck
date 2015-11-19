@@ -24,8 +24,8 @@ import java.time.LocalTime;
 import java.util.concurrent.BlockingDeque;
 
 import com.sludev.logs.logcheck.log.ILogEntrySink;
-import com.sludev.logs.logcheck.model.LogEntry;
-import com.sludev.logs.logcheck.model.LogEntryVO;
+import com.sludev.logs.logcheck.log.LogEntry;
+import com.sludev.logs.logcheck.config.entities.LogEntryVO;
 import com.sludev.logs.logcheck.utils.LogCheckException;
 import org.apache.commons.collections4.map.PassiveExpiringMap;
 import org.apache.logging.log4j.LogManager;

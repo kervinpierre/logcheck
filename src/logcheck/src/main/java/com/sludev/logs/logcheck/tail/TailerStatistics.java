@@ -1,3 +1,21 @@
+/*
+ * SLU Dev Inc. CONFIDENTIAL
+ * DO NOT COPY
+ *
+ * Copyright (c) [2012] - [2015] SLU Dev Inc. <info@sludev.com>
+ * All Rights Reserved.
+ *
+ * NOTICE:  All information contained herein is, and remains
+ * the property of SLU Dev Inc. and its suppliers,
+ * if any.  The intellectual and technical concepts contained
+ * herein are proprietary to SLU Dev Inc. and its suppliers and
+ * may be covered by U.S. and Foreign Patents, patents in process,
+ * and are protected by trade secret or copyright law.
+ * Dissemination of this information or reproduction of this material
+ * is strictly forbidden unless prior written permission is obtained
+ * from SLU Dev Inc.
+ */
+
 package com.sludev.logs.logcheck.tail;
 
 import com.sludev.logs.logcheck.config.entities.LogCheckState;
@@ -11,7 +29,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
-import java.nio.file.CopyOption;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -20,6 +37,9 @@ import java.util.UUID;
 
 /**
  * Track the statistics on an ongoing Tailer job.
+ *
+ * It saves and restores where in a log file we are/were.  And also whether that file is
+ * still the file we think it is.
  *
  * Created by kervin on 10/27/2015.
  */
@@ -199,6 +219,22 @@ public class TailerStatistics
                 throw new LogCheckException(errMsg, ex);
             }
         }
+    }
+
+    public LogCheckState restore() throws LogCheckException
+    {
+        LogCheckState res;
+
+        res = restore(stateFile, errorFile);
+
+        return res;
+    }
+
+    public static LogCheckState restore(Path stateFile, Path errorFile) throws LogCheckException
+    {
+        LogCheckState res = null;
+
+        return res;
     }
 
     public LogCheckState getState()

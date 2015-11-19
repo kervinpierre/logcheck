@@ -1,11 +1,11 @@
 ## Display version
 # --version
 
-# Simple continuous random write mainly using defaults
-# --output-file /tmp/logcheck-sample-app-output.txt
+# LinuxSimple continuous random write mainly using defaults
+--output-file /tmp/logcheck-sample-app-output.txt  --output-frequency 2s
 
 # Windows test, general parameters
 # --output-file c:/tmp/logcheck-sample-app-output.txt --rotate-after-count 1K --delete-logs --output-frequency 5ms
 
 # Windows test, general parameters
---output-file c:/tmp/logcheck-sample-app-output.txt --delete-logs --output-frequency 2s
+#--output-file c:/tmp/logcheck-sample-app-output.txt --delete-logs --output-frequency 2s

@@ -20,8 +20,8 @@ package com.sludev.logs.logcheck.store;
 import com.sludev.logs.logcheck.enums.LCIndexNameFormat;
 import com.sludev.logs.logcheck.enums.LCResultStatus;
 import com.sludev.logs.logcheck.log.ILogEntrySource;
-import com.sludev.logs.logcheck.model.LogEntry;
-import com.sludev.logs.logcheck.model.LogEntryVO;
+import com.sludev.logs.logcheck.log.LogEntry;
+import com.sludev.logs.logcheck.config.entities.LogEntryVO;
 import com.sludev.logs.logcheck.utils.LogCheckConstants;
 import com.sludev.logs.logcheck.utils.LogCheckException;
 import com.sludev.logs.logcheck.utils.LogCheckResult;
@@ -54,6 +54,12 @@ public final class LogEntryElasticSearch implements ILogEntryStore
     private String elasticsearchIndexPrefix;
     private String elasticsearchLogType;
     private LCIndexNameFormat elasticsearchIndexNameFormat;
+
+    @Override
+    public ILogEntrySource getMainLogEntrySource()
+    {
+        return mainLogEntrySource;
+    }
 
     public String getElasticsearchLogType()
     {
@@ -179,16 +185,6 @@ public final class LogEntryElasticSearch implements ILogEntryStore
  
         esClient = factory.getObject();
     }
-    
-    @Override
-    public LogCheckResult call() throws Exception
-    {
-        LogCheckResult res;
-
-        res = ILogEntryStore.process(mainLogEntrySource, this);
-        
-        return res;
-    }
 
     /**
      * Put a log entry into the backend store, which is Elastic Search in this case.
@@ -199,16 +195,15 @@ public final class LogEntryElasticSearch implements ILogEntryStore
      * @throws LogCheckException
      */
     @Override
-    public LogCheckResult put(LogEntry le) throws InterruptedException, LogCheckException
+    public LogCheckResult put(LogEntryVO le) throws InterruptedException, LogCheckException
     {
         log.debug( String.format("put() for logEntry '%s'\n", le.getTimeStamp()));
         
         LogCheckResult res = LogCheckResult.from(LCResultStatus.SUCCESS);
-        
-        LogEntryVO currVO = LogEntry.toValueObject(le);
+
         String currIndex = getIndex();
         String currLogType = getElasticsearchLogType();
-        String currJSON = LogEntryVO.toJSON(currVO);
+        String currJSON = LogEntryVO.toJSON(le);
         
         Index index = new Index.Builder(currJSON).index(currIndex).type(currLogType).build();
 

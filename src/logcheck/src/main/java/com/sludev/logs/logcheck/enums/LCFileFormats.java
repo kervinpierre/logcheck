@@ -29,7 +29,8 @@ public enum LCFileFormats
 {
     NONE,
     LCCONFIG,
-    LCSTATE;
+    LCSTATE,
+    LCDDUPE;
 
     private static final Logger log = LogManager.getLogger(LCFileFormats.class);
 
@@ -44,6 +45,10 @@ public enum LCFileFormats
 
             case LCSTATE:
                 res = "logcheckstate.xsd";
+                break;
+
+            case LCDDUPE:
+                res = "logcheckdedupelog.xsd";
                 break;
 
             default:

@@ -2,7 +2,7 @@ package com.sludev.logs.logcheck.log.impl.builder;
 
 import com.sludev.logs.logcheck.log.ILogEntryBuilder;
 import com.sludev.logs.logcheck.log.ILogEntrySink;
-import com.sludev.logs.logcheck.model.LogEntry;
+import com.sludev.logs.logcheck.log.LogEntry;
 
 import java.util.List;
 import java.util.regex.Pattern;

@@ -140,7 +140,13 @@ NOTICE:  All information contained herein is, and remains
                         <xs:documentation>Elasticsearch server where logs are stored.  Including protocol and port.</xs:documentation>
                     </xs:annotation>
                 </xs:element>
-                
+
+                <xs:element name="deDuplicationLogDir" type="xs:string" minOccurs="0" maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>Directory for storing all deduplication logs.</xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+
             </xs:choice>
         </xs:complexType>
     </xs:element>

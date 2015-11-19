@@ -24,8 +24,8 @@ import java.util.regex.Pattern;
 
 import com.sludev.logs.logcheck.log.ILogEntryBuilder;
 import com.sludev.logs.logcheck.log.ILogEntrySink;
-import com.sludev.logs.logcheck.model.LogEntry;
-import com.sludev.logs.logcheck.model.LogEntryVO;
+import com.sludev.logs.logcheck.log.LogEntry;
+import com.sludev.logs.logcheck.config.entities.LogEntryVO;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

@@ -1,23 +1,24 @@
 /*
- *   SLU Dev Inc. CONFIDENTIAL
- *   DO NOT COPY
- *  
- *  Copyright (c) [2012] - [2015] SLU Dev Inc. <info@sludev.com>
- *  All Rights Reserved.
- *  
- *  NOTICE:  All information contained herein is, and remains
- *   the property of SLU Dev Inc. and its suppliers,
- *   if any.  The intellectual and technical concepts contained
- *   herein are proprietary to SLU Dev Inc. and its suppliers and
- *   may be covered by U.S. and Foreign Patents, patents in process,
- *   and are protected by trade secret or copyright law.
- *   Dissemination of this information or reproduction of this material
- *   is strictly forbidden unless prior written permission is obtained
- *   from SLU Dev Inc.
+ * SLU Dev Inc. CONFIDENTIAL
+ * DO NOT COPY
+ *
+ * Copyright (c) [2012] - [2015] SLU Dev Inc. <info@sludev.com>
+ * All Rights Reserved.
+ *
+ * NOTICE:  All information contained herein is, and remains
+ * the property of SLU Dev Inc. and its suppliers,
+ * if any.  The intellectual and technical concepts contained
+ * herein are proprietary to SLU Dev Inc. and its suppliers and
+ * may be covered by U.S. and Foreign Patents, patents in process,
+ * and are protected by trade secret or copyright law.
+ * Dissemination of this information or reproduction of this material
+ * is strictly forbidden unless prior written permission is obtained
+ * from SLU Dev Inc.
  */
-package com.sludev.logs.logcheck.model;
+package com.sludev.logs.logcheck.log;
 
 import com.sludev.logs.logcheck.enums.LCLogLevel;
+import com.sludev.logs.logcheck.config.entities.LogEntryVO;
 import com.sludev.logs.logcheck.utils.LogCheckConstants;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -161,15 +162,15 @@ public final class LogEntry
      */
     public static LogEntryVO toValueObject(LogEntry le)
     {
-        LogEntryVO res = new LogEntryVO();
-
-        res.host      = StringUtils.defaultIfBlank(le.getHost(), "");
-        res.exception = StringUtils.defaultIfBlank(le.getException(), "");
-        res.level     = StringUtils.defaultIfBlank(le.getLevel()==null?null:le.getLevel().toString(), "");
-        res.logger    = StringUtils.defaultIfBlank(le.getLogger(), "");
-        res.message   = StringUtils.defaultIfBlank(le.getMessage(), "");
-        res.timeStamp = StringUtils.defaultIfBlank(le.getTimeStamp()==null?null:le.getTimeStamp().toString(), "");
-        res.type      = StringUtils.defaultIfBlank(le.getType(), "");
+        LogEntryVO res = LogEntryVO.from(
+                StringUtils.defaultIfBlank(le.getLevel()==null?null:le.getLevel().toString(), ""),
+                StringUtils.defaultIfBlank(le.getLogger(), ""),
+                StringUtils.defaultIfBlank(le.getMessage(), ""),
+                StringUtils.defaultIfBlank(le.getException(), ""),
+                StringUtils.defaultIfBlank(le.getTimeStamp()==null?null:le.getTimeStamp().toString(), ""),
+                StringUtils.defaultIfBlank(le.getType(), ""),
+                StringUtils.defaultIfBlank(le.getHost(), "")
+        );
 
         return res;
     }

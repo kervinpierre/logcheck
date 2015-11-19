@@ -22,7 +22,6 @@ import org.apache.logging.log4j.Logger;
 
 import java.nio.file.Path;
 import java.time.Instant;
-import java.time.LocalTime;
 
 /**
  * The state of a single log file being processed.
