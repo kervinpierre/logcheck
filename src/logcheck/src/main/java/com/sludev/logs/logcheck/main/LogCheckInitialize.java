@@ -96,6 +96,8 @@ public class LogCheckInitialize
         String currIdBlockSize = null;
         String currSetName = null;
         String currDeDupeDirPath = null;
+        String currDeDupeMaxLogsPerFile = null;
+        String currDeDupeMaxLogsBeforeWrite = null;
 
         try
         {
@@ -338,6 +340,16 @@ public class LogCheckInitialize
                         currDeDupeDirPath = currOpt.getValue();
                         break;
 
+                    case "dedupe-log-per-file":
+                        //
+                        currDeDupeMaxLogsPerFile = currOpt.getValue();
+                        break;
+
+                    case "dedupe-max-before-write":
+                        //
+                        currDeDupeMaxLogsBeforeWrite = currOpt.getValue();
+                        break;
+
                     case "log-entry-builder-type":
                         // Specify the log entry builder type to use
                         currLEBuilderType = currOpt.getValue();
@@ -379,6 +391,8 @@ public class LogCheckInitialize
                     currLogDeduplicationDuration, // logDeduplicationDuration,
                     currPollIntervalSeconds,
                     currIdBlockSize,
+                    currDeDupeMaxLogsBeforeWrite,
+                    currDeDupeMaxLogsPerFile,
                     currLEBuilderType,
                     currIdBlockHashtype);
         }
@@ -570,6 +584,18 @@ public class LogCheckInitialize
 
         options.addOption( Option.builder().longOpt( "dedupe-dir-path" )
                 .desc( "For storing all the deduplication logs." )
+                .hasArg()
+                .build() );
+
+        options.addOption( Option.builder().longOpt( "dedupe-log-per-file" )
+                .desc( "The maximum number of log entries per deduplication log file." )
+                .hasArg()
+                .build() );
+
+
+        options.addOption( Option.builder().longOpt( "dedupe-max-before-write" )
+                .desc( "The number of log entries that should be stored before the "
+                        + "deduplication information is written to disk." )
                 .hasArg()
                 .build() );
 
