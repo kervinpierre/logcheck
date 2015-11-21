@@ -58,6 +58,17 @@ public class LogCheckConstants
     public static int DEFAULT_DEDUPE_LOGS_BEFORE_WRITE = 5;
     public static int MAX_DEDUPE_LOGS_PER_FILE = Integer.MIN_VALUE;
 
+    /**
+     * Number of deduplication log files to keep before deleting the older files.
+     *
+     * This can be changed on the command line.
+     */
+    public static int DEFAULT_DEDUPE_LOG_FILES_ROTATE = 3;
+
+    /**
+     * The maximum number of deduplication log files to keep on disk.
+     * More log files than this number will result in a program error.
+     */
     public static int MAX_DEDUPE_LOG_FILES = 1000;
 
     public static String DEFAULT_DEDUPE_LOG_FILE_NAME = "LogEntryDeDupe";

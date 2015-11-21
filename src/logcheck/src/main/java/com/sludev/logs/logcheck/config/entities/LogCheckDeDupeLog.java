@@ -20,13 +20,19 @@ package com.sludev.logs.logcheck.config.entities;
 
 import com.sludev.logs.logcheck.utils.LogCheckConstants;
 import com.sludev.logs.logcheck.utils.LogCheckException;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -130,21 +136,80 @@ public final class LogCheckDeDupeLog
         return res;
     }
 
-    public static Path nextFileName(Path deDupeDirPath) throws LogCheckException
+    public static Path nextFileName(final Path dirPath,
+                                    final Integer maxLogFiles,
+                                    final boolean rotateOldFiles) throws LogCheckException
     {
         Path newPath = null;
 
+        if(rotateOldFiles)
+        {
+            List<Path> files = null;
+
+            try
+            {
+                files = new ArrayList<>();
+                files.addAll(Arrays.asList(Files.list(dirPath).toArray(Path[]::new)));
+                Collections.sort(files);
+            }
+            catch( IOException ex )
+            {
+                String errMsg = String.format("Error listing '%s'", dirPath);
+                log.debug(errMsg, ex);
+            }
+
+            int extraLogFiles = files.size()-maxLogFiles;
+
+            // Delete files over max
+            for( int i = 0; i<=extraLogFiles; i++)
+            {
+                Path currPath = files.get(i);
+                try
+                {
+                    Files.delete(currPath);
+
+                    log.debug(String.format("deleted '%s'", currPath));
+                }
+                catch( IOException ex )
+                {
+                    String errMsg = String.format("Error deleting '%s'", currPath);
+                    log.debug(errMsg, ex);
+                }
+            }
+
+            // Rename the remaining files
+            if( extraLogFiles >= 0 )
+            {
+                for( int i = extraLogFiles+1, j = 0; i < files.size(); i++, j++ )
+                {
+                    String newName = String.format("%s.%06d.log.xml",
+                            LogCheckConstants.DEFAULT_DEDUPE_LOG_FILE_NAME, j);
+
+                    newPath = dirPath.resolve(newName);
+                    Path currPath = files.get(i);
+
+                    try
+                    {
+                        Files.move(currPath, newPath, StandardCopyOption.REPLACE_EXISTING);
+
+                        log.debug(String.format("moved '%s' to '%s'.", currPath, newPath));
+                    }
+                    catch( IOException ex )
+                    {
+                        String errMsg = String.format("Error moving '%s' to '%s'",
+                                                        currPath, newPath);
+                        log.debug(errMsg, ex);
+                    }
+                }
+            }
+        }
+
         for( int i = 0; i < LogCheckConstants.MAX_DEDUPE_LOG_FILES; i++)
         {
-//            if( i >= maxBackups-1 )
-//            {
-//                ;
-//            }
-//
             String newName = String.format("%s.%06d.log.xml",
                     LogCheckConstants.DEFAULT_DEDUPE_LOG_FILE_NAME, i);
 
-            newPath = deDupeDirPath.resolve(newName);
+            newPath = dirPath.resolve(newName);
             if( Files.notExists(newPath))
             {
                 break;

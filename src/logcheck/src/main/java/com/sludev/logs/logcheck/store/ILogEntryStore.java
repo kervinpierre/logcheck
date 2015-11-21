@@ -52,7 +52,8 @@ public interface ILogEntryStore
                                           final Path deDupeDirPath,
                                           final UUID runUUID,
                                           final Integer deDupeMaxLogsBeforeWrite,
-                                          final Integer deDupeMaxLogsPerFile) throws InterruptedException, LogCheckException
+                                          final Integer deDupeMaxLogsPerFile,
+                                          final Integer deDupeMaxLogFiles) throws InterruptedException, LogCheckException
     {
         LogCheckResult res = LogCheckResult.from(LCResultStatus.SUCCESS);
         LogEntry currEntry;
@@ -89,8 +90,11 @@ public interface ILogEntryStore
                     LogCheckDeDupeLogWriter.write(currDeDupeLog, deDupeFileName);
                 }
 
-                deDupeFileName = LogCheckDeDupeLog.nextFileName(deDupeDirPath);
+                deDupeFileName = LogCheckDeDupeLog.nextFileName(deDupeDirPath,deDupeMaxLogFiles,true);
                 currDeDupeLog = LogCheckDeDupeLog.from(runUUID, Instant.now(), null);
+
+                // Delete old files if necesasary
+                ;
             }
 
             // Block until the next log entry

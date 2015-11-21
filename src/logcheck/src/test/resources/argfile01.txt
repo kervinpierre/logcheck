@@ -26,4 +26,4 @@
 # --log-file c:/tmp/logcheck-sample-app-output.txt --print-logs --log-entry-builder-type=singleline --save-state --state-file c:/tmp/current-state.xml
 
 # A07. Unix
---log-file /tmp/logcheck-sample-app-output.txt --print-logs --log-entry-builder-type=singleline --save-state --state-file /tmp/current-state.xml --error-file /tmp/current-errors.xml --set-name="test app" --dedupe-dir-path /tmp/dedupe --dedupe-max-before-write=5 --dedupe-log-per-file 25
+--log-file /tmp/logcheck-sample-app-output.txt --print-logs --log-entry-builder-type=singleline --save-state --state-file /tmp/current-state.xml --error-file /tmp/current-errors.xml --set-name="test app" --dedupe-dir-path /tmp/dedupe --dedupe-max-before-write=5 --dedupe-log-per-file 10 --dedupe-max-log-files=5

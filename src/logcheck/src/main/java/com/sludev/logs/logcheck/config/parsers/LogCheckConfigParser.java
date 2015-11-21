@@ -69,6 +69,7 @@ public class LogCheckConfigParser
         String deDupeDir = null;
         String deDupeMaxLogsPerFile = null;
         String deDupeMaxLogsBeforeWrite = null;
+        String deDupeMaxLogFiles = null;
         
         try
         {
@@ -270,6 +271,15 @@ public class LogCheckConfigParser
             log.debug("configuration parsing error.", ex);
         }
 
+        try
+        {
+            deDupeMaxLogFiles = currXPath.compile("./deDuplicationMaxLogFiles").evaluate(currEl);
+        }
+        catch (XPathExpressionException ex)
+        {
+            log.debug("configuration parsing error.", ex);
+        }
+
         res = LogCheckConfig.from(null,
                 null, // service,
                 null, // emailOnError,
@@ -305,6 +315,7 @@ public class LogCheckConfigParser
                 idBlockSize,
                 deDupeMaxLogsBeforeWrite,
                 deDupeMaxLogsPerFile,
+                deDupeMaxLogFiles,
                 leBuilderType,
                 idBlockHashType);
 

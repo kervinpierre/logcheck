@@ -47,6 +47,7 @@ public final class LogCheckConfig
     private final Integer idBlockSize;
     private final Integer deDupeMaxLogsPerFile;
     private final Integer deDupeMaxLogsBeforeWrite;
+    private final Integer deDupeMaxLogFiles;
     private final String emailOnError;
     private final String smtpServer;
     private final String smtpPort;
@@ -269,6 +270,11 @@ public final class LogCheckConfig
         return deDupeMaxLogsBeforeWrite;
     }
 
+    public Integer getDeDupeMaxLogFiles()
+    {
+        return deDupeMaxLogFiles;
+    }
+
     private LogCheckConfig(final LogCheckConfig orig,
                            final Boolean service,
                            final String emailOnError,
@@ -304,6 +310,7 @@ public final class LogCheckConfig
                            final Integer idBlockSize,
                            final Integer deDupeMaxLogsBeforeWrite,
                            final Integer deDupeMaxLogsPerFile,
+                           final Integer deDupeMaxLogFiles,
                            final LCLogEntryBuilderType logEntryBuilder,
                            final LCHashType idBlockHashType) throws LogCheckException
     {
@@ -344,6 +351,19 @@ public final class LogCheckConfig
         else
         {
             this.deDupeMaxLogsPerFile = LogCheckConstants.MAX_DEDUPE_LOGS_PER_FILE;
+        }
+
+        if( deDupeMaxLogFiles != null )
+        {
+            this.deDupeMaxLogFiles = deDupeMaxLogFiles;
+        }
+        else if( orig != null && orig.getDeDupeMaxLogFiles() != null )
+        {
+            this.deDupeMaxLogFiles = orig.getDeDupeMaxLogFiles();
+        }
+        else
+        {
+            this.deDupeMaxLogFiles = LogCheckConstants.DEFAULT_DEDUPE_LOG_FILES_ROTATE;
         }
 
         if( idBlockSize != null )
@@ -845,6 +865,7 @@ public final class LogCheckConfig
                                        final String idBlockSizeStr,
                                         final String deDupeMaxLogsBeforeWriteStr,
                                         final String deDupeMaxLogsPerFileStr,
+                                        final String deDupeMaxLogFilesStr,
                                        final String logEntryBuilderStr,
                                        final String idBlockHashTypeStr) throws LogCheckException
     {
@@ -866,6 +887,7 @@ public final class LogCheckConfig
         Integer idBlockSize = null;
         Integer deDupeMaxLogsBeforeWrite = null;
         Integer deDupeMaxLogsPerFile = null;
+        Integer deDupeMaxLogFiles = null;
         LCHashType idBlockHash = null;
 
         if(StringUtils.isNoneBlank(lockFilePathStr))
@@ -1015,6 +1037,21 @@ public final class LogCheckConfig
             }
         }
 
+        if(StringUtils.isNoneBlank(deDupeMaxLogFilesStr))
+        {
+            try
+            {
+                deDupeMaxLogFiles = Integer.parseInt(deDupeMaxLogFilesStr);
+            }
+            catch( NumberFormatException ex )
+            {
+                String errMsg = String.format("Error parsing integer '%s'", deDupeMaxLogFilesStr);
+
+                log.debug(errMsg, ex);
+                throw new LogCheckException(errMsg, ex);
+            }
+        }
+
         LogCheckConfig res = LogCheckConfig.from(orig,
                 service,
                 emailOnError,
@@ -1050,6 +1087,7 @@ public final class LogCheckConfig
                 idBlockSize,
                 deDupeMaxLogsBeforeWrite,
                 deDupeMaxLogsPerFile,
+                deDupeMaxLogFiles,
                 logEntryBuilder,
                 idBlockHash);
 
@@ -1091,6 +1129,7 @@ public final class LogCheckConfig
                            final Integer idBlockSize,
                            final Integer deDupeMaxLogsBeforeWrite,
                            final Integer deDupeMaxLogsPerFile,
+                           final Integer deDupeMaxLogFiles,
                            final LCLogEntryBuilderType logEntryBuilder,
                            final LCHashType idBlockHashType) throws LogCheckException
     {
@@ -1129,6 +1168,7 @@ public final class LogCheckConfig
                 idBlockSize,
                 deDupeMaxLogsBeforeWrite,
                 deDupeMaxLogsPerFile,
+                deDupeMaxLogFiles,
                 logEntryBuilder,
                 idBlockHashType);
 

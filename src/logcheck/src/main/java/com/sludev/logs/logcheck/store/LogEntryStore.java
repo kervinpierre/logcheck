@@ -47,13 +47,16 @@ public final class LogEntryStore implements Callable<LogCheckResult>
     private final UUID runUUID;
     private final Integer deDupeMaxLogsBeforeWrite;
     private final Integer deDupeMaxLogsPerFile;
+    private final Integer deDupeMaxLogFiles;
+
 
     private LogEntryStore(final ILogEntryStore entryStore,
                           final Path deDupeLogOutputPath,
                           final String jobName,
                           final UUID runUUID,
                           final Integer deDupeMaxLogsBeforeWrite,
-                          final Integer deDupeMaxLogsPerFile)
+                          final Integer deDupeMaxLogsPerFile,
+                          final Integer deDupeMaxLogFiles)
     {
         this.entryStore = entryStore;
         this.deDupeLogOutputPath = deDupeLogOutputPath;
@@ -61,6 +64,7 @@ public final class LogEntryStore implements Callable<LogCheckResult>
         this.runUUID = runUUID;
         this.deDupeMaxLogsBeforeWrite = deDupeMaxLogsBeforeWrite;
         this.deDupeMaxLogsPerFile = deDupeMaxLogsPerFile;
+        this.deDupeMaxLogFiles = deDupeMaxLogFiles;
     }
 
     public static LogEntryStore from(final ILogEntryStore entryStore,
@@ -68,14 +72,15 @@ public final class LogEntryStore implements Callable<LogCheckResult>
                                      final String jobName,
                                      final UUID runUUID,
                                      final Integer deDupeMaxLogsBeforeWrite,
-                                     final Integer deDupeMaxLogsPerFile)
+                                     final Integer deDupeMaxLogsPerFile,
+                                     final Integer deDupeMaxLogFiles)
     {
         LogEntryStore store = new LogEntryStore(entryStore,
                 deDupeLogOutputPath,
                 jobName,
                 runUUID,
                 deDupeMaxLogsBeforeWrite,
-                deDupeMaxLogsPerFile);
+                deDupeMaxLogsPerFile, deDupeMaxLogFiles);
 
         return store;
     }
@@ -120,7 +125,8 @@ public final class LogEntryStore implements Callable<LogCheckResult>
                 currDeDupePath,
                 runUUID,
                 deDupeMaxLogsBeforeWrite,
-                deDupeMaxLogsPerFile);
+                deDupeMaxLogsPerFile,
+                deDupeMaxLogFiles);
 
         return res;
     }
