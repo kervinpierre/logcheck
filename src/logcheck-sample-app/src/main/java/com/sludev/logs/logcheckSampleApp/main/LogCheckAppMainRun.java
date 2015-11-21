@@ -19,6 +19,8 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * 
@@ -185,7 +187,8 @@ public final class LogCheckAppMainRun implements Callable<LCSAResult>
                 idg = null;
         }
 
-        final Set<LCSAResult> threadRes = new HashSet<>();
+        final AtomicReference<LCSAResult> threadRes = new AtomicReference<>();
+        final AtomicInteger callCount = new AtomicInteger(0);
 
         schedulerExe.scheduleAtFixedRate(() ->
         {
@@ -203,7 +206,7 @@ public final class LogCheckAppMainRun implements Callable<LCSAResult>
                 return;
             }
 
-            currStr = idg.getLine();
+            currStr = idg.getLine(String.format("Random Line number %d ", callCount.getAndIncrement()));
 
             try
             {
@@ -211,7 +214,7 @@ public final class LogCheckAppMainRun implements Callable<LCSAResult>
 
                 if( resWrite != LCSAResult.SUCCESS )
                 {
-                    threadRes.add(resWrite);
+                    threadRes.set(resWrite);
                     schedulerExe.shutdown();
                 }
             }
@@ -225,7 +228,7 @@ public final class LogCheckAppMainRun implements Callable<LCSAResult>
 
         schedulerExe.awaitTermination(Long.MAX_VALUE, TimeUnit.DAYS);
 
-        if( threadRes.contains(LCSAResult.COMPLETED_ROTATE_PENDING))
+        if( threadRes.get() == LCSAResult.COMPLETED_ROTATE_PENDING )
         {
             res = LCSAResult.COMPLETED_ROTATE_PENDING;
         }
