@@ -97,6 +97,7 @@ public class LogCheckInitialize
         String currSetName = null;
         String currDeDupeDirPath = null;
         String currDeDupeMaxLogsPerFile = null;
+        String currDeDupeMaxLogFiles = null;
         String currDeDupeMaxLogsBeforeWrite = null;
 
         try
@@ -345,6 +346,11 @@ public class LogCheckInitialize
                         currDeDupeMaxLogsPerFile = currOpt.getValue();
                         break;
 
+                    case "dedupe-max-log-files":
+                        //
+                        currDeDupeMaxLogFiles = currOpt.getValue();
+                        break;
+
                     case "dedupe-max-before-write":
                         //
                         currDeDupeMaxLogsBeforeWrite = currOpt.getValue();
@@ -393,6 +399,7 @@ public class LogCheckInitialize
                     currIdBlockSize,
                     currDeDupeMaxLogsBeforeWrite,
                     currDeDupeMaxLogsPerFile,
+                    currDeDupeMaxLogFiles,
                     currLEBuilderType,
                     currIdBlockHashtype);
         }
@@ -592,6 +599,10 @@ public class LogCheckInitialize
                 .hasArg()
                 .build() );
 
+        options.addOption( Option.builder().longOpt( "dedupe-max-log-files" )
+                .desc( "The maximum number of log files to keep. Older files are deleted." )
+                .hasArg()
+                .build() );
 
         options.addOption( Option.builder().longOpt( "dedupe-max-before-write" )
                 .desc( "The number of log entries that should be stored before the "

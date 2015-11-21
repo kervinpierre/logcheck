@@ -214,7 +214,8 @@ public class LogCheckRun implements Callable<LogCheckResult>
                 config.getSetName(),
                 currRunUUID,
                 config.getDeDupeMaxLogsBeforeWrite(),
-                config.getDeDupeMaxLogsPerFile());
+                config.getDeDupeMaxLogsPerFile(),
+                config.getDeDupeMaxLogFiles());
 
         logStoreTask = new FutureTask<>(storeWrapper);
 

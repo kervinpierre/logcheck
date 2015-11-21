@@ -160,6 +160,12 @@ NOTICE:  All information contained herein is, and remains
                     </xs:annotation>
                 </xs:element>
 
+                <xs:element name="deDuplicationMaxLogFiles" type="xs:integer" minOccurs="0" maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>The number of log files to keep on disk.</xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+
             </xs:choice>
         </xs:complexType>
     </xs:element>
