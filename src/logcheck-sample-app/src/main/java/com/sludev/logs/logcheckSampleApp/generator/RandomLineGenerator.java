@@ -14,11 +14,17 @@ public final class RandomLineGenerator implements IDataGenerator
     private static final Logger log = LogManager.getLogger(RandomLineGenerator.class);
 
     @Override
-    public String getLine()
+    public String getLine(String data)
     {
         String res;
+        String currData = data;
 
-        res = String.format("%s : Random Line Data : %s\n", Instant.now(), UUID.randomUUID());
+        if( currData == null )
+        {
+            currData = "Random Line Data";
+        }
+
+        res = String.format("%s : %s : %s\n", Instant.now(), currData, UUID.randomUUID());
 
         return res;
     }

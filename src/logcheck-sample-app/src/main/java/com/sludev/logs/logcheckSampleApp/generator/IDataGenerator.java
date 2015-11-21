@@ -5,5 +5,5 @@ package com.sludev.logs.logcheckSampleApp.generator;
  */
 public interface IDataGenerator
 {
-    String getLine();
+    String getLine(String data);
 }
