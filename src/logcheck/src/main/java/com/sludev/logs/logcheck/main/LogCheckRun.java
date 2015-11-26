@@ -18,6 +18,13 @@
 package com.sludev.logs.logcheck.main;
 
 import com.sludev.logs.logcheck.config.entities.LogCheckConfig;
+import com.sludev.logs.logcheck.config.entities.LogCheckDeDupeLog;
+import com.sludev.logs.logcheck.config.entities.LogCheckState;
+import com.sludev.logs.logcheck.config.entities.LogEntryDeDupe;
+import com.sludev.logs.logcheck.config.parsers.LogCheckStateParser;
+import com.sludev.logs.logcheck.config.parsers.ParserUtil;
+import com.sludev.logs.logcheck.dedupe.ContinueUtil;
+import com.sludev.logs.logcheck.enums.LCFileFormats;
 import com.sludev.logs.logcheck.enums.LCResultStatus;
 import com.sludev.logs.logcheck.log.ILogEntryBuilder;
 import com.sludev.logs.logcheck.log.impl.builder.NCSACommonLogBuilder;
@@ -52,11 +59,14 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.LinkedBlockingDeque;
+
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.concurrent.BasicThreadFactory;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 /**
+ * Mainly starts and manages threads, or concurrency in general.
  *
  * @author Kervin
  */
@@ -165,12 +175,16 @@ public class LogCheckRun implements Callable<LogCheckResult>
         // And pass into it the previously selected Log Entry Builder.
         LogCheckTail lct = LogCheckTail.from(currLogEntryBuilder,
                 config.getLogPath(),
+                config.getDeDupeDirPath(),
                 config.getPollIntervalSeconds(),
+                config.getContinueState(),
                 config.isTailFromEnd(),
-                null,
+                config.getReOpenLogFile(),
                 config.getSaveState(),
-                null,
-                null,
+                null, // bufferSize
+                config.getReadLogFileCount(),
+                config.getReadMaxDeDupeEntries(),
+                config.getStopAfter(), // stopAfter
                 config.getIdBlockHashType(),
                 config.getIdBlockSize(),
                 config.getSetName(),
@@ -251,6 +265,13 @@ public class LogCheckRun implements Callable<LogCheckResult>
                     // Log polling thread has completed.  Generally this should
                     // not happen until we're shutting down.
                     fileTailRes = logCheckTailerTask.get();
+
+                    // If Tailer thread is done, then cancel/interrupt the store thread
+                    // E.g. useful for implementing the --stop-after feature
+                    if( fileTailRes.getStatus() == LCResultStatus.SUCCESS )
+                    {
+                        logStoreExeRes.cancel(true);
+                    }
                 }
                 
                 if( logStoreExeRes.isDone() )

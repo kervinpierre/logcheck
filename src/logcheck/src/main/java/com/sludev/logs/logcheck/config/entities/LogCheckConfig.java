@@ -44,10 +44,13 @@ public final class LogCheckConfig
     
     private final Boolean service;
     private final Long pollIntervalSeconds;
+    private final Long stopAfter;
     private final Integer idBlockSize;
     private final Integer deDupeMaxLogsPerFile;
     private final Integer deDupeMaxLogsBeforeWrite;
     private final Integer deDupeMaxLogFiles;
+    private final Integer readLogFileCount;
+    private final Integer readMaxDeDupeEntries;
     private final String emailOnError;
     private final String smtpServer;
     private final String smtpPort;
@@ -61,6 +64,7 @@ public final class LogCheckConfig
     private final Boolean printLog;
     private final Boolean saveState;
     private final Boolean continueState;
+    private final Boolean reOpenLogFile;
     private final Path lockFilePath;
     private final Path logPath;
     private final Path statusFilePath;
@@ -205,6 +209,11 @@ public final class LogCheckConfig
         return service;
     }
 
+    public Boolean getReOpenLogFile()
+    {
+        return reOpenLogFile;
+    }
+
     public Long getPollIntervalSeconds()
     {
         return pollIntervalSeconds;
@@ -275,6 +284,21 @@ public final class LogCheckConfig
         return deDupeMaxLogFiles;
     }
 
+    public Integer getReadLogFileCount()
+    {
+        return readLogFileCount;
+    }
+
+    public Integer getReadMaxDeDupeEntries()
+    {
+        return readMaxDeDupeEntries;
+    }
+
+    public Long getStopAfter()
+    {
+        return stopAfter;
+    }
+
     private LogCheckConfig(final LogCheckConfig orig,
                            final Boolean service,
                            final String emailOnError,
@@ -288,6 +312,7 @@ public final class LogCheckConfig
                            final Boolean showVersion,
                            final Boolean printLog,
                            final Boolean tailFromEnd,
+                           final Boolean reOpenLogFile,
                            final Boolean saveState,
                            final Boolean continueState,
                            final Path lockFilePath,
@@ -307,6 +332,9 @@ public final class LogCheckConfig
                            final Duration logCutoffDuration,
                            final Duration logDeduplicationDuration,
                            final Long pollIntervalSeconds,
+                           final Long stopAfter,
+                           final Integer readLogFileCount,
+                           final Integer readMaxDeDupeEntries,
                            final Integer idBlockSize,
                            final Integer deDupeMaxLogsBeforeWrite,
                            final Integer deDupeMaxLogsPerFile,
@@ -759,6 +787,19 @@ public final class LogCheckConfig
             this.logDeduplicationDuration = null;
         }
 
+        if( stopAfter != null )
+        {
+            this.stopAfter = stopAfter;
+        }
+        else if( orig != null && orig.getStopAfter() != null )
+        {
+            this.stopAfter = orig.getStopAfter();
+        }
+        else
+        {
+            this.stopAfter = null;
+        }
+
         if( printLog != null )
         {
             this.printLog = printLog;
@@ -783,6 +824,19 @@ public final class LogCheckConfig
         else
         {
             this.saveState = null;
+        }
+
+        if( reOpenLogFile != null )
+        {
+            this.reOpenLogFile = reOpenLogFile;
+        }
+        else if( orig != null && orig.getReOpenLogFile() != null )
+        {
+            this.reOpenLogFile = orig.getReOpenLogFile();
+        }
+        else
+        {
+            this.reOpenLogFile = null;
         }
 
         if( continueState != null )
@@ -811,6 +865,32 @@ public final class LogCheckConfig
             this.pollIntervalSeconds = null;
         }
 
+        if( readLogFileCount != null )
+        {
+            this.readLogFileCount = readLogFileCount;
+        }
+        else if( orig != null && orig.getReadLogFileCount() != null )
+        {
+            this.readLogFileCount = orig.getReadLogFileCount();
+        }
+        else
+        {
+            this.readLogFileCount = null;
+        }
+
+        if( getReadMaxDeDupeEntries() != null )
+        {
+            this.readMaxDeDupeEntries = readMaxDeDupeEntries;
+        }
+        else if( orig != null && orig.getReadMaxDeDupeEntries() != null )
+        {
+            this.readMaxDeDupeEntries = orig.getReadMaxDeDupeEntries();
+        }
+        else
+        {
+            this.readMaxDeDupeEntries = null;
+        }
+
         if( tailFromEnd != null )
         {
             this.tailFromEnd = tailFromEnd;
@@ -823,6 +903,95 @@ public final class LogCheckConfig
         {
             this.tailFromEnd = null;
         }
+    }
+
+    public static LogCheckConfig from( final LogCheckConfig orig,
+                                       final Boolean service,
+                                       final String emailOnError,
+                                       final String smtpServer,
+                                       final String smtpPort,
+                                       final String smtpPass,
+                                       final String smtpUser,
+                                       final String smtpProto,
+                                       final String setName,
+                                       final Boolean dryRun,
+                                       final Boolean showVersion,
+                                       final Boolean printLog,
+                                       final Boolean tailFromEnd,
+                                       final Boolean reOpenLogFile,
+                                       final Boolean saveState,
+                                       final Boolean continueState,
+                                       final Path lockFilePath,
+                                       final Path logPath,
+                                       final Path statusFilePath,
+                                       final Path stateFilePath,
+                                       final Path errorFilePath,
+                                       final Path configFilePath,
+                                       final Path holdingDirPath,
+                                       final Path deDupeDirPath,
+                                       final URL elasticsearchURL,
+                                       final String elasticsearchIndexName,
+                                       final String elasticsearchIndexPrefix,
+                                       final String elasticsearchLogType,
+                                       final LCIndexNameFormat elasticsearchIndexNameFormat,
+                                       final LocalTime logCutoffDate,
+                                       final Duration logCutoffDuration,
+                                       final Duration logDeduplicationDuration,
+                                       final Long pollIntervalSeconds,
+                                       final Long stopAfter,
+                                       final Integer readLogFileCount,
+                                       final Integer readMaxDeDupeEntries,
+                                       final Integer idBlockSize,
+                                       final Integer deDupeMaxLogsBeforeWrite,
+                                       final Integer deDupeMaxLogsPerFile,
+                                       final Integer deDupeMaxLogFiles,
+                                       final LCLogEntryBuilderType logEntryBuilder,
+                                       final LCHashType idBlockHashType) throws LogCheckException
+    {
+        LogCheckConfig res = new LogCheckConfig(orig,
+                service,
+                emailOnError,
+                smtpServer,
+                smtpPort,
+                smtpPass,
+                smtpUser,
+                smtpProto,
+                setName,
+                dryRun,
+                showVersion,
+                printLog,
+                tailFromEnd,
+                reOpenLogFile,
+                saveState,
+                continueState,
+                lockFilePath,
+                logPath,
+                statusFilePath,
+                stateFilePath,
+                errorFilePath,
+                configFilePath,
+                holdingDirPath,
+                deDupeDirPath,
+                elasticsearchURL,
+                elasticsearchIndexName,
+                elasticsearchIndexPrefix,
+                elasticsearchLogType,
+                elasticsearchIndexNameFormat,
+                logCutoffDate,
+                logCutoffDuration,
+                logDeduplicationDuration,
+                pollIntervalSeconds,
+                stopAfter,
+                readLogFileCount,
+                readMaxDeDupeEntries,
+                idBlockSize,
+                deDupeMaxLogsBeforeWrite,
+                deDupeMaxLogsPerFile,
+                deDupeMaxLogFiles,
+                logEntryBuilder,
+                idBlockHashType);
+
+        return res;
     }
 
     /**
@@ -843,6 +1012,7 @@ public final class LogCheckConfig
                                        final Boolean showVersion,
                                        final Boolean printLog,
                                        final Boolean tailFromEnd,
+                                       final Boolean reOpenLogFile,
                                        final Boolean saveState,
                                        final Boolean continueState,
                                        final String lockFilePathStr,
@@ -862,6 +1032,9 @@ public final class LogCheckConfig
                                        final String logCutoffDurationStr,
                                        final String logDeduplicationDurationStr,
                                        final String pollIntervalSecondsStr,
+                                        final String stopAfterStr,
+                                        final String readLogFileCountStr,
+                                        final String readMaxDeDupeEntriesStr,
                                        final String idBlockSizeStr,
                                         final String deDupeMaxLogsBeforeWriteStr,
                                         final String deDupeMaxLogsPerFileStr,
@@ -884,10 +1057,13 @@ public final class LogCheckConfig
         Duration logDeduplicationDuration = null;
         Long pollIntervalSeconds = null;
         LCLogEntryBuilderType logEntryBuilder  = null;
+        Integer readLogFileCount = null;
+        Integer readMaxDeDupeEntries = null;
         Integer idBlockSize = null;
         Integer deDupeMaxLogsBeforeWrite = null;
         Integer deDupeMaxLogsPerFile = null;
         Integer deDupeMaxLogFiles = null;
+        Long stopAfter = null;
         LCHashType idBlockHash = null;
 
         if(StringUtils.isNoneBlank(lockFilePathStr))
@@ -1052,6 +1228,51 @@ public final class LogCheckConfig
             }
         }
 
+        if(StringUtils.isNoneBlank(readLogFileCountStr))
+        {
+            try
+            {
+                readLogFileCount = Integer.parseInt(readLogFileCountStr);
+            }
+            catch( NumberFormatException ex )
+            {
+                String errMsg = String.format("Error parsing integer '%s'", readLogFileCountStr);
+
+                log.debug(errMsg, ex);
+                throw new LogCheckException(errMsg, ex);
+            }
+        }
+
+        if(StringUtils.isNoneBlank(readMaxDeDupeEntriesStr))
+        {
+            try
+            {
+                readMaxDeDupeEntries = Integer.parseInt(readMaxDeDupeEntriesStr);
+            }
+            catch( NumberFormatException ex )
+            {
+                String errMsg = String.format("Error parsing integer '%s'", readMaxDeDupeEntriesStr);
+
+                log.debug(errMsg, ex);
+                throw new LogCheckException(errMsg, ex);
+            }
+        }
+
+        if(StringUtils.isNoneBlank(stopAfterStr))
+        {
+            try
+            {
+                stopAfter = Long.parseLong(stopAfterStr);
+            }
+            catch( NumberFormatException ex )
+            {
+                String errMsg = String.format("Error parsing integer '%s'", stopAfterStr);
+
+                log.debug(errMsg, ex);
+                throw new LogCheckException(errMsg, ex);
+            }
+        }
+
         LogCheckConfig res = LogCheckConfig.from(orig,
                 service,
                 emailOnError,
@@ -1065,6 +1286,7 @@ public final class LogCheckConfig
                 showVersion,
                 printLog,
                 tailFromEnd,
+                reOpenLogFile,
                 saveState,
                 continueState,
                 lockFilePath,
@@ -1084,93 +1306,15 @@ public final class LogCheckConfig
                 logCutoffDuration,
                 logDeduplicationDuration,
                 pollIntervalSeconds,
+                stopAfter,
+                readLogFileCount,
+                readMaxDeDupeEntries,
                 idBlockSize,
                 deDupeMaxLogsBeforeWrite,
                 deDupeMaxLogsPerFile,
                 deDupeMaxLogFiles,
                 logEntryBuilder,
                 idBlockHash);
-
-        return res;
-    }
-
-    public static LogCheckConfig from( final LogCheckConfig orig,
-                            final Boolean service,
-                            final String emailOnError,
-                            final String smtpServer,
-                            final String smtpPort,
-                            final String smtpPass,
-                            final String smtpUser,
-                            final String smtpProto,
-                            final String setName,
-                            final Boolean dryRun,
-                            final Boolean showVersion,
-                            final Boolean printLog,
-                            final Boolean tailFromEnd,
-                            final Boolean saveState,
-                            final Boolean continueState,
-                            final Path lockFilePath,
-                            final Path logPath,
-                            final Path statusFilePath,
-                            final Path stateFilePath,
-                            final Path errorFilePath,
-                            final Path configFilePath,
-                            final Path holdingDirPath,
-                            final Path deDupeDirPath,
-                            final URL elasticsearchURL,
-                            final String elasticsearchIndexName,
-                            final String elasticsearchIndexPrefix,
-                            final String elasticsearchLogType,
-                            final LCIndexNameFormat elasticsearchIndexNameFormat,
-                            final LocalTime logCutoffDate,
-                            final Duration logCutoffDuration,
-                            final Duration logDeduplicationDuration,
-                            final Long pollIntervalSeconds,
-                           final Integer idBlockSize,
-                           final Integer deDupeMaxLogsBeforeWrite,
-                           final Integer deDupeMaxLogsPerFile,
-                           final Integer deDupeMaxLogFiles,
-                           final LCLogEntryBuilderType logEntryBuilder,
-                           final LCHashType idBlockHashType) throws LogCheckException
-    {
-        LogCheckConfig res = new LogCheckConfig(orig,
-                service,
-                emailOnError,
-                smtpServer,
-                smtpPort,
-                smtpPass,
-                smtpUser,
-                smtpProto,
-                setName,
-                dryRun,
-                showVersion,
-                printLog,
-                saveState,
-                continueState,
-                tailFromEnd,
-                lockFilePath,
-                logPath,
-                statusFilePath,
-                stateFilePath,
-                errorFilePath,
-                configFilePath,
-                holdingDirPath,
-                deDupeDirPath,
-                elasticsearchURL,
-                elasticsearchIndexName,
-                elasticsearchIndexPrefix,
-                elasticsearchLogType,
-                elasticsearchIndexNameFormat,
-                logCutoffDate,
-                logCutoffDuration,
-                logDeduplicationDuration,
-                pollIntervalSeconds,
-                idBlockSize,
-                deDupeMaxLogsBeforeWrite,
-                deDupeMaxLogsPerFile,
-                deDupeMaxLogFiles,
-                logEntryBuilder,
-                idBlockHashType);
 
         return res;
     }

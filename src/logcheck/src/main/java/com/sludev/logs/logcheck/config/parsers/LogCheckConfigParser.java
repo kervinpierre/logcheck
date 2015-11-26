@@ -56,6 +56,8 @@ public class LogCheckConfigParser
         String smtpProtocolStr = null;
         Boolean dryRun = null;
         Boolean currSaveState = null;
+        Boolean continueState = null;
+        Boolean reOpenLogFile = null;
         String lockFileStr = null;
         String elasticsearchURLStr = null;
         String logFileStr = null;
@@ -70,7 +72,10 @@ public class LogCheckConfigParser
         String deDupeMaxLogsPerFile = null;
         String deDupeMaxLogsBeforeWrite = null;
         String deDupeMaxLogFiles = null;
-        
+        String stopAfterStr = null;
+        String readLogFileCountStr = null;
+        String readMaxDeDupeEntriesStr = null;
+
         try
         {
             holdingDirStr = currXPath.compile("./holdingFolder").evaluate(currEl);
@@ -280,6 +285,53 @@ public class LogCheckConfigParser
             log.debug("configuration parsing error.", ex);
         }
 
+        try
+        {
+            stopAfterStr = currXPath.compile("./stopAfter").evaluate(currEl);
+        }
+        catch (XPathExpressionException ex)
+        {
+            log.debug("configuration parsing error.", ex);
+        }
+
+        try
+        {
+            readLogFileCountStr = currXPath.compile("./readLogFileCount").evaluate(currEl);
+        }
+        catch (XPathExpressionException ex)
+        {
+            log.debug("configuration parsing error.", ex);
+        }
+
+        try
+        {
+            readMaxDeDupeEntriesStr = currXPath.compile("./readMaxDeDupeEntries").evaluate(currEl);
+        }
+        catch (XPathExpressionException ex)
+        {
+            log.debug("configuration parsing error.", ex);
+        }
+
+        try
+        {
+            String tempStr = currXPath.compile("./continue").evaluate(currEl);
+            continueState = Boolean.parseBoolean(tempStr);
+        }
+        catch (XPathExpressionException ex)
+        {
+            log.debug("configuration parsing error.", ex);
+        }
+
+        try
+        {
+            String tempStr = currXPath.compile("./reOpenLogFile").evaluate(currEl);
+            reOpenLogFile = Boolean.parseBoolean(tempStr);
+        }
+        catch (XPathExpressionException ex)
+        {
+            log.debug("configuration parsing error.", ex);
+        }
+
         res = LogCheckConfig.from(null,
                 null, // service,
                 null, // emailOnError,
@@ -293,8 +345,9 @@ public class LogCheckConfigParser
                 null, // showVersion,
                 null, // printLog,
                 null, // tailFromEnd,
+                reOpenLogFile, // reOpenLogFile
                 currSaveState, // saveState
-                null, // continueState
+                continueState, // continueState
                 lockFileStr,
                 logFileStr,
                 statusFileStr,
@@ -312,6 +365,9 @@ public class LogCheckConfigParser
                 null, // logCutoffDuration,
                 null, // logDeduplicationDuration,
                 pollIntervalStr,
+                stopAfterStr, // stopAfter
+                readLogFileCountStr, // readLogFileCount
+                readMaxDeDupeEntriesStr, // readMaxDeDupeEntries
                 idBlockSize,
                 deDupeMaxLogsBeforeWrite,
                 deDupeMaxLogsPerFile,

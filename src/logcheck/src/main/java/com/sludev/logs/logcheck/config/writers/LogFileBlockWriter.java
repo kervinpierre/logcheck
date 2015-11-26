@@ -4,6 +4,7 @@ import com.sludev.logs.logcheck.config.entities.LogCheckState;
 import com.sludev.logs.logcheck.config.entities.LogFileBlock;
 import com.sludev.logs.logcheck.enums.LCHashType;
 import com.sludev.logs.logcheck.utils.LogCheckException;
+import org.apache.commons.codec.binary.Hex;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.w3c.dom.Document;
@@ -52,7 +53,7 @@ public final class LogFileBlockWriter
             throw new LogCheckException("Missing hash type");
         }
         currElem = doc.createElement("hashType");
-        currElem.appendChild(doc.createTextNode(currHashType.toString()));
+        currElem.appendChild(doc.createTextNode(currHashType.toString().toLowerCase()));
         res.appendChild(currElem);
 
         // hash
@@ -63,8 +64,7 @@ public final class LogFileBlockWriter
         }
         currElem = doc.createElement("hashDigest");
         currElem.appendChild(
-                doc.createTextNode(
-                        String.format("%x", new java.math.BigInteger(1, currHashData))));
+                doc.createTextNode(Hex.encodeHexString(currHashData)));
         res.appendChild(currElem);
 
         return res;

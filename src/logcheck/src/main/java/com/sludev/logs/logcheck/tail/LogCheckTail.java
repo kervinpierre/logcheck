@@ -17,25 +17,42 @@
  */
 package com.sludev.logs.logcheck.tail;
 
+import com.sludev.logs.logcheck.config.entities.LogCheckDeDupeLog;
 import com.sludev.logs.logcheck.config.entities.LogCheckState;
+import com.sludev.logs.logcheck.config.entities.LogEntryDeDupe;
+import com.sludev.logs.logcheck.config.entities.LogFileState;
+import com.sludev.logs.logcheck.config.parsers.LogCheckStateParser;
+import com.sludev.logs.logcheck.config.parsers.ParserUtil;
+import com.sludev.logs.logcheck.dedupe.ContinueUtil;
+import com.sludev.logs.logcheck.enums.LCFileFormats;
 import com.sludev.logs.logcheck.enums.LCHashType;
 import com.sludev.logs.logcheck.enums.LCResultStatus;
+import com.sludev.logs.logcheck.enums.LCTailerResult;
 import com.sludev.logs.logcheck.log.ILogEntryBuilder;
 import com.sludev.logs.logcheck.tail.impl.LogCheckTailerListener;
 import com.sludev.logs.logcheck.utils.LogCheckConstants;
 import com.sludev.logs.logcheck.utils.LogCheckException;
 import com.sludev.logs.logcheck.utils.LogCheckResult;
 
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+import java.time.Instant;
+import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.FutureTask;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.concurrent.BasicThreadFactory;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -53,11 +70,15 @@ public final class LogCheckTail implements Callable<LogCheckResult>
     private final ILogEntryBuilder mainLogEntryBuilder;
     
     private final Path logFile;
+    private final Path deDupeDir;
     private final Long delay;
     private final Boolean tailFromEnd;
-    private final Boolean reOpenOnChunk;
+    private final Boolean reOpenLogFile;
+    private final Boolean continueState;
     private final Boolean saveState;
     private final Integer bufferSize;
+    private final Integer readLogFileCount;
+    private final Integer readMaxDeDupeEntries;
     private final Long stopAfter;
     private final LCHashType idBlockHash;
     private final Integer idBlockSize;
@@ -67,11 +88,15 @@ public final class LogCheckTail implements Callable<LogCheckResult>
 
     private LogCheckTail(final ILogEntryBuilder mainLogEntryBuilder,
                          final Path logFile,
+                         final Path deDupeDir,
                          final Long delay,
+                         final Boolean continueState,
                          final Boolean tailFromEnd,
-                         final Boolean reOpenOnChunk,
+                         final Boolean reOpenLogFile,
                          final Boolean saveState,
                          final Integer bufferSize,
+                         final Integer readLogFileCount,
+                         final Integer readMaxDeDupeEntries,
                          final Long stopAfter,
                          final LCHashType idBlockHash,
                          final Integer idBlockSize,
@@ -83,6 +108,11 @@ public final class LogCheckTail implements Callable<LogCheckResult>
         this.idBlockHash = idBlockHash;
         this.idBlockSize = idBlockSize;
         this.setName = setName;
+        this.continueState = continueState;
+        this.deDupeDir = deDupeDir;
+        this.readLogFileCount = readLogFileCount;
+        this.readMaxDeDupeEntries = readMaxDeDupeEntries;
+
         // Don't bother with logs we missed earlier
 
         if( tailFromEnd != null )
@@ -103,13 +133,13 @@ public final class LogCheckTail implements Callable<LogCheckResult>
             this.saveState = false;
         }
 
-        if( reOpenOnChunk != null )
+        if( reOpenLogFile != null )
         {
-            this.reOpenOnChunk = reOpenOnChunk;
+            this.reOpenLogFile = reOpenLogFile;
         }
         else
         {
-            this.reOpenOnChunk = false;
+            this.reOpenLogFile = false;
         }
 
         if( bufferSize != null )
@@ -169,11 +199,15 @@ public final class LogCheckTail implements Callable<LogCheckResult>
 
     public static LogCheckTail from(final ILogEntryBuilder mainLogEntryBuilder,
                                     final Path logFile,
+                                    final Path deDupeDir,
                                     final Long delay,
+                                    final Boolean continueState,
                                     final Boolean tailFromEnd,
                                     final Boolean reOpenOnChunk,
                                     final Boolean saveState,
                                     final Integer bufferSize,
+                                    final Integer readLogFileCount,
+                                    final Integer readMaxDeDupeEntries,
                                     final Long stopAfter,
                                     final LCHashType idBlockHash,
                                     final Integer idBlockSize,
@@ -183,11 +217,15 @@ public final class LogCheckTail implements Callable<LogCheckResult>
     {
         LogCheckTail res = new LogCheckTail(mainLogEntryBuilder,
                 logFile,
+                deDupeDir,
                 delay,
+                continueState,
                 tailFromEnd,
                 reOpenOnChunk,
                 saveState,
                 bufferSize,
+                readLogFileCount,
+                readMaxDeDupeEntries,
                 stopAfter,
                 idBlockHash,
                 idBlockSize,
@@ -199,15 +237,17 @@ public final class LogCheckTail implements Callable<LogCheckResult>
     }
 
     @Override
-    public LogCheckResult call()
+    public LogCheckResult call() throws LogCheckException
     {
         LogCheckResult res = LogCheckResult.from(LCResultStatus.SUCCESS);
 
         long currDelay = delay==null?0:delay;
-        boolean currTailFromEnd = tailFromEnd==null?false:tailFromEnd;
-        boolean currReOpenOnChunk = reOpenOnChunk==null?false:reOpenOnChunk;
+        boolean currTailFromEnd = BooleanUtils.isNotFalse(tailFromEnd);
 
-        final ScheduledExecutorService stopSchedulerExe;
+        Long currPosition = null;
+
+        boolean currReOpen = BooleanUtils.isTrue(reOpenLogFile);
+
         final ScheduledExecutorService statsSchedulerExe;
 
         TailerStatistics stats = TailerStatistics.from(logFile,
@@ -217,44 +257,12 @@ public final class LogCheckTail implements Callable<LogCheckResult>
                 idBlockSize,
                 setName);
 
+        stats.setLastProcessedTimeStart( Instant.now() );
+
         LogCheckTailerListener mainTailerListener
                             = LogCheckTailerListener.from(mainLogEntryBuilder);
 
-        final Tailer mainTailer = Tailer.from(logFile,
-                Tailer.DEFAULT_CHARSET,
-                mainTailerListener,
-                currDelay,
-                currTailFromEnd,
-                currReOpenOnChunk,
-                Tailer.DEFAULT_BUFSIZE,
-                stats,
-                setName,
-                stateFile);
-        
-        if( stopAfter != null
-                && stopAfter > 0 )
-        {
-            stopSchedulerExe = Executors.newScheduledThreadPool(1);
-
-            stopSchedulerExe.schedule(() ->
-            {
-                if( mainTailer != null )
-                {
-                    mainTailer.stop();
-                }
-
-                stopSchedulerExe.shutdownNow();
-            }, stopAfter, TimeUnit.SECONDS);
-            
-            stopSchedulerExe.shutdown();
-        }
-        else
-        {
-            stopSchedulerExe = null;
-        }
-
-        if( saveState != null
-                && saveState )
+        if( saveState != null && saveState )
         {
             BasicThreadFactory tailerSaveFactory = new BasicThreadFactory.Builder()
                     .namingPattern("tailerSaveThread-%d")
@@ -281,36 +289,92 @@ public final class LogCheckTail implements Callable<LogCheckResult>
             statsSchedulerExe = null;
         }
 
+        final AtomicReference<Tailer> mainTailer = new AtomicReference<>();
+        final AtomicBoolean exitNow = new AtomicBoolean(false);
+
+        final ScheduledExecutorService stopSchedulerExe;
+        if( stopAfter != null
+                && stopAfter > 0 )
+        {
+            stopSchedulerExe = Executors.newScheduledThreadPool(1);
+
+            stopSchedulerExe.schedule(() ->
+            {
+                Tailer currTailer = mainTailer.get();
+                if( currTailer != null )
+                {
+                    currTailer.stop();
+                    exitNow.set(true);
+
+                    log.debug("Process Stop Scheduler called.");
+                }
+
+                stopSchedulerExe.shutdownNow();
+            }, stopAfter, TimeUnit.SECONDS);
+
+            stopSchedulerExe.shutdown();
+        }
+        else
+        {
+            stopSchedulerExe = null;
+        }
+
         BasicThreadFactory tailerFactory = new BasicThreadFactory.Builder()
                 .namingPattern("tailerthread-%d")
                 .build();
 
         ExecutorService tailerExe = Executors.newSingleThreadExecutor(tailerFactory);
-        FutureTask<Long> mainTailerTask = new FutureTask<>(mainTailer);
 
-        // Tailer start
-        Future tailerExeRes = tailerExe.submit(mainTailer);
-
-        tailerExe.shutdown();
-
-        Long tailerRes = null;
+        LCTailerResult tailerRes = LCTailerResult.NONE;
 
         try
         {
-            while( tailerRes == null )
+            // Tailer start
+            // Main Tailer should be restarted if 'reOpen' option is set.
+            do
             {
-                if( tailerExeRes.isDone() )
+                if( BooleanUtils.isTrue(continueState) )
                 {
-                    // Log polling thread has completed.  Generally this should
-                    // not happen until we're shutting down.
-                    tailerRes = mainTailerTask.get();
+                    if( Files.notExists(stateFile) )
+                    {
+                        log.debug(
+                                String.format("Trying to 'continue' but the state file does not exist. '%s'",
+                                        stateFile));
+                    }
+                    else
+                    {
+                        // Done every time before the Tailer thread starts.
+                        LogCheckState currState = retrieveState(stateFile,
+                                deDupeDir,
+                                setName,
+                                readLogFileCount,
+                                readMaxDeDupeEntries);
+
+                        currPosition
+                                = positionFromLogFile(currState.getLogFile());
+                    }
+
                 }
 
-                // At this point we can block/wait on all threads but I'll
-                // sleep for now until there's some processing to be done on
-                // the main thread.
-                Thread.sleep(2000);
+                mainTailer.set( Tailer.from(logFile,
+                        currPosition,
+                        stopAfter,
+                        Tailer.DEFAULT_CHARSET,
+                        mainTailerListener,
+                        currDelay*1000, // Convert to milliseconds
+                        currTailFromEnd,
+                        currReOpen,
+                        Tailer.DEFAULT_BUFSIZE,
+                        stats,
+                        setName,
+                        stateFile) );
+
+                Future<LCTailerResult> tailerExeRes = tailerExe.submit(mainTailer.get());
+
+                // Wait until Tailer thread has completed.
+                tailerRes = tailerExeRes.get();
             }
+            while( tailerRes == LCTailerResult.REOPEN && exitNow.get() == false);
         }
         catch (InterruptedException ex)
         {
@@ -328,17 +392,115 @@ public final class LogCheckTail implements Callable<LogCheckResult>
         {
             tailerExe.shutdownNow();
 
+            if( statsSchedulerExe != null )
+            {
+                statsSchedulerExe.shutdownNow();
+            }
+
             if( stopSchedulerExe != null )
             {
                 stopSchedulerExe.shutdownNow();
             }
 
-            if( statsSchedulerExe != null )
+        }
+
+        return res;
+    }
+
+    public static Long positionFromLogFile(LogFileState state) throws LogCheckException
+    {
+        Long res = null;
+
+        Long stateStartPos = state.getLastProcessedPosition();
+        Long stateStartLine = state.getLastProcessedLineNumber();
+        Long stateStartChar = state.getLastProcessedCharNumber();
+
+        if( stateStartPos != null && stateStartPos >= 0 )
+        {
+            res = stateStartPos;
+        }
+        else
+        {
+            if( stateStartLine != null && stateStartLine >= 0
+                    && stateStartChar != null && stateStartChar >= 0 )
             {
-                statsSchedulerExe.shutdownNow();
+                // Use the line and char numbers to calculate the starting position
+                try
+                {
+                    ByteBuffer buffer = ByteBuffer.allocate(64);
+                    long lineCount = 0;
+                    long charCount = 0;
+
+                    FileChannel reader = FileChannel.open(state.getFile(),
+                            StandardOpenOption.READ);
+                    while( reader.read(buffer)!= -1 )
+                    {
+                        buffer.flip();
+
+                        for( int i = 0; i < buffer.limit(); i++ )
+                        {
+                            final byte ch = buffer.get();
+                            if( ch == '\n' )
+                            {
+                                if( lineCount == stateStartLine
+                                        && charCount < stateStartChar)
+                                {
+                                    throw new LogCheckException(
+                                            String.format("Asked to start at Line %d and Char %d,"
+                                                            + " but line only has %d characters",
+                                                    stateStartLine, stateStartChar, charCount));
+                                }
+
+                                lineCount++;
+                            }
+                            else
+                            {
+                                if( lineCount == stateStartLine )
+                                {
+                                    charCount++;
+                                }
+                            }
+
+                            if( lineCount == stateStartLine && charCount == stateStartChar )
+                            {
+                                res = reader.position();
+                            }
+                        }
+                    }
+                }
+                catch( IOException ex )
+                {
+                    log.debug("Error calculating line position.", ex);
+                }
             }
         }
 
         return res;
+    }
+
+    public static LogCheckState retrieveState(final Path stateFile,
+                                              final Path deDupeDir,
+                                              final String setName,
+                                              final Integer logFileCount,
+                                              final Integer maxLogEntries) throws LogCheckException
+    {
+        // Read the last run's deduplication logs
+        List<LogCheckDeDupeLog> ddLogs
+                = ContinueUtil.readLastDeDupeLogs(deDupeDir,
+                setName,
+                null,
+                logFileCount);
+
+        List<LogEntryDeDupe> ddObjs
+                = ContinueUtil.lastLogEntryDeDupes(ddLogs, maxLogEntries);
+
+        // Read state file for information about the last run
+        LogCheckState lcConf = LogCheckStateParser.readConfig(
+                ParserUtil.readConfig(stateFile,
+                        LCFileFormats.LCSTATE));
+
+        // TODO : Allow 'look back' support to allow using the deduplication logs for confirming the file pointer's accuracy
+
+        return lcConf;
     }
 }

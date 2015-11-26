@@ -166,6 +166,35 @@ NOTICE:  All information contained herein is, and remains
                     </xs:annotation>
                 </xs:element>
 
+                <xs:element name="stopAfter" type="xs:integer" minOccurs="0" maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>The number of seconds to run before stopping.</xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+
+                <xs:element name="readLogFileCount" type="xs:integer" minOccurs="0" maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>The number of log files to read while reading deduplication logs.</xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+
+                <xs:element name="readMaxDeDupeEntries" type="xs:integer" minOccurs="0" maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>The number of deduplication entries to read.</xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+
+                <xs:element name="reOpenLogFile" type="xs:boolean" minOccurs="0" maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>Close then re-open the log file between reading</xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+
+                <xs:element name="continue" type="xs:boolean" minOccurs="0" maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>Continue with the state files from from a previous run</xs:documentation>
+                    </xs:annotation>
+                </xs:element>
             </xs:choice>
         </xs:complexType>
     </xs:element>

@@ -17,11 +17,14 @@
  */
 package com.sludev.logs.logcheck.config.entities;
 
+import com.sludev.logs.logcheck.utils.LogCheckException;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.nio.file.Path;
 import java.time.Instant;
+import java.time.format.DateTimeParseException;
 
 /**
  * The state of a single log file being processed.
@@ -57,7 +60,7 @@ public final class LogFileState
         return lastProcessedTimeEnd;
     }
 
-    public Long getLastProcessedPosition()
+    public long getLastProcessedPosition()
     {
         return lastProcessedPosition;
     }
@@ -110,6 +113,115 @@ public final class LogFileState
                          final LogFileBlock lastProcessedBlock,
                          final LogFileBlock firstBlock)
     {
+        LogFileState res = new LogFileState(file,
+                lastProcessedTimeStart,
+                lastProcessedTimeEnd,
+                lastProcessedPosition,
+                lastProcessedLineNumber,
+                lastProcessedCharNumber,
+                lastProcessedBlock,
+                firstBlock);
+
+        return res;
+    }
+
+
+    public static LogFileState from( final String fileStr,
+                                     final String lastProcessedTimeStartStr,
+                                     final String lastProcessedTimeEndStr,
+                                     final String lastProcessedPositionStr,
+                                     final String lastProcessedLineNumberStr,
+                                     final String lastProcessedCharNumberStr,
+                                     final LogFileBlock lastProcessedBlock,
+                                     final LogFileBlock firstBlock) throws LogCheckException
+    {
+        Path file = null;
+        Instant lastProcessedTimeStart = null;
+        Instant lastProcessedTimeEnd = null;
+        Long lastProcessedPosition = null;
+        Long lastProcessedLineNumber = null;
+        Long lastProcessedCharNumber = null;
+
+        if( StringUtils.isNoneBlank(lastProcessedPositionStr) )
+        {
+            try
+            {
+                lastProcessedPosition = Long.parseLong(lastProcessedPositionStr);
+            }
+            catch( IllegalArgumentException ex )
+            {
+                String errMsg = String.format("Invalid integer for Last Processed Position '%s'",
+                        lastProcessedPositionStr);
+                log.debug(errMsg, ex);
+
+                throw new LogCheckException(errMsg, ex);
+            }
+        }
+
+        if( StringUtils.isNoneBlank(lastProcessedLineNumberStr) )
+        {
+            try
+            {
+                lastProcessedLineNumber = Long.parseLong(lastProcessedLineNumberStr);
+            }
+            catch( IllegalArgumentException ex )
+            {
+                String errMsg = String.format("Invalid integer for Last Processed Line Number '%s'",
+                        lastProcessedLineNumberStr);
+                log.debug(errMsg, ex);
+
+                throw new LogCheckException(errMsg, ex);
+            }
+        }
+
+        if( StringUtils.isNoneBlank(lastProcessedCharNumberStr) )
+        {
+            try
+            {
+                lastProcessedCharNumber = Long.parseLong(lastProcessedCharNumberStr);
+            }
+            catch( IllegalArgumentException ex )
+            {
+                String errMsg = String.format("Invalid integer for Last Processed Char Number '%s'",
+                        lastProcessedCharNumberStr);
+                log.debug(errMsg, ex);
+
+                throw new LogCheckException(errMsg, ex);
+            }
+        }
+
+        if( StringUtils.isNoneBlank(lastProcessedTimeStartStr) )
+        {
+            try
+            {
+                lastProcessedTimeStart = Instant.parse(lastProcessedTimeStartStr);
+            }
+            catch( DateTimeParseException ex )
+            {
+                String errMsg = String.format("Invalid integer for Last Processed Time Start '%s'",
+                        lastProcessedTimeStartStr);
+                log.debug(errMsg, ex);
+
+                throw new LogCheckException(errMsg, ex);
+            }
+        }
+
+        if( StringUtils.isNoneBlank(lastProcessedTimeEndStr) )
+        {
+            try
+            {
+                lastProcessedTimeEnd = Instant.parse(lastProcessedTimeEndStr);
+            }
+            catch( DateTimeParseException ex )
+            {
+                String errMsg = String.format("Invalid integer for Last Processed Time End '%s'",
+                        lastProcessedTimeEndStr);
+                log.debug(errMsg, ex);
+
+                throw new LogCheckException(errMsg, ex);
+            }
+        }
+
         LogFileState res = new LogFileState(file,
                 lastProcessedTimeStart,
                 lastProcessedTimeEnd,

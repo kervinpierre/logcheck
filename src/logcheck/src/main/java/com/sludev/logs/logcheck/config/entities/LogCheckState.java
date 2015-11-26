@@ -17,10 +17,13 @@
  */
 package com.sludev.logs.logcheck.config.entities;
 
+import com.sludev.logs.logcheck.utils.LogCheckException;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.time.Instant;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -93,6 +96,54 @@ public class LogCheckState
                                  final String setName,
                                  final List<LogCheckError> errors)
     {
+        LogCheckState res = new LogCheckState(logFile,
+                saveDate,
+                id,
+                setName,
+                errors);
+
+        return res;
+    }
+
+    public static LogCheckState from( final LogFileState logFile,
+                                      final String saveDateStr,
+                                      final String idStr,
+                                      final String setName,
+                                      final List<LogCheckError> errors) throws LogCheckException
+    {
+        Instant saveDate = null;
+        UUID id = null;
+
+        if( StringUtils.isNoneBlank(saveDateStr) )
+        {
+            try
+            {
+                saveDate = Instant.parse(saveDateStr);
+            }
+            catch( DateTimeParseException ex )
+            {
+                String errMsg = String.format("Invalid Timestamp Save Date'%s'", saveDateStr);
+                log.debug(errMsg, ex);
+
+                throw new LogCheckException(errMsg, ex);
+            }
+        }
+
+        if( StringUtils.isNoneBlank(idStr) )
+        {
+            try
+            {
+                id = UUID.fromString(idStr);
+            }
+            catch( DateTimeParseException ex )
+            {
+                String errMsg = String.format("Invalid ID '%s'", saveDateStr);
+                log.debug(errMsg, ex);
+
+                throw new LogCheckException(errMsg, ex);
+            }
+        }
+
         LogCheckState res = new LogCheckState(logFile,
                 saveDate,
                 id,
