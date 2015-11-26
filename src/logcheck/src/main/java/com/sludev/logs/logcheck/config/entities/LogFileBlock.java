@@ -20,6 +20,9 @@ package com.sludev.logs.logcheck.config.entities;
 import com.sludev.logs.logcheck.enums.LCHashType;
 import com.sludev.logs.logcheck.utils.LogCheckConstants;
 import com.sludev.logs.logcheck.utils.LogCheckException;
+import org.apache.commons.codec.DecoderException;
+import org.apache.commons.codec.binary.Hex;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -40,6 +43,7 @@ public final class LogFileBlock
     private static final Logger log
             = LogManager.getLogger(LogFileBlock.class);
 
+    private final String name;
     private final Long startPosition;
     private final Integer size;
     private final LCHashType hashType;
@@ -65,21 +69,124 @@ public final class LogFileBlock
         return size;
     }
 
-    private LogFileBlock(final Long startPosition,
+    public String getName()
+    {
+        return name;
+    }
+
+    private LogFileBlock(final String name,
+                         final Long startPosition,
                          final Integer size,
                          final LCHashType hashType,
                          final byte[] hashDigest)
     {
+        this.name = name;
         this.startPosition = startPosition;
         this.size = size;
         this.hashType = hashType;
         this.hashDigest = hashDigest;
     }
 
+    public static LogFileBlock from(final String name,
+                                    final Long startPosition,
+                                    final Integer size,
+                                    final LCHashType hashType,
+                                    final byte[] hashDigest)
+    {
+        LogFileBlock res = new LogFileBlock(name,
+                startPosition,
+                size,
+                hashType,
+                hashDigest);
+
+        return res;
+    }
+
+    public static LogFileBlock from(final String name,
+                                    final String startPositionStr,
+                                    final String sizeStr,
+                                    final String hashTypeStr,
+                                    final String hashDigestStr) throws LogCheckException
+    {
+        Long startPosition = null;
+        Integer size = null;
+        LCHashType hashType = null;
+        byte[] hashDigest = null;
+
+        if( StringUtils.isNoneBlank(startPositionStr) )
+        {
+            try
+            {
+                startPosition = Long.parseLong(startPositionStr);
+            }
+            catch( IllegalArgumentException ex )
+            {
+                String errMsg = String.format("Invalid integer for Start Position '%s'", startPositionStr);
+                log.debug(errMsg, ex);
+
+                throw new LogCheckException(errMsg, ex);
+            }
+        }
+
+        if( StringUtils.isNoneBlank(sizeStr) )
+        {
+            try
+            {
+                size = Integer.parseInt(sizeStr);
+            }
+            catch( IllegalArgumentException ex )
+            {
+                String errMsg = String.format("Invalid integer size '%s'", sizeStr);
+                log.debug(errMsg, ex);
+
+                throw new LogCheckException(errMsg, ex);
+            }
+        }
+
+        if( StringUtils.isNoneBlank(hashTypeStr) )
+        {
+            try
+            {
+                hashType = LCHashType.from(hashTypeStr);
+            }
+            catch( IllegalArgumentException ex )
+            {
+                String errMsg = String.format("Invalid Hash Type '%s'", hashTypeStr);
+                log.debug(errMsg, ex);
+
+                throw new LogCheckException(errMsg, ex);
+            }
+        }
+
+        if( StringUtils.isNoneBlank(hashDigestStr) )
+        {
+            try
+            {
+                hashDigest = Hex.decodeHex(hashDigestStr.toCharArray());
+            }
+            catch( DecoderException  ex )
+            {
+                String errMsg = String.format("Invalid Hash Digest '%s'", hashDigestStr);
+                log.debug(errMsg, ex);
+
+                throw new LogCheckException(errMsg, ex);
+            }
+        }
+
+        LogFileBlock res = new LogFileBlock(name,
+                startPosition,
+                size,
+                hashType,
+                hashDigest);
+
+        return res;
+    }
+
     /*
     ** Generate the hash value
      */
-    public static LogFileBlock from(final Long startPosition,
+    public static LogFileBlock from(final String name,
+                                    final Long startPosition,
                                     final LCHashType hashType,
                                     final byte[] block) throws LogCheckException
     {
@@ -148,7 +255,8 @@ public final class LogFileBlock
             log.debug(String.format("Hash '%s' : %x", hashType, new java.math.BigInteger(1, value)));
         }
 
-        res = from(startPosition,
+        res = from(name,
+                startPosition,
                 block.length,
                 hashType,
                 value);
@@ -156,20 +264,8 @@ public final class LogFileBlock
         return res;
     }
 
-    public static LogFileBlock from(final Long startPosition,
-                        final Integer size,
-                        final LCHashType hashType,
-                        final byte[] hashDigest)
-    {
-        LogFileBlock res = new LogFileBlock(startPosition,
-                size,
-                hashType,
-                hashDigest);
-
-        return res;
-    }
-
-    public static LogFileBlock from(final Path fl,
+    public static LogFileBlock from(final String name,
+                                    final Path fl,
                                     final long pos,
                                     final int sz,
                                     final LCHashType hs) throws LogCheckException
@@ -246,7 +342,10 @@ public final class LogFileBlock
 
         buffer.flip();
 
-        LogFileBlock res = LogFileBlock.from(pos, hs, buffer.array());
+        LogFileBlock res = LogFileBlock.from(name,
+                pos,
+                hs,
+                buffer.array());
 
         return res;
     }

@@ -92,14 +92,17 @@ public interface ILogEntryStore
 
                 deDupeFileName = LogCheckDeDupeLog.nextFileName(deDupeDirPath,deDupeMaxLogFiles,true);
                 currDeDupeLog = LogCheckDeDupeLog.from(runUUID, Instant.now(), null);
-
-                // Delete old files if necesasary
-                ;
             }
 
             // Block until the next log entry
             currEntry = src.next();
             currEntryVO = LogEntry.toValueObject(currEntry);
+
+            // TODO : Check the deduplication list before put
+
+            // TODO : Define duplication rules E.g. skip or quit
+
+            // TODO : Have duplication list for current run, and for past runs
 
             LogCheckResult putRes = dst.put(currEntryVO);
             logCount++;

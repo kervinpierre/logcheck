@@ -22,22 +22,8 @@ import com.sludev.logs.logcheck.config.entities.LogCheckConfig;
 import com.sludev.logs.logcheck.config.parsers.LogCheckConfigParser;
 import com.sludev.logs.logcheck.config.parsers.ParserUtil;
 import com.sludev.logs.logcheck.enums.LCFileFormats;
+import com.sludev.logs.logcheck.utils.FSSArgFile;
 import com.sludev.logs.logcheck.utils.LogCheckException;
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringReader;
-import java.io.StringWriter;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -48,6 +34,18 @@ import org.apache.commons.cli.ParseException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringReader;
+import java.io.StringWriter;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.Iterator;
 
 /**
  * Initialize the LogCheck application.
@@ -75,6 +73,7 @@ public class LogCheckInitialize
         Boolean currPrintLogs = null;
         Boolean currSaveState = null;
         Boolean currContinue = null;
+        Boolean currReOpenLogFile = null;
         String currPollIntervalSeconds = null;
         String currEmailOnError = null;
         String currSmtpServer = null;
@@ -99,6 +98,9 @@ public class LogCheckInitialize
         String currDeDupeMaxLogsPerFile = null;
         String currDeDupeMaxLogFiles = null;
         String currDeDupeMaxLogsBeforeWrite = null;
+        String currStopAfter = null;
+        String currReadLogFileCount = null;
+        String currReadMaxDeDupeEntries = null;
 
         try
         {
@@ -123,49 +125,21 @@ public class LogCheckInitialize
             if (line.hasOption("argfile"))
             {
                 String argfile = line.getOptionValue("argfile");
-                
+
+                String[] argArray = FSSArgFile.getArgArray( Paths.get(argfile) );
+
+                log.debug( String.format("LogCheckMain main() : Argfile parsed : %s\n",
+                        Arrays.toString(argArray)) );
+
                 try
                 {
-                    BufferedReader reader = new BufferedReader( new FileReader(argfile));
-                    String argLine = "";
-                    
-                    do
-                    {
-                        argLine = reader.readLine();
-                        if( argLine != null )
-                        {
-                            argLine = argLine.trim();
-                        }
-                    }
-                    while(  argLine != null 
-                                && (argLine.length() < 1 ||  argLine.startsWith("#")) );
-
-                    CSVReader cread = new CSVReader(new StringReader(argLine+"\n"), ' ', '"', '\\');
-                    String[] argArray = cread.readNext();
-
-                    log.debug( String.format("LogCheckMain main() : Argfile parsed : %s\n", 
-                            Arrays.toString(argArray)) );
-        
-                    try
-                    {
-                        line = parser.parse(options, argArray);
-                    }
-                    catch (ParseException ex)
-                    {
-                        throw new LogCheckException( 
-                            String.format("Error parsing command line.'%s'", 
-                                ex.getMessage()), ex);
-                    }
+                    line = parser.parse(options, argArray);
                 }
-                catch (FileNotFoundException ex)
+                catch (ParseException ex)
                 {
-                     log.error( "Error : File not found :", ex);
-                    throw new LogCheckException("ERROR: Argument file not found.", ex);
-                }
-                catch (IOException ex)
-                {
-                     log.error( "Error : IO : ", ex);
-                    throw new LogCheckException("ERROR: Argument file can not be read.", ex);
+                    throw new LogCheckException(
+                        String.format("Error parsing command line.'%s'",
+                            ex.getMessage()), ex);
                 }
             }
             
@@ -361,6 +335,26 @@ public class LogCheckInitialize
                         currLEBuilderType = currOpt.getValue();
                         break;
 
+                    case "stop-after":
+                        // How long to run the tailer
+                        currStopAfter = currOpt.getValue();
+                        break;
+
+                    case "read-log-file-count":
+                        // Read log file count for deduplication logs
+                        currReadLogFileCount = currOpt.getValue();
+                        break;
+
+                    case "read-max-dedupe-entries":
+                        // Maximum deduplication log entries
+                        currReadMaxDeDupeEntries = currOpt.getValue();
+                        break;
+
+                    case "reopen-log-file":
+                        // Specify the log entry builder type to use
+                        currReOpenLogFile = true;
+                        break;
+
                 }
             }
 
@@ -377,6 +371,7 @@ public class LogCheckInitialize
                     currShowVersion, // showVersion,
                     currPrintLogs, // printLog,
                     currTailFromEnd, // tailFromEnd,
+                    currReOpenLogFile, // reOpenLogFile
                     currSaveState,  // saveState
                     currContinue,
                     currLockFile,
@@ -396,6 +391,9 @@ public class LogCheckInitialize
                     currLogCutoffDuration, // logCutoffDuration,
                     currLogDeduplicationDuration, // logDeduplicationDuration,
                     currPollIntervalSeconds,
+                    currStopAfter,
+                    currReadLogFileCount,
+                    currReadMaxDeDupeEntries,
                     currIdBlockSize,
                     currDeDupeMaxLogsBeforeWrite,
                     currDeDupeMaxLogsPerFile,
@@ -608,6 +606,25 @@ public class LogCheckInitialize
                 .desc( "The number of log entries that should be stored before the "
                         + "deduplication information is written to disk." )
                 .hasArg()
+                .build() );
+
+        options.addOption( Option.builder().longOpt( "stop-after" )
+                .desc( "The number of seconds to run before stopping." )
+                .hasArg()
+                .build() );
+
+        options.addOption( Option.builder().longOpt( "read-log-file-count" )
+                .desc( "The number of deduplication log files to read on restore." )
+                .hasArg()
+                .build() );
+
+        options.addOption( Option.builder().longOpt( "read-max-dedupe-entries" )
+                .desc( "The maximum number of deduplication entries to read." )
+                .hasArg()
+                .build() );
+
+        options.addOption( Option.builder().longOpt( "reopen-log-file" )
+                .desc( "Close and reopen log files between reading them." )
                 .build() );
 
         return options;

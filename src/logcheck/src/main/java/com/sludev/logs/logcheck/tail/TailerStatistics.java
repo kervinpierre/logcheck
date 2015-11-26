@@ -56,7 +56,7 @@ public class TailerStatistics
     private final String setName;
 
     // Mutable
-    private Long lastProcessedPosition;
+    private volatile long lastProcessedPosition;
     private Instant lastProcessedTimeStart;
     private Instant lastProcessedTimeEnd;
 
@@ -90,12 +90,12 @@ public class TailerStatistics
         this.lastProcessedTimeEnd = lastProcessedTimeEnd;
     }
 
-    public Long getLastProcessedPosition()
+    public long getLastProcessedPosition()
     {
         return lastProcessedPosition;
     }
 
-    public void setLastProcessedPosition(Long lastProcessedPosition)
+    public void setLastProcessedPosition(long lastProcessedPosition)
     {
         this.lastProcessedPosition = lastProcessedPosition;
     }
@@ -136,7 +136,8 @@ public class TailerStatistics
 
     public LogFileBlock getFirstBlock( ) throws LogCheckException
     {
-        LogFileBlock res = LogFileBlock.from(logFile,
+        LogFileBlock res = LogFileBlock.from("FIRST_BLOCK",
+                logFile,
                 0L,
                 idBlockSize,
                 hashType);
@@ -155,7 +156,8 @@ public class TailerStatistics
             return null;
         }
 
-        LogFileBlock res = LogFileBlock.from(logFile,
+        LogFileBlock res = LogFileBlock.from("LAST_BLOCK",
+                logFile,
                 pos,
                 idBlockSize,
                 hashType);
@@ -173,6 +175,18 @@ public class TailerStatistics
         log.debug(String.format("Saving statistics to '%s'.", stateFile));
 
         Pair<Path,Path> files = null;
+
+        if( state.getLogFile() == null )
+        {
+            throw new LogCheckException("LogFile cannot be null.");
+        }
+
+        if( state.getLogFile().getLastProcessedPosition() < 1 )
+        {
+            // Don't save a log file that hasn't processed data
+            throw new LogCheckException(String.format("LastProcessedPosition is %d",
+                            state.getLogFile().getLastProcessedPosition()));
+        }
 
         // Serialize state
         try

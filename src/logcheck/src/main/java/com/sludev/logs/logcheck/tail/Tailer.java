@@ -16,9 +16,7 @@
  */
 package com.sludev.logs.logcheck.tail;
 
-import com.sludev.logs.logcheck.config.entities.LogCheckState;
-import com.sludev.logs.logcheck.config.entities.LogFileState;
-import com.sludev.logs.logcheck.config.writers.LogCheckStateWriter;
+import com.sludev.logs.logcheck.enums.LCTailerResult;
 import com.sludev.logs.logcheck.utils.LogCheckException;
 import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
@@ -32,14 +30,15 @@ import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.time.Instant;
-import java.time.LocalTime;
-import java.util.UUID;
 import java.util.concurrent.Callable;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Simple implementation of the unix "tail -f" functionality.
  */
-public final class Tailer implements Callable<Long>
+public final class Tailer implements Callable<LCTailerResult>
 {
     private static final Logger log
                     = LogManager.getLogger(Tailer.class);
@@ -66,6 +65,8 @@ public final class Tailer implements Callable<Long>
      */
     private final long delayMillis;
 
+    private final Long startPosition;
+
     /**
      * Whether to tail from the end or start of file
      */
@@ -82,6 +83,8 @@ public final class Tailer implements Callable<Long>
     private final boolean reOpen;
 
     private final TailerStatistics statistics;
+
+    private final Long stopAfter;
 
     // Mutable
 
@@ -104,6 +107,8 @@ public final class Tailer implements Callable<Long>
      * @param bufSize Buffer size
      */
     private Tailer(final Path file,
+                   final Long startPosition,
+                   final Long stopAfter,
                    final Charset cset,
                    final ITailerListener listener,
                    final long delayMillis,
@@ -122,9 +127,14 @@ public final class Tailer implements Callable<Long>
         this.reOpen = reOpen;
         this.cset = cset;
         this.statistics = stats;
+
+        this.startPosition = startPosition;
+        this.stopAfter = stopAfter;
     }
 
     public static Tailer from(final Path file,
+                       final Long startPosition,
+                       final Long stopAfter,
                        final Charset cset,
                        final ITailerListener listener,
                        final long delayMillis,
@@ -136,6 +146,8 @@ public final class Tailer implements Callable<Long>
                        final Path stateFile)
     {
         Tailer res = new Tailer(file,
+                startPosition,
+                stopAfter,
                 cset,
                 listener,
                 delayMillis,
@@ -173,14 +185,12 @@ public final class Tailer implements Callable<Long>
      * for each new line.
      */
     @Override
-    public Long call()
+    public LCTailerResult call()
     {
         log.debug(String.format("Starting Tailer on '%s'", file));
 
-        Long res = 0L;
+        LCTailerResult res = LCTailerResult.NONE;
         FileChannel reader = null;
-
-        statistics.setLastProcessedTimeStart( Instant.now() );
 
         try
         {
@@ -192,7 +202,34 @@ public final class Tailer implements Callable<Long>
                 reader = FileChannel.open(file, StandardOpenOption.READ);
 
                 // The current position in the file
-                position = end ? reader.size() : 0;
+                if( startPosition != null && startPosition >= 0 )
+                {
+                    if( end )
+                    {
+                        log.debug(
+                                String.format("Both '--tail-from-end' and a "
+                                        + "starting byte position of %d where provided. Start Position has precedence",
+                                        startPosition));
+                    }
+
+                    if( startPosition > reader.size() )
+                    {
+                        throw new LogCheckException(
+                                String.format("File start position ( %d ) can not be further than the file's"
+                                + "last position ( %d ).", startPosition, reader.size()));
+                    }
+
+                    // Start where instructed
+                    position = startPosition;
+                }
+                else
+                {
+                    if( end )
+                    {
+                        // Tail from the end of the file
+                        position = reader.size();
+                    }
+                }
 
                 reader.position(position);
             }
@@ -236,27 +273,29 @@ public final class Tailer implements Callable<Long>
 
                 if( reOpen )
                 {
-                    IOUtils.closeQuietly(reader);
+                    // reOpen means read to the end of file then quit.
+                    // The monitoring thread should relaunch after a period
+                    // of time.
+                    stop();
+
+                    res = LCTailerResult.REOPEN;
+                    // TODO : Ensure the LogCheckState is saved here
                 }
 
+                // Delay if requested
                 Thread.sleep(delayMillis);
-
-                if( run && reOpen )
-                {
-                    reader = FileChannel.open(file, StandardOpenOption.READ);
-                    reader.position(position);
-                }
             }
-
         }
         catch (final InterruptedException e)
         {
             Thread.currentThread().interrupt();
             stop(e);
+            res = LCTailerResult.INTERRUPTED;
         }
         catch (final Exception e)
         {
             stop(e);
+            res = LCTailerResult.INTERRUPTED;
         }
         finally
         {
