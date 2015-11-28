@@ -17,6 +17,7 @@
 package com.sludev.logs.logcheck.tail;
 
 import com.sludev.logs.logcheck.enums.LCTailerResult;
+import com.sludev.logs.logcheck.log.ILogEntryBuilder;
 import com.sludev.logs.logcheck.utils.LogCheckException;
 import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
@@ -30,6 +31,7 @@ import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.time.Instant;
+import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -75,7 +77,7 @@ public final class Tailer implements Callable<LCTailerResult>
     /**
      * The listener to notify of events when tailing.
      */
-    private final ITailerListener listener;
+    private final List<ILogEntryBuilder> builders;
 
     /**
      * Whether to close and reopen the file whilst waiting for more input.
@@ -98,7 +100,6 @@ public final class Tailer implements Callable<LCTailerResult>
      *
      * @param file the file to follow.
      * @param cset the Charset to be used for reading the file
-     * @param listener the ITailerListener to use.
      * @param delayMillis the delay between checks of the file for new content
      * in milliseconds.
      * @param end Set to true to tail from the end of the file, false to tail
@@ -110,7 +111,7 @@ public final class Tailer implements Callable<LCTailerResult>
                    final Long startPosition,
                    final Long stopAfter,
                    final Charset cset,
-                   final ITailerListener listener,
+                   final List<ILogEntryBuilder> builders,
                    final long delayMillis,
                    final boolean end,
                    final boolean reOpen,
@@ -122,8 +123,7 @@ public final class Tailer implements Callable<LCTailerResult>
         this.end = end;
 
         // Save and prepare the listener
-        this.listener = listener;
-        listener.init(this);
+        this.builders = builders;
         this.reOpen = reOpen;
         this.cset = cset;
         this.statistics = stats;
@@ -136,7 +136,7 @@ public final class Tailer implements Callable<LCTailerResult>
                        final Long startPosition,
                        final Long stopAfter,
                        final Charset cset,
-                       final ITailerListener listener,
+                       final List<ILogEntryBuilder> builders,
                        final long delayMillis,
                        final boolean end,
                        final boolean reOpen,
@@ -149,7 +149,7 @@ public final class Tailer implements Callable<LCTailerResult>
                 startPosition,
                 stopAfter,
                 cset,
-                listener,
+                builders,
                 delayMillis,
                 end,
                 reOpen,
@@ -185,7 +185,7 @@ public final class Tailer implements Callable<LCTailerResult>
      * for each new line.
      */
     @Override
-    public LCTailerResult call()
+    public LCTailerResult call() throws Exception
     {
         log.debug(String.format("Starting Tailer on '%s'", file));
 
@@ -216,7 +216,7 @@ public final class Tailer implements Callable<LCTailerResult>
                     {
                         throw new LogCheckException(
                                 String.format("File start position ( %d ) can not be further than the file's"
-                                + "last position ( %d ).", startPosition, reader.size()));
+                                + "last position ( %d ).  Was the file truncated since last run?", startPosition, reader.size()));
                     }
 
                     // Start where instructed
@@ -289,12 +289,6 @@ public final class Tailer implements Callable<LCTailerResult>
         catch (final InterruptedException e)
         {
             Thread.currentThread().interrupt();
-            stop(e);
-            res = LCTailerResult.INTERRUPTED;
-        }
-        catch (final Exception e)
-        {
-            stop(e);
             res = LCTailerResult.INTERRUPTED;
         }
         finally
@@ -303,12 +297,6 @@ public final class Tailer implements Callable<LCTailerResult>
         }
 
         return res;
-    }
-
-    private void stop(final Exception e)
-    {
-        listener.handle(e);
-        stop();
     }
 
     /**
@@ -326,7 +314,7 @@ public final class Tailer implements Callable<LCTailerResult>
      * @return The new position after the lines have been read
      * @throws java.io.IOException if an I/O error occurs.
      */
-    private long readLines(final FileChannel reader) throws IOException, LogCheckException
+    private long readLines(final FileChannel reader) throws IOException, LogCheckException, InterruptedException
     {
         ByteArrayOutputStream lineBuf = new ByteArrayOutputStream(64);
         long pos = reader.position();
@@ -369,7 +357,12 @@ public final class Tailer implements Callable<LCTailerResult>
 
                 if( doHandle )
                 {
-                    listener.handle(new String(lineBuf.toByteArray(), cset));
+                    String ts = new String(lineBuf.toByteArray(), cset);
+                    for( ILogEntryBuilder ib : builders)
+                    {
+                        ib.handleLogLine(ts);
+                    }
+
                     lineBuf.reset();
                     rePos = pos + i + 1;
 

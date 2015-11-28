@@ -33,6 +33,7 @@ import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -43,12 +44,13 @@ public interface ILogEntryStore
 {
     static final Logger log = LogManager.getLogger(ILogEntryStore.class);
 
-    public void init();
-    public ILogEntrySource getMainLogEntrySource();
+    public void init() throws LogCheckException;
+    public void destroy() throws LogCheckException;
+
     public LogCheckResult put(LogEntryVO le) throws InterruptedException, LogCheckException;
 
     public static LogCheckResult process( final ILogEntrySource src,
-                                          final ILogEntryStore dst,
+                                          final List<ILogEntryStore> dstStores,
                                           final Path deDupeDirPath,
                                           final UUID runUUID,
                                           final Integer deDupeMaxLogsBeforeWrite,
@@ -104,7 +106,12 @@ public interface ILogEntryStore
 
             // TODO : Have duplication list for current run, and for past runs
 
-            LogCheckResult putRes = dst.put(currEntryVO);
+            LogCheckResult putRes = null;
+            for( ILogEntryStore dst : dstStores )
+            {
+                putRes = dst.put(currEntryVO);
+            }
+
             logCount++;
 
             // Update deduplication statistics

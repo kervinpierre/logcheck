@@ -18,13 +18,8 @@
 package com.sludev.logs.logcheck.main;
 
 import com.sludev.logs.logcheck.config.entities.LogCheckConfig;
-import com.sludev.logs.logcheck.config.entities.LogCheckDeDupeLog;
-import com.sludev.logs.logcheck.config.entities.LogCheckState;
-import com.sludev.logs.logcheck.config.entities.LogEntryDeDupe;
-import com.sludev.logs.logcheck.config.parsers.LogCheckStateParser;
-import com.sludev.logs.logcheck.config.parsers.ParserUtil;
-import com.sludev.logs.logcheck.dedupe.ContinueUtil;
-import com.sludev.logs.logcheck.enums.LCFileFormats;
+import com.sludev.logs.logcheck.enums.LCLogEntryBuilderType;
+import com.sludev.logs.logcheck.enums.LCLogEntryStoreType;
 import com.sludev.logs.logcheck.enums.LCResultStatus;
 import com.sludev.logs.logcheck.log.ILogEntryBuilder;
 import com.sludev.logs.logcheck.log.impl.builder.NCSACommonLogBuilder;
@@ -36,9 +31,10 @@ import com.sludev.logs.logcheck.log.impl.builder.MultiLineDelimitedBuilder;
 import com.sludev.logs.logcheck.log.impl.LogEntryQueueSink;
 import com.sludev.logs.logcheck.log.impl.LogEntryQueueSource;
 import com.sludev.logs.logcheck.store.ILogEntryStore;
-import com.sludev.logs.logcheck.store.LogEntryConsole;
-import com.sludev.logs.logcheck.store.LogEntryElasticSearch;
 import com.sludev.logs.logcheck.store.LogEntryStore;
+import com.sludev.logs.logcheck.store.impl.LogEntryConsole;
+import com.sludev.logs.logcheck.store.impl.LogEntryElasticSearch;
+import com.sludev.logs.logcheck.store.impl.LogEntrySimpleFile;
 import com.sludev.logs.logcheck.utils.LogCheckConstants;
 import com.sludev.logs.logcheck.utils.LogCheckResult;
 import com.sludev.logs.logcheck.tail.LogCheckTail;
@@ -60,7 +56,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.LinkedBlockingDeque;
 
-import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.concurrent.BasicThreadFactory;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -130,56 +125,65 @@ public class LogCheckRun implements Callable<LogCheckResult>
                 config.getLogCutoffDuration(),
                 null);
 
-        ILogEntryBuilder currLogEntryBuilder = null;
+        List<ILogEntryBuilder> currLogEntryBuilders = new ArrayList<>();
 
-        // Choose the correct Log Entry Builder
-        switch(config.getLogEntryBuilder())
+        // FIXME : Support multiple builders.  But for now we don't need it so all but the last will be ignored.
+        for( LCLogEntryBuilderType builder : config.getLogEntryBuilders() )
         {
-            case MULTILINE_DELIMITED:
+            if( builder == null )
+            {
+                throw new LogCheckException("Log Check Builder cannot be null");
+            }
+
+            // Choose the correct Log Entry Builder
+            switch( builder )
+            {
+                case MULTILINE_DELIMITED:
                 {
                     // Log tailing related objects
                     List<String> ignoreList = new ArrayList<>();
                     ignoreList.add(LogCheckConstants.DEFAULT_MULTILINE_IGNORE_LINE);
 
-                    currLogEntryBuilder = MultiLineDelimitedBuilder.from(
+                    currLogEntryBuilders.add(MultiLineDelimitedBuilder.from(
                             LogCheckConstants.DEFAULT_MULTILINE_ROW_START_PATTERN,
                             LogCheckConstants.DEFAULT_MULTILINE_ROW_END_PATTERN,
                             null,
                             LogCheckConstants.DEFAULT_MULTILINE_COL_END_PATTERN,
                             ignoreList,
-                            logEntrySink);
+                            logEntrySink));
                 }
                 break;
 
-            case NCSACOMMONLOG:
+                case NCSACOMMONLOG:
                 {
-                    currLogEntryBuilder = NCSACommonLogBuilder.from(null, logEntrySink);
+                    currLogEntryBuilders.add(NCSACommonLogBuilder.from(null, logEntrySink));
                 }
                 break;
 
-            case SINGLELINE:
+                case SINGLELINE:
                 {
-                    currLogEntryBuilder = SingleLineBuilder.from(null, logEntrySink);
+                    currLogEntryBuilders.add(SingleLineBuilder.from(null, logEntrySink));
                 }
                 break;
 
-            default:
-                String errMsg = String.format("Error creating LogEntry builder '%s'",
-                        config.getLogEntryBuilder());
+                default:
+                    String errMsg = String.format("Error creating LogEntry builder '%s'",
+                            config.getLogEntryBuilders());
 
-                log.debug(errMsg);
-                throw new LogCheckException(errMsg);
+                    log.debug(errMsg);
+                    throw new LogCheckException(errMsg);
+            }
         }
 
         // Create the main Tailer.
         // And pass into it the previously selected Log Entry Builder.
-        LogCheckTail lct = LogCheckTail.from(currLogEntryBuilder,
+        LogCheckTail lct = LogCheckTail.from(currLogEntryBuilders,
                 config.getLogPath(),
                 config.getDeDupeDirPath(),
                 config.getPollIntervalSeconds(),
                 config.getContinueState(),
                 config.isTailFromEnd(),
-                config.getReOpenLogFile(),
+                config.getReadReOpenLogFile(),
                 config.getSaveState(),
                 null, // bufferSize
                 config.getReadLogFileCount(),
@@ -192,38 +196,61 @@ public class LogCheckRun implements Callable<LogCheckResult>
                 config.getErrorFilePath());
 
         FutureTask<LogCheckResult> logStoreTask = null;
-        ILogEntryStore currStore = null;
+        List<ILogEntryStore> currStores = new ArrayList<>();
 
-        // Log storage related objects
-        if( config.getElasticsearchURL() != null )
+        for( LCLogEntryStoreType store : config.getLogEntryStores() )
         {
-            // Elastic Search
-            LogEntryElasticSearch lees = LogEntryElasticSearch.from(logEntrySource);
+            if( store == null )
+            {
+                throw new LogCheckException("Log Check Store cannot be null");
+            }
 
-            lees.setElasticsearchURL(config.getElasticsearchURL());
-            lees.setElasticsearchIndexPrefix(config.getElasticsearchIndexPrefix());
-            lees.setElasticsearchIndexNameFormat(config.getElasticsearchIndexNameFormat());
-            lees.setElasticsearchIndexName(config.getElasticsearchIndexName());
-            lees.setElasticsearchLogType(config.getElasticsearchLogType());
+            switch( store )
+            {
+                case ELASTICSEARCH:
+                    // Elastic Search
+                    LogEntryElasticSearch lees = LogEntryElasticSearch.from();
 
-            currStore = lees;
+                    lees.setElasticsearchURL(config.getElasticsearchURL());
+                    lees.setElasticsearchIndexPrefix(config.getElasticsearchIndexPrefix());
+                    lees.setElasticsearchIndexNameFormat(config.getElasticsearchIndexNameFormat());
+                    lees.setElasticsearchIndexName(config.getElasticsearchIndexName());
+                    lees.setElasticsearchLogType(config.getElasticsearchLogType());
+
+                    currStores.add(lees);
+                    break;
+
+                case CONSOLE:
+                    LogEntryConsole lec = LogEntryConsole.from();
+
+                    currStores.add(lec);
+                    break;
+
+                case SIMPLEFILE:
+                    LogEntrySimpleFile lesf = LogEntrySimpleFile.from(config.getStoreLogPath(),
+                            config.getStoreReOpenLogFile());
+
+                    currStores.add(lesf);
+                    break;
+
+                default:
+                    log.debug(String.format("Unknown Log Entry %s", config.getLogEntryStores()));
+                    break;
+            }
         }
-        else if( config.getPrintLog() != null
-                   && config.getPrintLog() )
-        {
-            LogEntryConsole lec = LogEntryConsole.from(logEntrySource);
 
-            currStore = lec;
-        }
-
-        if( currStore == null )
+        if( currStores.size() < 1 )
         {
             throw new LogCheckException("No valid log store found");
         }
 
-        currStore.init();
+        for( ILogEntryStore store : currStores )
+        {
+            store.init();
+        }
 
-        LogEntryStore storeWrapper = LogEntryStore.from(currStore,
+        LogEntryStore storeWrapper = LogEntryStore.from(logEntrySource,
+                currStores,
                 config.getDeDupeDirPath(),
                 config.getSetName(),
                 currRunUUID,
@@ -303,6 +330,14 @@ public class LogCheckRun implements Callable<LogCheckResult>
         {
             logCheckTailerExe.shutdownNow();
             logStoreExe.shutdownNow();
+
+            if( currStores != null && currStores.size() > 1 )
+            {
+                for( ILogEntryStore store : currStores )
+                {
+                    store.destroy();
+                }
+            }
         }
         
         return res;

@@ -184,8 +184,10 @@ public class TailerStatistics
         if( state.getLogFile().getLastProcessedPosition() < 1 )
         {
             // Don't save a log file that hasn't processed data
-            throw new LogCheckException(String.format("LastProcessedPosition is %d",
+            log.debug(String.format("TailerStatistics::save() called but no data processed since LastProcessedPosition is %d",
                             state.getLogFile().getLastProcessedPosition()));
+
+            return;
         }
 
         // Serialize state
