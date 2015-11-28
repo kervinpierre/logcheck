@@ -1,8 +1,8 @@
-package com.sludev.logs.logcheck.store;
+package com.sludev.logs.logcheck.store.impl;
 
-import com.sludev.logs.logcheck.enums.LCResultStatus;
-import com.sludev.logs.logcheck.log.ILogEntrySource;
 import com.sludev.logs.logcheck.config.entities.LogEntryVO;
+import com.sludev.logs.logcheck.enums.LCResultStatus;
+import com.sludev.logs.logcheck.store.ILogEntryStore;
 import com.sludev.logs.logcheck.utils.LogCheckException;
 import com.sludev.logs.logcheck.utils.LogCheckResult;
 import org.apache.logging.log4j.LogManager;
@@ -18,28 +18,26 @@ public final class LogEntryConsole implements ILogEntryStore
     private static final Logger log
                            = LogManager.getLogger(LogEntryConsole.class);
 
-    private final ILogEntrySource mainLogEntrySource;
-
-    @Override
-    public ILogEntrySource getMainLogEntrySource()
+    private LogEntryConsole()
     {
-        return mainLogEntrySource;
+        ;
     }
 
-    private LogEntryConsole(ILogEntrySource mainLogEntrySource)
+    public static LogEntryConsole from()
     {
-        this.mainLogEntrySource = mainLogEntrySource;
-    }
-
-    public static LogEntryConsole from(ILogEntrySource mainLogEntrySource)
-    {
-        LogEntryConsole res = new LogEntryConsole(mainLogEntrySource);
+        LogEntryConsole res = new LogEntryConsole();
 
         return res;
     }
 
     @Override
     public void init()
+    {
+
+    }
+
+    @Override
+    public void destroy()
     {
 
     }

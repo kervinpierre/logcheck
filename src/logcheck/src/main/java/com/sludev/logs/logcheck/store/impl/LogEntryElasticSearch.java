@@ -15,13 +15,14 @@
  *   is strictly forbidden unless prior written permission is obtained
  *   from SLU Dev Inc.
  */
-package com.sludev.logs.logcheck.store;
+package com.sludev.logs.logcheck.store.impl;
 
 import com.sludev.logs.logcheck.enums.LCIndexNameFormat;
 import com.sludev.logs.logcheck.enums.LCResultStatus;
 import com.sludev.logs.logcheck.log.ILogEntrySource;
 import com.sludev.logs.logcheck.log.LogEntry;
 import com.sludev.logs.logcheck.config.entities.LogEntryVO;
+import com.sludev.logs.logcheck.store.ILogEntryStore;
 import com.sludev.logs.logcheck.utils.LogCheckConstants;
 import com.sludev.logs.logcheck.utils.LogCheckException;
 import com.sludev.logs.logcheck.utils.LogCheckResult;
@@ -47,7 +48,6 @@ public final class LogEntryElasticSearch implements ILogEntryStore
     private static final Logger log 
                              = LogManager.getLogger(LogEntryElasticSearch.class);
 
-    private final ILogEntrySource mainLogEntrySource;
     private JestClient esClient;
     private URL elasticsearchURL;
     private String elasticsearchIndexName;
@@ -55,11 +55,6 @@ public final class LogEntryElasticSearch implements ILogEntryStore
     private String elasticsearchLogType;
     private LCIndexNameFormat elasticsearchIndexNameFormat;
 
-    @Override
-    public ILogEntrySource getMainLogEntrySource()
-    {
-        return mainLogEntrySource;
-    }
 
     public String getElasticsearchLogType()
     {
@@ -133,10 +128,8 @@ public final class LogEntryElasticSearch implements ILogEntryStore
         this.elasticsearchURL = u;
     }
     
-    private LogEntryElasticSearch(ILogEntrySource mainLogEntrySource)
+    private LogEntryElasticSearch()
     {
-        this.mainLogEntrySource = mainLogEntrySource;
-
         esClient = null;
         elasticsearchIndexNameFormat 
                 = LogCheckConstants.DEFAULT_ELASTICSEARCH_INDEX_NAME_FORMAT;
@@ -148,9 +141,9 @@ public final class LogEntryElasticSearch implements ILogEntryStore
         setElasticsearchURL(LogCheckConstants.DEFAULT_ELASTICSEARCH_URL);
     }
 
-    public static LogEntryElasticSearch from(ILogEntrySource mainLogEntrySource)
+    public static LogEntryElasticSearch from()
     {
-        LogEntryElasticSearch res = new LogEntryElasticSearch(mainLogEntrySource);
+        LogEntryElasticSearch res = new LogEntryElasticSearch();
 
         return res;
     }
@@ -184,6 +177,13 @@ public final class LogEntryElasticSearch implements ILogEntryStore
                         .build());
  
         esClient = factory.getObject();
+    }
+
+
+    @Override
+    public void destroy()
+    {
+
     }
 
     /**

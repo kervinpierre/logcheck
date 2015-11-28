@@ -20,6 +20,7 @@ package com.sludev.logs.logcheck.config.entities;
 import com.sludev.logs.logcheck.enums.LCHashType;
 import com.sludev.logs.logcheck.enums.LCIndexNameFormat;
 import com.sludev.logs.logcheck.enums.LCLogEntryBuilderType;
+import com.sludev.logs.logcheck.enums.LCLogEntryStoreType;
 import com.sludev.logs.logcheck.utils.LogCheckConstants;
 import com.sludev.logs.logcheck.utils.LogCheckException;
 import org.apache.commons.lang3.StringUtils;
@@ -31,6 +32,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * The main configuration class for the LogCheck application.
@@ -64,9 +67,11 @@ public final class LogCheckConfig
     private final Boolean printLog;
     private final Boolean saveState;
     private final Boolean continueState;
-    private final Boolean reOpenLogFile;
+    private final Boolean readReOpenLogFile;
+    private final Boolean storeReOpenLogFile;
     private final Path lockFilePath;
     private final Path logPath;
+    private final Path storeLogPath;
     private final Path statusFilePath;
     private final Path stateFilePath;
     private final Path errorFilePath;
@@ -81,7 +86,8 @@ public final class LogCheckConfig
     private final Duration logCutoffDuration;
     private final Duration logDeduplicationDuration;
     private final LCIndexNameFormat elasticsearchIndexNameFormat;
-    private final LCLogEntryBuilderType logEntryBuilder;
+    private final List<LCLogEntryBuilderType> logEntryBuilders;
+    private final List<LCLogEntryStoreType> logEntryStores;
     private final LCHashType idBlockHashType;
 
     public Path getErrorFilePath()
@@ -114,9 +120,14 @@ public final class LogCheckConfig
         return stateFilePath;
     }
 
-    public LCLogEntryBuilderType getLogEntryBuilder()
+    public List<LCLogEntryBuilderType> getLogEntryBuilders()
     {
-        return logEntryBuilder;
+        return logEntryBuilders;
+    }
+
+    public List<LCLogEntryStoreType> getLogEntryStores()
+    {
+        return logEntryStores;
     }
 
     public String getElasticsearchLogType()
@@ -209,9 +220,19 @@ public final class LogCheckConfig
         return service;
     }
 
-    public Boolean getReOpenLogFile()
+    public Boolean getReadReOpenLogFile()
     {
-        return reOpenLogFile;
+        return readReOpenLogFile;
+    }
+
+    public Boolean getStoreReOpenLogFile()
+    {
+        return storeReOpenLogFile;
+    }
+
+    public Path getStoreLogPath()
+    {
+        return storeLogPath;
     }
 
     public Long getPollIntervalSeconds()
@@ -312,11 +333,13 @@ public final class LogCheckConfig
                            final Boolean showVersion,
                            final Boolean printLog,
                            final Boolean tailFromEnd,
-                           final Boolean reOpenLogFile,
+                           final Boolean readReOpenLogFile,
+                           final Boolean storeReOpenLogFile,
                            final Boolean saveState,
                            final Boolean continueState,
                            final Path lockFilePath,
                            final Path logPath,
+                           final Path storeLogPath,
                            final Path statusFilePath,
                            final Path stateFilePath,
                            final Path errorFilePath,
@@ -339,9 +362,49 @@ public final class LogCheckConfig
                            final Integer deDupeMaxLogsBeforeWrite,
                            final Integer deDupeMaxLogsPerFile,
                            final Integer deDupeMaxLogFiles,
-                           final LCLogEntryBuilderType logEntryBuilder,
+                           final List<LCLogEntryBuilderType> logEntryBuilders,
+                           final List<LCLogEntryStoreType> logEntryStores,
                            final LCHashType idBlockHashType) throws LogCheckException
     {
+        if( logEntryStores != null )
+        {
+            this.logEntryStores = logEntryStores;
+        }
+        else if( orig != null && orig.getLogEntryStores() != null )
+        {
+            this.logEntryStores = orig.getLogEntryStores();
+        }
+        else
+        {
+            this.logEntryStores = null;
+        }
+
+        if( storeReOpenLogFile != null )
+        {
+            this.storeReOpenLogFile = storeReOpenLogFile;
+        }
+        else if( orig != null && orig.getStoreReOpenLogFile() != null )
+        {
+            this.storeReOpenLogFile = orig.getStoreReOpenLogFile();
+        }
+        else
+        {
+            this.storeReOpenLogFile = false;
+        }
+
+        if( storeLogPath != null )
+        {
+            this.storeLogPath = storeLogPath;
+        }
+        else if( orig != null && orig.getStoreLogPath() != null )
+        {
+            this.storeLogPath = orig.getStoreLogPath();
+        }
+        else
+        {
+            this.storeLogPath = null;
+        }
+
         if( service != null )
         {
             this.service = service;
@@ -420,17 +483,17 @@ public final class LogCheckConfig
             this.idBlockHashType = LCHashType.SHA1;
         }
 
-        if( logEntryBuilder != null )
+        if( logEntryBuilders != null )
         {
-            this.logEntryBuilder = logEntryBuilder;
+            this.logEntryBuilders = logEntryBuilders;
         }
-        else if( orig != null && orig.getLogEntryBuilder() != null )
+        else if( orig != null && orig.getLogEntryBuilders() != null )
         {
-            this.logEntryBuilder = orig.getLogEntryBuilder();
+            this.logEntryBuilders = orig.getLogEntryBuilders();
         }
         else
         {
-            this.logEntryBuilder = null;
+            this.logEntryBuilders = null;
         }
 
         if( emailOnError != null )
@@ -826,17 +889,17 @@ public final class LogCheckConfig
             this.saveState = null;
         }
 
-        if( reOpenLogFile != null )
+        if( readReOpenLogFile != null )
         {
-            this.reOpenLogFile = reOpenLogFile;
+            this.readReOpenLogFile = readReOpenLogFile;
         }
-        else if( orig != null && orig.getReOpenLogFile() != null )
+        else if( orig != null && orig.getReadReOpenLogFile() != null )
         {
-            this.reOpenLogFile = orig.getReOpenLogFile();
+            this.readReOpenLogFile = orig.getReadReOpenLogFile();
         }
         else
         {
-            this.reOpenLogFile = null;
+            this.readReOpenLogFile = null;
         }
 
         if( continueState != null )
@@ -905,48 +968,51 @@ public final class LogCheckConfig
         }
     }
 
-    public static LogCheckConfig from( final LogCheckConfig orig,
-                                       final Boolean service,
-                                       final String emailOnError,
-                                       final String smtpServer,
-                                       final String smtpPort,
-                                       final String smtpPass,
-                                       final String smtpUser,
-                                       final String smtpProto,
-                                       final String setName,
-                                       final Boolean dryRun,
-                                       final Boolean showVersion,
-                                       final Boolean printLog,
-                                       final Boolean tailFromEnd,
-                                       final Boolean reOpenLogFile,
-                                       final Boolean saveState,
-                                       final Boolean continueState,
-                                       final Path lockFilePath,
-                                       final Path logPath,
-                                       final Path statusFilePath,
-                                       final Path stateFilePath,
-                                       final Path errorFilePath,
-                                       final Path configFilePath,
-                                       final Path holdingDirPath,
-                                       final Path deDupeDirPath,
-                                       final URL elasticsearchURL,
-                                       final String elasticsearchIndexName,
-                                       final String elasticsearchIndexPrefix,
-                                       final String elasticsearchLogType,
-                                       final LCIndexNameFormat elasticsearchIndexNameFormat,
-                                       final LocalTime logCutoffDate,
-                                       final Duration logCutoffDuration,
-                                       final Duration logDeduplicationDuration,
-                                       final Long pollIntervalSeconds,
-                                       final Long stopAfter,
-                                       final Integer readLogFileCount,
-                                       final Integer readMaxDeDupeEntries,
-                                       final Integer idBlockSize,
-                                       final Integer deDupeMaxLogsBeforeWrite,
-                                       final Integer deDupeMaxLogsPerFile,
-                                       final Integer deDupeMaxLogFiles,
-                                       final LCLogEntryBuilderType logEntryBuilder,
-                                       final LCHashType idBlockHashType) throws LogCheckException
+    public static LogCheckConfig from(final LogCheckConfig orig,
+                                      final Boolean service,
+                                      final String emailOnError,
+                                      final String smtpServer,
+                                      final String smtpPort,
+                                      final String smtpPass,
+                                      final String smtpUser,
+                                      final String smtpProto,
+                                      final String setName,
+                                      final Boolean dryRun,
+                                      final Boolean showVersion,
+                                      final Boolean printLog,
+                                      final Boolean tailFromEnd,
+                                      final Boolean readReOpenLogFile,
+                                      final Boolean storeReOpenLogFile,
+                                      final Boolean saveState,
+                                      final Boolean continueState,
+                                      final Path lockFilePath,
+                                      final Path logPath,
+                                      final Path storeLogPath,
+                                      final Path statusFilePath,
+                                      final Path stateFilePath,
+                                      final Path errorFilePath,
+                                      final Path configFilePath,
+                                      final Path holdingDirPath,
+                                      final Path deDupeDirPath,
+                                      final URL elasticsearchURL,
+                                      final String elasticsearchIndexName,
+                                      final String elasticsearchIndexPrefix,
+                                      final String elasticsearchLogType,
+                                      final LCIndexNameFormat elasticsearchIndexNameFormat,
+                                      final LocalTime logCutoffDate,
+                                      final Duration logCutoffDuration,
+                                      final Duration logDeduplicationDuration,
+                                      final Long pollIntervalSeconds,
+                                      final Long stopAfter,
+                                      final Integer readLogFileCount,
+                                      final Integer readMaxDeDupeEntries,
+                                      final Integer idBlockSize,
+                                      final Integer deDupeMaxLogsBeforeWrite,
+                                      final Integer deDupeMaxLogsPerFile,
+                                      final Integer deDupeMaxLogFiles,
+                                      final List<LCLogEntryBuilderType> logEntryBuilders,
+                                      final List<LCLogEntryStoreType> logEntryStores,
+                                      final LCHashType idBlockHashType) throws LogCheckException
     {
         LogCheckConfig res = new LogCheckConfig(orig,
                 service,
@@ -961,11 +1027,13 @@ public final class LogCheckConfig
                 showVersion,
                 printLog,
                 tailFromEnd,
-                reOpenLogFile,
+                readReOpenLogFile,
+                storeReOpenLogFile,
                 saveState,
                 continueState,
                 lockFilePath,
                 logPath,
+                storeLogPath,
                 statusFilePath,
                 stateFilePath,
                 errorFilePath,
@@ -988,7 +1056,8 @@ public final class LogCheckConfig
                 deDupeMaxLogsBeforeWrite,
                 deDupeMaxLogsPerFile,
                 deDupeMaxLogFiles,
-                logEntryBuilder,
+                logEntryBuilders,
+                logEntryStores,
                 idBlockHashType);
 
         return res;
@@ -1012,11 +1081,13 @@ public final class LogCheckConfig
                                        final Boolean showVersion,
                                        final Boolean printLog,
                                        final Boolean tailFromEnd,
-                                       final Boolean reOpenLogFile,
+                                       final Boolean readReOpenLogFile,
+                                        final Boolean storeReOpenLogFile,
                                        final Boolean saveState,
                                        final Boolean continueState,
                                        final String lockFilePathStr,
                                        final String logPathStr,
+                                        final String storeLogPathStr,
                                        final String statusFilePathStr,
                                        final String stateFilePathStr,
                                        final String errorFilePathStr,
@@ -1039,11 +1110,13 @@ public final class LogCheckConfig
                                         final String deDupeMaxLogsBeforeWriteStr,
                                         final String deDupeMaxLogsPerFileStr,
                                         final String deDupeMaxLogFilesStr,
-                                       final String logEntryBuilderStr,
+                                       final String[] logEntryBuilderStrs,
+                                        final String[] logEntryStoreStrs,
                                        final String idBlockHashTypeStr) throws LogCheckException
     {
         Path lockFilePath = null;
         Path logPath = null;
+        Path storeLogPath = null;
         Path statusFilePath = null;
         Path stateFilePath = null;
         Path errorFilePath = null;
@@ -1056,7 +1129,8 @@ public final class LogCheckConfig
         Duration logCutoffDuration = null;
         Duration logDeduplicationDuration = null;
         Long pollIntervalSeconds = null;
-        LCLogEntryBuilderType logEntryBuilder  = null;
+        List<LCLogEntryBuilderType> logEntryBuilders  = new ArrayList<>();
+        List<LCLogEntryStoreType> logEntryStores = new ArrayList<>();
         Integer readLogFileCount = null;
         Integer readMaxDeDupeEntries = null;
         Integer idBlockSize = null;
@@ -1074,6 +1148,11 @@ public final class LogCheckConfig
         if(StringUtils.isNoneBlank(logPathStr))
         {
             logPath = Paths.get(logPathStr);
+        }
+
+        if(StringUtils.isNoneBlank(storeLogPathStr))
+        {
+            storeLogPath = Paths.get(storeLogPathStr);
         }
 
         if(StringUtils.isNoneBlank(statusFilePathStr))
@@ -1158,14 +1237,26 @@ public final class LogCheckConfig
             }
         }
 
-        if(StringUtils.isNoneBlank(logEntryBuilderStr))
+        if(logEntryBuilderStrs != null )
         {
-            logEntryBuilder = LCLogEntryBuilderType.from(logEntryBuilderStr);
+            for( String b : logEntryBuilderStrs )
+            {
+                if( StringUtils.isNoneBlank(b) )
+                {
+                    logEntryBuilders.add(LCLogEntryBuilderType.from(b));
+                }
+            }
         }
 
-        if(StringUtils.isNoneBlank(idBlockHashTypeStr))
+        if(logEntryStoreStrs != null )
         {
-            idBlockHash = LCHashType.from(idBlockHashTypeStr);
+            for( String s : logEntryStoreStrs )
+            {
+                if( StringUtils.isNoneBlank(s) )
+                {
+                    logEntryStores.add(LCLogEntryStoreType.from(s));
+                }
+            }
         }
 
         if(StringUtils.isNoneBlank(idBlockSizeStr))
@@ -1286,11 +1377,13 @@ public final class LogCheckConfig
                 showVersion,
                 printLog,
                 tailFromEnd,
-                reOpenLogFile,
+                readReOpenLogFile,
+                storeReOpenLogFile,
                 saveState,
                 continueState,
                 lockFilePath,
                 logPath,
+                storeLogPath,
                 statusFilePath,
                 stateFilePath,
                 errorFilePath,
@@ -1313,7 +1406,8 @@ public final class LogCheckConfig
                 deDupeMaxLogsBeforeWrite,
                 deDupeMaxLogsPerFile,
                 deDupeMaxLogFiles,
-                logEntryBuilder,
+                logEntryBuilders,
+                logEntryStores,
                 idBlockHash);
 
         return res;

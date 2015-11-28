@@ -18,6 +18,7 @@
 
 package com.sludev.logs.logcheck.store;
 
+import com.sludev.logs.logcheck.log.ILogEntrySource;
 import com.sludev.logs.logcheck.utils.LogCheckConstants;
 import com.sludev.logs.logcheck.utils.LogCheckException;
 import com.sludev.logs.logcheck.utils.LogCheckResult;
@@ -29,6 +30,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 
@@ -41,7 +43,8 @@ public final class LogEntryStore implements Callable<LogCheckResult>
 {
     private static final Logger log = LogManager.getLogger(LogEntryStore.class);
 
-    private final ILogEntryStore entryStore;
+    private final ILogEntrySource mainLogEntrySource;
+    private final List<ILogEntryStore> entryStores;
     private final Path deDupeLogOutputPath;
     private final String jobName;
     private final UUID runUUID;
@@ -49,8 +52,8 @@ public final class LogEntryStore implements Callable<LogCheckResult>
     private final Integer deDupeMaxLogsPerFile;
     private final Integer deDupeMaxLogFiles;
 
-
-    private LogEntryStore(final ILogEntryStore entryStore,
+    private LogEntryStore(final ILogEntrySource mainLogEntrySource,
+                          final List<ILogEntryStore> entryStores,
                           final Path deDupeLogOutputPath,
                           final String jobName,
                           final UUID runUUID,
@@ -58,7 +61,8 @@ public final class LogEntryStore implements Callable<LogCheckResult>
                           final Integer deDupeMaxLogsPerFile,
                           final Integer deDupeMaxLogFiles)
     {
-        this.entryStore = entryStore;
+        this.mainLogEntrySource = mainLogEntrySource;
+        this.entryStores = entryStores;
         this.deDupeLogOutputPath = deDupeLogOutputPath;
         this.jobName = jobName;
         this.runUUID = runUUID;
@@ -67,7 +71,8 @@ public final class LogEntryStore implements Callable<LogCheckResult>
         this.deDupeMaxLogFiles = deDupeMaxLogFiles;
     }
 
-    public static LogEntryStore from(final ILogEntryStore entryStore,
+    public static LogEntryStore from(final ILogEntrySource mainLogEntrySource,
+                                     final List<ILogEntryStore> entryStore,
                                      final Path deDupeLogOutputPath,
                                      final String jobName,
                                      final UUID runUUID,
@@ -75,7 +80,8 @@ public final class LogEntryStore implements Callable<LogCheckResult>
                                      final Integer deDupeMaxLogsPerFile,
                                      final Integer deDupeMaxLogFiles)
     {
-        LogEntryStore store = new LogEntryStore(entryStore,
+        LogEntryStore store = new LogEntryStore(mainLogEntrySource,
+                entryStore,
                 deDupeLogOutputPath,
                 jobName,
                 runUUID,
@@ -120,8 +126,8 @@ public final class LogEntryStore implements Callable<LogCheckResult>
             }
         }
 
-        res = ILogEntryStore.process(entryStore.getMainLogEntrySource(),
-                entryStore,
+        res = ILogEntryStore.process(mainLogEntrySource,
+                entryStores,
                 currDeDupePath,
                 runUUID,
                 deDupeMaxLogsBeforeWrite,

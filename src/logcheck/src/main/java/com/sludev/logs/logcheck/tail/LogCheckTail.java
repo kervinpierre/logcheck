@@ -29,7 +29,6 @@ import com.sludev.logs.logcheck.enums.LCHashType;
 import com.sludev.logs.logcheck.enums.LCResultStatus;
 import com.sludev.logs.logcheck.enums.LCTailerResult;
 import com.sludev.logs.logcheck.log.ILogEntryBuilder;
-import com.sludev.logs.logcheck.tail.impl.LogCheckTailerListener;
 import com.sludev.logs.logcheck.utils.LogCheckConstants;
 import com.sludev.logs.logcheck.utils.LogCheckException;
 import com.sludev.logs.logcheck.utils.LogCheckResult;
@@ -67,7 +66,7 @@ public final class LogCheckTail implements Callable<LogCheckResult>
     private static final Logger log 
                              = LogManager.getLogger(LogCheckTail.class);
 
-    private final ILogEntryBuilder mainLogEntryBuilder;
+    private final List<ILogEntryBuilder> mainLogEntryBuilders;
     
     private final Path logFile;
     private final Path deDupeDir;
@@ -86,7 +85,7 @@ public final class LogCheckTail implements Callable<LogCheckResult>
     private final Path stateFile;
     private final Path errorFile;
 
-    private LogCheckTail(final ILogEntryBuilder mainLogEntryBuilder,
+    private LogCheckTail(final List<ILogEntryBuilder> mainLogEntryBuilders,
                          final Path logFile,
                          final Path deDupeDir,
                          final Long delay,
@@ -104,7 +103,7 @@ public final class LogCheckTail implements Callable<LogCheckResult>
                          final Path stateFile,
                          final Path errorFile)
     {
-        this.mainLogEntryBuilder = mainLogEntryBuilder;
+        this.mainLogEntryBuilders = mainLogEntryBuilders;
         this.idBlockHash = idBlockHash;
         this.idBlockSize = idBlockSize;
         this.setName = setName;
@@ -197,7 +196,7 @@ public final class LogCheckTail implements Callable<LogCheckResult>
         }
     }
 
-    public static LogCheckTail from(final ILogEntryBuilder mainLogEntryBuilder,
+    public static LogCheckTail from(final List<ILogEntryBuilder> mainLogEntryBuilders,
                                     final Path logFile,
                                     final Path deDupeDir,
                                     final Long delay,
@@ -215,7 +214,7 @@ public final class LogCheckTail implements Callable<LogCheckResult>
                                     final Path stateFile,
                                     final Path errorFile)
     {
-        LogCheckTail res = new LogCheckTail(mainLogEntryBuilder,
+        LogCheckTail res = new LogCheckTail(mainLogEntryBuilders,
                 logFile,
                 deDupeDir,
                 delay,
@@ -258,9 +257,6 @@ public final class LogCheckTail implements Callable<LogCheckResult>
                 setName);
 
         stats.setLastProcessedTimeStart( Instant.now() );
-
-        LogCheckTailerListener mainTailerListener
-                            = LogCheckTailerListener.from(mainLogEntryBuilder);
 
         if( saveState != null && saveState )
         {
@@ -360,7 +356,7 @@ public final class LogCheckTail implements Callable<LogCheckResult>
                         currPosition,
                         stopAfter,
                         Tailer.DEFAULT_CHARSET,
-                        mainTailerListener,
+                        mainLogEntryBuilders,
                         currDelay*1000, // Convert to milliseconds
                         currTailFromEnd,
                         currReOpen,

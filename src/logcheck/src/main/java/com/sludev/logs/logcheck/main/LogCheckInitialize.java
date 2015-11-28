@@ -17,7 +17,6 @@
  */
 package com.sludev.logs.logcheck.main;
 
-import com.opencsv.CSVReader;
 import com.sludev.logs.logcheck.config.entities.LogCheckConfig;
 import com.sludev.logs.logcheck.config.parsers.LogCheckConfigParser;
 import com.sludev.logs.logcheck.config.parsers.ParserUtil;
@@ -35,12 +34,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
 import java.io.PrintWriter;
-import java.io.StringReader;
 import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -73,7 +67,8 @@ public class LogCheckInitialize
         Boolean currPrintLogs = null;
         Boolean currSaveState = null;
         Boolean currContinue = null;
-        Boolean currReOpenLogFile = null;
+        Boolean currReadReOpenLogFile = null;
+        Boolean currStoreReOpenLogFile = null;
         String currPollIntervalSeconds = null;
         String currEmailOnError = null;
         String currSmtpServer = null;
@@ -90,7 +85,6 @@ public class LogCheckInitialize
         String currStatusFile = null;
         String currStateFile = null;
         String currErrorFile = null;
-        String currLEBuilderType = null;
         String currIdBlockHashtype = null;
         String currIdBlockSize = null;
         String currSetName = null;
@@ -101,6 +95,9 @@ public class LogCheckInitialize
         String currStopAfter = null;
         String currReadLogFileCount = null;
         String currReadMaxDeDupeEntries = null;
+        String currStoreLogFile = null;
+        String[] currLEBuilderType = null;
+        String[] currLEStoreType = null;
 
         try
         {
@@ -332,7 +329,12 @@ public class LogCheckInitialize
 
                     case "log-entry-builder-type":
                         // Specify the log entry builder type to use
-                        currLEBuilderType = currOpt.getValue();
+                        currLEBuilderType = currOpt.getValues();
+                        break;
+
+                    case "log-entry-store-type":
+                        // Specify the log entry store type to use
+                        currLEStoreType = currOpt.getValues();
                         break;
 
                     case "stop-after":
@@ -350,11 +352,20 @@ public class LogCheckInitialize
                         currReadMaxDeDupeEntries = currOpt.getValue();
                         break;
 
-                    case "reopen-log-file":
+                    case "read-reopen-log-file":
                         // Specify the log entry builder type to use
-                        currReOpenLogFile = true;
+                        currReadReOpenLogFile = true;
                         break;
 
+                    case "store-reopen-log-file":
+                        // Specify the log entry builder type to use
+                        currStoreReOpenLogFile = true;
+                        break;
+
+                    case "store-log-file":
+                        // Maximum deduplication log entries
+                        currStoreLogFile = currOpt.getValue();
+                        break;
                 }
             }
 
@@ -371,11 +382,13 @@ public class LogCheckInitialize
                     currShowVersion, // showVersion,
                     currPrintLogs, // printLog,
                     currTailFromEnd, // tailFromEnd,
-                    currReOpenLogFile, // reOpenLogFile
+                    currReadReOpenLogFile, // reOpenLogFile
+                    currStoreReOpenLogFile, // --store-reopen-log-file
                     currSaveState,  // saveState
                     currContinue,
                     currLockFile,
                     currLogPath,
+                    currStoreLogFile,
                     currStatusFile,
                     currStateFile,
                     currErrorFile,
@@ -399,6 +412,7 @@ public class LogCheckInitialize
                     currDeDupeMaxLogsPerFile,
                     currDeDupeMaxLogFiles,
                     currLEBuilderType,
+                    currLEStoreType,
                     currIdBlockHashtype);
         }
         catch (LogCheckException ex)
@@ -552,7 +566,17 @@ public class LogCheckInitialize
                 .build() );
 
         options.addOption( Option.builder().longOpt( "log-entry-builder-type" )
-                .desc( "The method for parsing log entries as they come in. Options are 'single', 'multiline-delimited'" ).hasArg().argName("LCLEBUILDERTYPE").build() );
+                .desc( "The method for parsing log entries as they come in. Options are 'single', 'multiline-delimited'" )
+                .hasArgs()
+                .argName("LCLEBUILDERTYPE")
+                .build() );
+
+        options.addOption( Option.builder().longOpt( "log-entry-store-type" )
+                .desc( "The method for storing log entries. Options include 'elasticsearch', 'console', and 'file'" )
+                .hasArgs()
+                .valueSeparator(',')
+                .argName("LCLESTORETYPE")
+                .build() );
 
         options.addOption( Option.builder().longOpt( "print-logs" )
                 .desc( "Output the logs to the standard out. Mainly for testing." )
@@ -623,8 +647,17 @@ public class LogCheckInitialize
                 .hasArg()
                 .build() );
 
-        options.addOption( Option.builder().longOpt( "reopen-log-file" )
+        options.addOption( Option.builder().longOpt( "read-reopen-log-file" )
                 .desc( "Close and reopen log files between reading them." )
+                .build() );
+
+        options.addOption( Option.builder().longOpt( "store-reopen-log-file" )
+                .desc( "Close and reopen the Log Entry Store log file." )
+                .build() );
+
+        options.addOption( Option.builder().longOpt( "store-log-file" )
+                .desc( "The path to the Log Entry log file on disk." )
+                .hasArg()
                 .build() );
 
         return options;

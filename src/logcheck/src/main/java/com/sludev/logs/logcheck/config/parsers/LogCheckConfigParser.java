@@ -23,10 +23,14 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
 
 import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  *
@@ -64,7 +68,6 @@ public class LogCheckConfigParser
         String statusFileStr = null;
         String stateFileStr = null;
         String errorFileStr = null;
-        String leBuilderType = null;
         String idBlockSize = null;
         String idBlockHashType = null;
         String setName = null;
@@ -75,6 +78,8 @@ public class LogCheckConfigParser
         String stopAfterStr = null;
         String readLogFileCountStr = null;
         String readMaxDeDupeEntriesStr = null;
+        String[] leBuilderType = null;
+        String[] leStoreType = null;
 
         try
         {
@@ -87,11 +92,42 @@ public class LogCheckConfigParser
 
         try
         {
-            leBuilderType = currXPath.compile("./logEntryBuilderType").evaluate(currEl);
+            NodeList currElList = (NodeList)currXPath.compile("./logEntryBuilders/builder").evaluate(
+                    currEl, XPathConstants.NODESET);
+
+            if( currElList != null && currElList.getLength() > 0)
+            {
+                List<String> tempList = new ArrayList<>();
+                for(int i=0; i<currElList.getLength(); i++)
+                {
+                    Element tempEl = (Element)currElList.item(i);
+                    tempList.add( tempEl.getTextContent() );
+                }
+            }
         }
         catch (XPathExpressionException ex)
         {
-            log.debug("configuration parsing error.", ex);
+            log.debug("configuration parsing error <logEntryBuilders>.", ex);
+        }
+
+        try
+        {
+            NodeList currElList = (NodeList)currXPath.compile("./logEntryStores/store").evaluate(
+                    currEl, XPathConstants.NODESET);
+
+            if( currElList != null && currElList.getLength() > 0)
+            {
+                List<String> tempList = new ArrayList<>();
+                for(int i=0; i<currElList.getLength(); i++)
+                {
+                    Element tempEl = (Element)currElList.item(i);
+                    tempList.add( tempEl.getTextContent() );
+                }
+            }
+        }
+        catch (XPathExpressionException ex)
+        {
+            log.debug("configuration parsing error <logEntryStores>.", ex);
         }
 
         try
@@ -346,10 +382,12 @@ public class LogCheckConfigParser
                 null, // printLog,
                 null, // tailFromEnd,
                 reOpenLogFile, // reOpenLogFile
+                null, // storeReOpenLogFile
                 currSaveState, // saveState
                 continueState, // continueState
                 lockFileStr,
                 logFileStr,
+                null, // storeLogFile
                 statusFileStr,
                 stateFileStr,
                 errorFileStr,
@@ -373,6 +411,7 @@ public class LogCheckConfigParser
                 deDupeMaxLogsPerFile,
                 deDupeMaxLogFiles,
                 leBuilderType,
+                leStoreType,
                 idBlockHashType);
 
         return res;

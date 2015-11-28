@@ -39,9 +39,15 @@ NOTICE:  All information contained herein is, and remains
                     </xs:annotation>
                 </xs:element>
 
-                <xs:element name="logEntryBuilderType" type="LogEntryBuilderTypeType" minOccurs="0"  maxOccurs="1">
+                <xs:element name="logEntryBuilders" type="LogEntryBuilderListType" minOccurs="0"  maxOccurs="1">
                     <xs:annotation>
                         <xs:documentation>The type of LogEntry Builder.</xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+
+                <xs:element name="logEntryStores" type="LogEntryStoreListType" minOccurs="0" maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>The method for storing log entries. Options include 'elasticsearch', 'console', and 'file'</xs:documentation>
                     </xs:annotation>
                 </xs:element>
 
@@ -195,15 +201,37 @@ NOTICE:  All information contained herein is, and remains
                         <xs:documentation>Continue with the state files from from a previous run</xs:documentation>
                     </xs:annotation>
                 </xs:element>
+
             </xs:choice>
         </xs:complexType>
     </xs:element>
+
+    <xs:complexType name="LogEntryBuilderListType">
+        <xs:choice minOccurs="0" maxOccurs="unbounded">
+            <xs:element name="builder" type="LogEntryBuilderTypeType" minOccurs="0" maxOccurs="unbounded" />
+        </xs:choice>
+    </xs:complexType>
 
     <xs:simpleType name="LogEntryBuilderTypeType">
         <xs:restriction base="xs:string">
             <xs:enumeration value="none"/>
             <xs:enumeration value="singleline"/>
             <xs:enumeration value="multiline-delimited"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:complexType name="LogEntryStoreListType">
+        <xs:choice minOccurs="0" maxOccurs="unbounded">
+            <xs:element name="store" type="LogEntryStoreTypeType" minOccurs="0" maxOccurs="unbounded" />
+        </xs:choice>
+    </xs:complexType>
+
+    <xs:simpleType name="LogEntryStoreTypeType">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="none"/>
+            <xs:enumeration value="console"/>
+            <xs:enumeration value="simplefile"/>
+            <xs:enumeration value="elasticsearch"/>
         </xs:restriction>
     </xs:simpleType>
 

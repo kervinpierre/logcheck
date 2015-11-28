@@ -55,6 +55,8 @@
 ## A08. Unix test.  Stop after test, close/reopen logs between reading the file.
 --log-file /tmp/logcheck-sample-app-output.txt \
 --log-entry-builder-type=singleline            \
+--log-entry-store-type=console,simplefile      \
+--store-log-file /tmp/store-log.txt            \
 --save-state                                   \
 --state-file /tmp/current-state.xml            \
 --error-file /tmp/current-errors.xml           \
@@ -65,7 +67,7 @@
 --dedupe-max-log-files=5                       \
 --continue                                     \
   # Stop after 20 seconds
---stop-after=20                                \
+#--stop-after=20                                \
   # Close/reopen the log file during reads
---reopen-log-file                              \
+--read-reopen-log-file                         \
 --print-logs
