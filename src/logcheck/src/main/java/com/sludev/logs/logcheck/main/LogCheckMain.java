@@ -185,9 +185,8 @@ public class LogCheckMain
     public static LogCheckResult processStart(LogCheckConfig config) throws LogCheckException
     {
         LogCheckResult resp = null;
-        LogCheckRun currRun = new LogCheckRun();
+        LogCheckRun currRun = new LogCheckRun(config);
         FutureTask<LogCheckResult> currRunTask = new FutureTask<>(currRun);
-        currRun.setConfig(config);
 
         BasicThreadFactory thFactory = new BasicThreadFactory.Builder()
             .namingPattern("mainthread-%d")

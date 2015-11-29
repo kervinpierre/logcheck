@@ -30,12 +30,8 @@ import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.Callable;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Simple implementation of the unix "tail -f" functionality.
@@ -45,12 +41,7 @@ public final class Tailer implements Callable<LCTailerResult>
     private static final Logger log
                     = LogManager.getLogger(Tailer.class);
 
-    public static final int DEFAULT_DELAY_MILLIS = 1000;
-
     public static final int DEFAULT_BUFSIZE = 4096;
-
-    // The default charset used for reading files
-    public static final Charset DEFAULT_CHARSET = Charset.defaultCharset();
 
     /**
      * The file which will be tailed.
@@ -84,9 +75,9 @@ public final class Tailer implements Callable<LCTailerResult>
      */
     private final boolean reOpen;
 
-    private final TailerStatistics statistics;
+    private final boolean startPositionIgnoreError;
 
-    private final Long stopAfter;
+    private final TailerStatistics statistics;
 
     // Mutable
 
@@ -109,18 +100,19 @@ public final class Tailer implements Callable<LCTailerResult>
      */
     private Tailer(final Path file,
                    final Long startPosition,
-                   final Long stopAfter,
                    final Charset cset,
                    final List<ILogEntryBuilder> builders,
                    final long delayMillis,
                    final boolean end,
                    final boolean reOpen,
+                   final boolean startPositionIgnoreError,
                    final int bufSize,
                    final TailerStatistics stats)
     {
         this.file = file;
         this.delayMillis = delayMillis;
         this.end = end;
+        this.startPositionIgnoreError = startPositionIgnoreError;
 
         // Save and prepare the listener
         this.builders = builders;
@@ -129,17 +121,16 @@ public final class Tailer implements Callable<LCTailerResult>
         this.statistics = stats;
 
         this.startPosition = startPosition;
-        this.stopAfter = stopAfter;
     }
 
     public static Tailer from(final Path file,
                        final Long startPosition,
-                       final Long stopAfter,
                        final Charset cset,
                        final List<ILogEntryBuilder> builders,
                        final long delayMillis,
                        final boolean end,
                        final boolean reOpen,
+                       final boolean startPositionIgnoreError,
                        final int bufSize,
                        final TailerStatistics stats,
                        final String setName,
@@ -147,12 +138,12 @@ public final class Tailer implements Callable<LCTailerResult>
     {
         Tailer res = new Tailer(file,
                 startPosition,
-                stopAfter,
                 cset,
                 builders,
                 delayMillis,
                 end,
                 reOpen,
+                startPositionIgnoreError,
                 bufSize,
                 stats);
 
@@ -212,11 +203,13 @@ public final class Tailer implements Callable<LCTailerResult>
                                         startPosition));
                     }
 
-                    if( startPosition > reader.size() )
+                    if( startPosition > reader.size()
+                            && startPositionIgnoreError == false )
                     {
                         throw new LogCheckException(
                                 String.format("File start position ( %d ) can not be further than the file's"
-                                + "last position ( %d ).  Was the file truncated since last run?", startPosition, reader.size()));
+                                + " last position ( %d ).  Was the file truncated since last run?",
+                                        startPosition, reader.size()));
                     }
 
                     // Start where instructed
@@ -236,40 +229,8 @@ public final class Tailer implements Callable<LCTailerResult>
 
             while( run )
             {
-                // Check the file length to see if it was rotated
-                /*final long length = Files.size(getFile());
-
-                if( length < position )
-                {
-                    // File was rotated
-                    listener.fileRotated();
-                    // Reopen the reader after rotation
-
-                    // Ensure that the old file is closed iff we re-open it successfully
-                    final FileChannel save = reader;
-                    reader = FileChannel.open(getFile(), StandardOpenOption.READ);
-
-                    // At this point, we're sure that the old file is rotated
-                    // Finish scanning the old file and then we'll start with the new one
-                    try
-                    {
-                        readLines(save);
-                    }
-                    catch( IOException ioe )
-                    {
-                        listener.handle(ioe);
-                    }
-                    position = 0;
-                    // close old file explicitly rather than relying on GC picking up previous RAF
-                    IOUtils.closeQuietly(save);
-
-                    continue;
-                }
-                else*/
-                {
-                    // The file has more content than it did last time
-                    position = readLines(reader);
-                }
+                // The file has more content than it did last time
+                position = readLines(reader);
 
                 if( reOpen )
                 {

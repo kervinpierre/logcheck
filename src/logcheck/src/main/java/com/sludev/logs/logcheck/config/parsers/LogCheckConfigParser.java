@@ -385,6 +385,7 @@ public class LogCheckConfigParser
                 null, // storeReOpenLogFile
                 currSaveState, // saveState
                 continueState, // continueState
+                null, // startPositionIgnoreError
                 lockFileStr,
                 logFileStr,
                 null, // storeLogFile

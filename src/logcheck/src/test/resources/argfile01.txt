@@ -59,7 +59,6 @@
 --store-log-file /tmp/store-log.txt            \
 --save-state                                   \
 --state-file /tmp/current-state.xml            \
---error-file /tmp/current-errors.xml           \
 --set-name="test app"                          \
 --dedupe-dir-path /tmp/dedupe                  \
 --dedupe-max-before-write=5                    \

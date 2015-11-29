@@ -69,6 +69,7 @@ public final class LogCheckConfig
     private final Boolean continueState;
     private final Boolean readReOpenLogFile;
     private final Boolean storeReOpenLogFile;
+    private final Boolean startPositionIgnoreError;
     private final Path lockFilePath;
     private final Path logPath;
     private final Path storeLogPath;
@@ -113,6 +114,11 @@ public final class LogCheckConfig
     public Boolean getContinueState()
     {
         return continueState;
+    }
+
+    public Boolean getStartPositionIgnoreError()
+    {
+        return startPositionIgnoreError;
     }
 
     public Path getStateFilePath()
@@ -337,6 +343,7 @@ public final class LogCheckConfig
                            final Boolean storeReOpenLogFile,
                            final Boolean saveState,
                            final Boolean continueState,
+                           final Boolean startPositionIgnoreError,
                            final Path lockFilePath,
                            final Path logPath,
                            final Path storeLogPath,
@@ -507,6 +514,19 @@ public final class LogCheckConfig
         else
         {
             this.emailOnError = null;
+        }
+
+        if( startPositionIgnoreError != null )
+        {
+            this.startPositionIgnoreError = startPositionIgnoreError;
+        }
+        else if( orig != null && orig.getStartPositionIgnoreError() != null )
+        {
+            this.startPositionIgnoreError = orig.getStartPositionIgnoreError();
+        }
+        else
+        {
+            this.startPositionIgnoreError = null;
         }
 
         if( elasticsearchURL != null )
@@ -985,6 +1005,7 @@ public final class LogCheckConfig
                                       final Boolean storeReOpenLogFile,
                                       final Boolean saveState,
                                       final Boolean continueState,
+                                      final Boolean startPositionIgnoreError,
                                       final Path lockFilePath,
                                       final Path logPath,
                                       final Path storeLogPath,
@@ -1031,6 +1052,7 @@ public final class LogCheckConfig
                 storeReOpenLogFile,
                 saveState,
                 continueState,
+                startPositionIgnoreError,
                 lockFilePath,
                 logPath,
                 storeLogPath,
@@ -1085,6 +1107,7 @@ public final class LogCheckConfig
                                         final Boolean storeReOpenLogFile,
                                        final Boolean saveState,
                                        final Boolean continueState,
+                                        final Boolean startPositionIgnoreError,
                                        final String lockFilePathStr,
                                        final String logPathStr,
                                         final String storeLogPathStr,
@@ -1381,6 +1404,7 @@ public final class LogCheckConfig
                 storeReOpenLogFile,
                 saveState,
                 continueState,
+                startPositionIgnoreError,
                 lockFilePath,
                 logPath,
                 storeLogPath,
