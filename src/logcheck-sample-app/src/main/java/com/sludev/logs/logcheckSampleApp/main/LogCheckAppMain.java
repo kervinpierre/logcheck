@@ -199,6 +199,8 @@ public final class LogCheckAppMain
         {
             // If main leaves for any reason, shutdown all threads
             mainThreadExe.shutdownNow();
+
+            log.debug("processStart() completed");
         }
 
         return resp;

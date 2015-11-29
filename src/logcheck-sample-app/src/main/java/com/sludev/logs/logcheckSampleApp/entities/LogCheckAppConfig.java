@@ -26,6 +26,7 @@ public final class LogCheckAppConfig
     private final Path outputPath;
     private final Pair<Long,TimeUnit> outputFrequency;
     private final Long rotateAfterCount;
+    private final Long stopAfterCount;
     private final Long maxBackups;
     private final LCSAGeneratorType outputGeneratorType;
     private final Boolean truncate;
@@ -51,6 +52,11 @@ public final class LogCheckAppConfig
     public Long getRotateAfterCount()
     {
         return rotateAfterCount;
+    }
+
+    public Long getStopAfterCount()
+    {
+        return stopAfterCount;
     }
 
     public Long getMaxBackups()
@@ -88,6 +94,7 @@ public final class LogCheckAppConfig
                               final Pair<Long,TimeUnit> outputFrequency,
                               final LCSAGeneratorType outputGeneratorType,
                               final Long rotateAfterCount,
+                              final Long stopAfterCount,
                               final Long maxBackups,
                               final Boolean truncate,
                               final Boolean append,
@@ -110,6 +117,15 @@ public final class LogCheckAppConfig
         else
         {
             this.rotateAfterCount = null;
+        }
+
+        if( stopAfterCount != null )
+        {
+            this.stopAfterCount = stopAfterCount;
+        }
+        else
+        {
+            this.stopAfterCount = null;
         }
 
         if( maxBackups != null )
@@ -187,6 +203,7 @@ public final class LogCheckAppConfig
                                          final Pair<Long,TimeUnit> outputFrequency,
                                          final LCSAGeneratorType outputGeneratorType,
                                          final Long rotateAfterCount,
+                                         final Long stopAfterCount,
                                          final Long maxBackups,
                                          final Boolean truncate,
                                          final Boolean append,
@@ -198,6 +215,7 @@ public final class LogCheckAppConfig
                                                         outputFrequency,
                                                         outputGeneratorType,
                                                         rotateAfterCount,
+                                                        stopAfterCount,
                                                         maxBackups,
                                                         truncate,
                                                         append,
@@ -212,6 +230,7 @@ public final class LogCheckAppConfig
                                          final String outputFrequency,
                                          final String outputGeneratorType,
                                          final String rotateAfterCount,
+                                         final String stopAfterCount,
                                          final String maxBackups,
                                          final Boolean truncate,
                                          final Boolean append,
@@ -222,6 +241,7 @@ public final class LogCheckAppConfig
         Path op = null;
         Pair<Long,TimeUnit> of = null;
         Long rac = null;
+        Long sac = null;
         Long mbu = null;
         LCSAGeneratorType gt = null;
 
@@ -250,7 +270,12 @@ public final class LogCheckAppConfig
             rac = ParseNumberWithSuffix.parseIntWithMagnitude(rotateAfterCount);
         }
 
-        LogCheckAppConfig res = from(ot, op, of, gt, rac, mbu,
+        if( StringUtils.isNoneBlank(stopAfterCount) )
+        {
+            sac = ParseNumberWithSuffix.parseIntWithMagnitude(stopAfterCount);
+        }
+
+        LogCheckAppConfig res = from(ot, op, of, gt, rac, sac, mbu,
                                         truncate, append, deleteLogs, confirmDeletes);
 
         return res;

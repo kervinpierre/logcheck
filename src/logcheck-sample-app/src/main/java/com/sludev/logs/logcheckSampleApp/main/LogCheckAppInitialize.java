@@ -43,6 +43,7 @@ public final class LogCheckAppInitialize
         String currOutputFrequency = null;
         String currOutputGenType = null;
         String currRotateAfter = null;
+        String currStopAfter = null;
         String currMaxBackups = null;
         Boolean currAppend = null;
         Boolean currTruncate = null;
@@ -185,6 +186,10 @@ public final class LogCheckAppInitialize
                         currRotateAfter = currOpt.getValue();
                         break;
 
+                    case "stop-after-count":
+                        currStopAfter = currOpt.getValue();
+                        break;
+
                     case "max-backups":
                         currMaxBackups = currOpt.getValue();
                         break;
@@ -203,6 +208,7 @@ public final class LogCheckAppInitialize
                     currOutputFrequency,
                     currOutputGenType,
                     currRotateAfter,
+                    currStopAfter,
                     currMaxBackups,
                     currAppend,
                     currTruncate,
@@ -240,7 +246,12 @@ public final class LogCheckAppInitialize
                 .build());
 
         options.addOption(Option.builder().longOpt("rotate-after-count")
-                .desc("Rotate the output file after the specified number of output writes. Suffix 'K', 'M' and 'G' are allowed.")
+                .desc("Rotate the log output file after the specified number of output writes. Suffix 'K', 'M' and 'G' are allowed.")
+                .hasArg()
+                .build());
+
+        options.addOption(Option.builder().longOpt("stop-after-count")
+                .desc("Stop the log output file after the specified number of output writes. Suffix 'K', 'M' and 'G' are allowed.")
                 .hasArg()
                 .build());
 
