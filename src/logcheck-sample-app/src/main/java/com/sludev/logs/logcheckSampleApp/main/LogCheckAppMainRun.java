@@ -13,8 +13,6 @@ import org.apache.logging.log4j.Logger;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -99,7 +97,7 @@ public final class LogCheckAppMainRun implements Callable<LCSAResult>
     private LCSAResult deleteLogs(Path outFile) throws LogCheckAppException
     {
         LCSAResult res = LCSAResult.NONE;
-        Path parent = null;
+        Path parent;
 
         if( outFile == null )
         {
@@ -190,6 +188,8 @@ public final class LogCheckAppMainRun implements Callable<LCSAResult>
         final AtomicReference<LCSAResult> threadRes = new AtomicReference<>();
         final AtomicInteger callCount = new AtomicInteger(0);
 
+        final Long stopAfter = config.getStopAfterCount();
+
         schedulerExe.scheduleAtFixedRate(() ->
         {
             String currStr = null;
@@ -212,7 +212,10 @@ public final class LogCheckAppMainRun implements Callable<LCSAResult>
             {
                 LCSAResult resWrite = wf.writeLine(currStr);
 
-                if( resWrite != LCSAResult.SUCCESS )
+                if( resWrite != LCSAResult.SUCCESS
+                        || ( stopAfter != null
+                          && stopAfter > 0
+                          && stopAfter < callCount.getAndIncrement()) )
                 {
                     threadRes.set(resWrite);
                     schedulerExe.shutdown();
