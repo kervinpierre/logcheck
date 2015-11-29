@@ -115,14 +115,16 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>4.10</version>
+            <version>4.12</version>
             <scope>test</scope>
         </dependency>
+
         <dependency>
             <groupId>io.searchbox</groupId>
             <artifactId>jest</artifactId>
             <version>0.1.5</version>
         </dependency>
+
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-collections4</artifactId>
@@ -130,17 +132,17 @@
         </dependency>
 
         <dependency>
-            <groupId>com.fastsitesoft</groupId>
-            <artifactId>fssagent</artifactId>
-            <version>1.2</version>
+            <groupId>com.sludev.logs</groupId>
+            <artifactId>logcheck-sample-app</artifactId>
+            <version>0.9</version>
             <scope>test</scope>
         </dependency>
+
         <dependency>
             <groupId>com.opencsv</groupId>
             <artifactId>opencsv</artifactId>
             <version>3.6</version>
         </dependency>
-
 
     </dependencies>
 </project>

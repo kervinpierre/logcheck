@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -39,6 +40,36 @@ import java.util.regex.Pattern;
 public final class FSSArgFile
 {
     private static final Logger log = LogManager.getLogger(FSSArgFile.class);
+
+    public static String[] getArgArray(String line) throws LogCheckException
+    {
+        String[] res;
+
+        // Use CSV parser because I really do not what to deal with quote and escape rules
+        // more than I have too.
+        CSVReader cread = new CSVReader(new StringReader(line), ' ', '"', '\\');
+        try
+        {
+            res = cread.readNext();
+        }
+        catch( IOException ex )
+        {
+            throw new LogCheckException("Error reading arg line", ex);
+        }
+
+        return res;
+    }
+
+    public static String[] getArgArray(List<String> lines) throws LogCheckException
+    {
+        String[] res;
+
+        String line = String.join(" ", lines);
+
+        res = getArgArray(line);
+
+        return res;
+    }
 
     public static String[] getArgArray(Path file) throws LogCheckException
     {
@@ -123,10 +154,7 @@ public final class FSSArgFile
             }
             while(  stop == false );
 
-            // Use CSV parser because I really do not what to deal with quote and escape rules
-            // more than I have too.
-            CSVReader cread = new CSVReader(new StringReader(argLine+"\n"), ' ', '"', '\\');
-            res = cread.readNext();
+            res = getArgArray(argLine + "\n");
         }
         catch( IOException ex )
         {

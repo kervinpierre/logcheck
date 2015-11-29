@@ -70,9 +70,14 @@ public class LogCheckRun implements Callable<LogCheckResult>
     private static final Logger log 
                              = LogManager.getLogger(LogCheckRun.class);
     
-    private LogCheckConfig config;
+    private final LogCheckConfig config;
     private Path lockFile;
-    
+
+    public LogCheckRun(LogCheckConfig config)
+    {
+        this.config = config;
+    }
+
     public Path getLockFile()
     {
         return lockFile;
@@ -86,11 +91,6 @@ public class LogCheckRun implements Callable<LogCheckResult>
     public LogCheckConfig getConfig()
     {
         return config;
-    }
-
-    public void setConfig(LogCheckConfig config)
-    {
-        this.config = config;
     }
 
     @Override
@@ -185,6 +185,7 @@ public class LogCheckRun implements Callable<LogCheckResult>
                 config.isTailFromEnd(),
                 config.getReadReOpenLogFile(),
                 config.getSaveState(),
+                config.getStartPositionIgnoreError(),
                 null, // bufferSize
                 config.getReadLogFileCount(),
                 config.getReadMaxDeDupeEntries(),
@@ -320,11 +321,13 @@ public class LogCheckRun implements Callable<LogCheckResult>
             
             // We don't have to do much here because the interrupt got us out
             // of the while loop.
-            
+
+            res = LogCheckResult.from(LCResultStatus.INTERRUPTED);
         }
         catch (ExecutionException ex)
         {
             log.error("Application 'run' execution error", ex);
+
         }
         finally
         {

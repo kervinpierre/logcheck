@@ -69,6 +69,7 @@ public class LogCheckInitialize
         Boolean currContinue = null;
         Boolean currReadReOpenLogFile = null;
         Boolean currStoreReOpenLogFile = null;
+        Boolean currStartPositionIgnoreError = null;
         String currPollIntervalSeconds = null;
         String currEmailOnError = null;
         String currSmtpServer = null;
@@ -366,6 +367,12 @@ public class LogCheckInitialize
                         // Maximum deduplication log entries
                         currStoreLogFile = currOpt.getValue();
                         break;
+
+
+                    case "start-position-ignore-error":
+                        // If there is a discrepancy between the State File and the Log File
+                        currStartPositionIgnoreError = true;
+                        break;
                 }
             }
 
@@ -386,6 +393,7 @@ public class LogCheckInitialize
                     currStoreReOpenLogFile, // --store-reopen-log-file
                     currSaveState,  // saveState
                     currContinue,
+                    currStartPositionIgnoreError,
                     currLockFile,
                     currLogPath,
                     currStoreLogFile,
@@ -658,6 +666,10 @@ public class LogCheckInitialize
         options.addOption( Option.builder().longOpt( "store-log-file" )
                 .desc( "The path to the Log Entry log file on disk." )
                 .hasArg()
+                .build() );
+
+        options.addOption( Option.builder().longOpt( "start-position-ignore-error" )
+                .desc( "If there is a discrepancy between the State File and the Log File, e.g. invalid position.  Then ignore the state file" )
                 .build() );
 
         return options;

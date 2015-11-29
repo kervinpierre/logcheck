@@ -36,6 +36,7 @@ import com.sludev.logs.logcheck.utils.LogCheckResult;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
@@ -75,6 +76,7 @@ public final class LogCheckTail implements Callable<LogCheckResult>
     private final Boolean reOpenLogFile;
     private final Boolean continueState;
     private final Boolean saveState;
+    private final Boolean startPositionIgnoreError;
     private final Integer bufferSize;
     private final Integer readLogFileCount;
     private final Integer readMaxDeDupeEntries;
@@ -93,6 +95,7 @@ public final class LogCheckTail implements Callable<LogCheckResult>
                          final Boolean tailFromEnd,
                          final Boolean reOpenLogFile,
                          final Boolean saveState,
+                         final Boolean startPositionIgnoreError,
                          final Integer bufferSize,
                          final Integer readLogFileCount,
                          final Integer readMaxDeDupeEntries,
@@ -130,6 +133,15 @@ public final class LogCheckTail implements Callable<LogCheckResult>
         else
         {
             this.saveState = false;
+        }
+
+        if( startPositionIgnoreError != null )
+        {
+            this.startPositionIgnoreError = startPositionIgnoreError;
+        }
+        else
+        {
+            this.startPositionIgnoreError = false;
         }
 
         if( reOpenLogFile != null )
@@ -204,6 +216,7 @@ public final class LogCheckTail implements Callable<LogCheckResult>
                                     final Boolean tailFromEnd,
                                     final Boolean reOpenOnChunk,
                                     final Boolean saveState,
+                                    final Boolean startPositionIgnoreError,
                                     final Integer bufferSize,
                                     final Integer readLogFileCount,
                                     final Integer readMaxDeDupeEntries,
@@ -222,6 +235,7 @@ public final class LogCheckTail implements Callable<LogCheckResult>
                 tailFromEnd,
                 reOpenOnChunk,
                 saveState,
+                startPositionIgnoreError,
                 bufferSize,
                 readLogFileCount,
                 readMaxDeDupeEntries,
@@ -246,6 +260,7 @@ public final class LogCheckTail implements Callable<LogCheckResult>
         Long currPosition = null;
 
         boolean currReOpen = BooleanUtils.isTrue(reOpenLogFile);
+        boolean currStartPosIgnoreError = BooleanUtils.isTrue(startPositionIgnoreError);
 
         final ScheduledExecutorService statsSchedulerExe;
 
@@ -354,12 +369,12 @@ public final class LogCheckTail implements Callable<LogCheckResult>
 
                 mainTailer.set( Tailer.from(logFile,
                         currPosition,
-                        stopAfter,
-                        Tailer.DEFAULT_CHARSET,
+                        Charset.defaultCharset(),
                         mainLogEntryBuilders,
                         currDelay*1000, // Convert to milliseconds
                         currTailFromEnd,
                         currReOpen,
+                        currStartPosIgnoreError,
                         Tailer.DEFAULT_BUFSIZE,
                         stats,
                         setName,

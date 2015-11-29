@@ -26,15 +26,18 @@ import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.rules.TestWatcher;
+import org.junit.runners.MethodSorters;
 
 /**
  *
  * @author Kervin Pierre <info@sludev.com>
  */
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class LogCheckMainTest
 {
     private static final Logger log 
