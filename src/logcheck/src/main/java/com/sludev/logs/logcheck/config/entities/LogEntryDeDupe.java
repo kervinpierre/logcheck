@@ -18,6 +18,11 @@
 
 package com.sludev.logs.logcheck.config.entities;
 
+import com.sludev.logs.logcheck.utils.LogCheckException;
+import org.apache.commons.codec.DecoderException;
+import org.apache.commons.codec.binary.Hex;
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -34,7 +39,7 @@ public final class LogEntryDeDupe
     private static final Logger log = LogManager.getLogger(LogEntryDeDupe.class);
 
     private final UUID id;
-    private final String logHashCode;
+    private final byte[] logHashCode;
     private final String errorCode;
     private final String errorCodeType;
     private final String errorText;
@@ -45,7 +50,7 @@ public final class LogEntryDeDupe
         return id;
     }
 
-    public String getLogHashCode()
+    public byte[] getLogHashCode()
     {
         return logHashCode;
     }
@@ -71,7 +76,7 @@ public final class LogEntryDeDupe
     }
 
     private LogEntryDeDupe(final UUID id,
-                           final String logHashCode,
+                           final byte[] logHashCode,
                            final String errorCode,
                            final String errorCodeType,
                            final String errorText,
@@ -86,7 +91,7 @@ public final class LogEntryDeDupe
     }
 
     public static LogEntryDeDupe from(final UUID id,
-                                      final String logHashCode,
+                                      final byte[] logHashCode,
                                       final String errorCode,
                                       final String errorCodeType,
                                       final String errorText,
@@ -103,17 +108,31 @@ public final class LogEntryDeDupe
     }
 
     public static LogEntryDeDupe from(final String idStr,
-                                      final String logHashCode,
+                                      final String logHashCodeStr,
                                       final String errorCode,
                                       final String errorCodeType,
                                       final String errorText,
-                                      final String timeStampStr)
+                                      final String timeStampStr) throws LogCheckException
     {
         UUID id = null;
         Instant timeStamp = null;
+        byte[] logHashCode = null;
 
         timeStamp = Instant.parse(timeStampStr);
         id        = UUID.fromString(idStr);
+
+        try
+        {
+            logHashCode = Hex.decodeHex(logHashCodeStr.toCharArray());
+        }
+        catch( DecoderException ex )
+        {
+            String errMsg = String.format("Failed converting string to binary. '%s'",
+                    logHashCodeStr);
+
+            log.debug(errMsg, ex);
+            throw new LogCheckException(errMsg, ex);
+        }
 
         LogEntryDeDupe ledd = new LogEntryDeDupe(id,
                 logHashCode,
@@ -123,5 +142,37 @@ public final class LogEntryDeDupe
                 timeStamp);
 
         return ledd;
+    }
+
+    @Override
+    public int hashCode()
+    {
+        HashCodeBuilder hcb = new HashCodeBuilder();
+
+        hcb.append(logHashCode);
+
+        return hcb.toHashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj)
+    {
+        EqualsBuilder eb = new EqualsBuilder();
+
+        if( obj == this )
+        {
+            return true;
+        }
+
+        if( obj instanceof LogEntryDeDupe == false )
+        {
+            return false;
+        }
+
+        LogEntryDeDupe ledd = (LogEntryDeDupe)obj;
+
+        eb.append(logHashCode, ledd.getLogHashCode());
+
+        return eb.isEquals();
     }
 }

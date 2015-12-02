@@ -110,12 +110,15 @@ public final class LogCheckFileWriter
         currBlock = lcf.getLastProcessedBlock();
         if( currBlock == null )
         {
-            throw new LogCheckException("Missing last processed block");
+            log.info("Missing last processed block");
         }
-        currElem = LogFileBlockWriter.toElement(doc, "lastProcessedBlock", currBlock);
-        if( currElem != null )
+        else
         {
-            res.appendChild(currElem);
+            currElem = LogFileBlockWriter.toElement(doc, "lastProcessedBlock", currBlock);
+            if( currElem != null )
+            {
+                res.appendChild(currElem);
+            }
         }
 
         return res;

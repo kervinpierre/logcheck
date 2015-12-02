@@ -26,6 +26,7 @@ import com.sludev.logs.logcheck.log.ILogEntrySource;
 import com.sludev.logs.logcheck.log.LogEntry;
 import com.sludev.logs.logcheck.utils.LogCheckException;
 import com.sludev.logs.logcheck.utils.LogCheckResult;
+import org.apache.commons.codec.binary.Hex;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -33,7 +34,10 @@ import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -66,6 +70,8 @@ public interface ILogEntryStore
         Path deDupeFileName = null;
         LogCheckDeDupeLog currDeDupeLog = null;
 
+        log.debug("process() started.");
+
         try
         {
             md = MessageDigest.getInstance("SHA-256");
@@ -75,36 +81,67 @@ public interface ILogEntryStore
             log.debug("Failed getting SHA-256 Hash", ex);
         }
 
+        Set<LogEntryDeDupe> currentProcessedEntries = new HashSet<>();
         boolean shouldWrite = false;
         do
         {
-            // Setup the deduplication directory if we need it.
-            // Rotate the log file after a certain number of log stores.
-            if( deDupeDirPath != null
-                    && (logCount == 0
-                        || (deDupeMaxLogsPerFile != null
-                            && deDupeMaxLogsPerFile > 0
-                            && logCount % deDupeMaxLogsPerFile == 0)) )
+            try
             {
-                if( shouldWrite )
+                // Setup the deduplication directory if we need it.
+                // Rotate the log file after a certain number of log stores.
+                if( deDupeDirPath != null
+                        && (logCount == 0
+                        || (deDupeMaxLogsPerFile != null
+                        && deDupeMaxLogsPerFile > 0
+                        && logCount % deDupeMaxLogsPerFile == 0)) )
                 {
-                    // We should write out the final log entries
-                    LogCheckDeDupeLogWriter.write(currDeDupeLog, deDupeFileName);
-                }
+                    if( shouldWrite )
+                    {
+                        // We should write out the final log entries
+                        LogCheckDeDupeLogWriter.write(currDeDupeLog, deDupeFileName);
+                    }
 
-                deDupeFileName = LogCheckDeDupeLog.nextFileName(deDupeDirPath,deDupeMaxLogFiles,true);
-                currDeDupeLog = LogCheckDeDupeLog.from(runUUID, Instant.now(), null);
+                    deDupeFileName = LogCheckDeDupeLog.nextFileName(deDupeDirPath, deDupeMaxLogFiles, true);
+                    currDeDupeLog = LogCheckDeDupeLog.from(runUUID, Instant.now(), null);
+                }
+            }
+            catch( LogCheckException ex )
+            {
+                log.warn("Error writing deduplication logs", ex);
             }
 
             // Block until the next log entry
             currEntry = src.next();
             currEntryVO = LogEntry.toValueObject(currEntry);
 
-            // TODO : Check the deduplication list before put
+            // Check the deduplication list before put
+            LogEntryDeDupe currLEDD = null;
+            if( md != null )
+            {
+                md.update(LogEntryVO.toJSON(currEntryVO).getBytes());
+                currLEDD = LogEntryDeDupe.from(null,
+                        md.digest(),
+                        null,
+                        null,
+                        null,
+                        Instant.now());
 
-            // TODO : Define duplication rules E.g. skip or quit
+                if( currentProcessedEntries.contains(currLEDD) )
+                {
+                    String errMsg = String.format("This Log Entry has already been added in this process() call '%s'",
+                            Hex.encodeHexString(currLEDD.getLogHashCode()));
 
-            // TODO : Have duplication list for current run, and for past runs
+                    log.debug(errMsg);
+
+                    // TODO : Define duplication rules E.g. skip or quit
+
+                    // TODO : Check the deduplication logs on disk as well
+                }
+                else
+                {
+                    currentProcessedEntries.add(currLEDD);
+                }
+            }
 
             LogCheckResult putRes = null;
             for( ILogEntryStore dst : dstStores )
@@ -114,39 +151,36 @@ public interface ILogEntryStore
 
             logCount++;
 
-            // Update deduplication statistics
-            if( currDeDupeLog != null
-                    && md != null )
+            try
             {
-                md.update(LogEntryVO.toJSON(currEntryVO).getBytes());
-                String currHashStr = String.format("%x", new java.math.BigInteger(1, md.digest()));
-
-                LogEntryDeDupe currLEDD = LogEntryDeDupe.from(null,
-                        currHashStr,
-                        null,
-                        null,
-                        null,
-                        Instant.now());
-
-                currDeDupeLog.getLogEntryDeDupes().add(currLEDD);
-                shouldWrite = true;
-
-                boolean doWrite = true;
-                if( putRes != null
-                        && deDupeMaxLogsBeforeWrite != null
-                        && deDupeMaxLogsBeforeWrite > 0
-                        && logCount % deDupeMaxLogsBeforeWrite != 0 )
+                // Update deduplication statistics
+                if( currDeDupeLog != null
+                        && currLEDD != null )
                 {
-                    doWrite = false;
-                }
+                    currDeDupeLog.getLogEntryDeDupes().add(currLEDD);
+                    shouldWrite = true;
 
-                if( doWrite )
-                {
-                    // Obviously, we can't rewrite the log file on each log store.
-                    // log entries stored before writing out this log is configurable.
-                    LogCheckDeDupeLogWriter.write(currDeDupeLog, deDupeFileName);
-                    shouldWrite = false;
+                    boolean doWrite = true;
+                    if( putRes != null
+                            && deDupeMaxLogsBeforeWrite != null
+                            && deDupeMaxLogsBeforeWrite > 0
+                            && logCount % deDupeMaxLogsBeforeWrite != 0 )
+                    {
+                        doWrite = false;
+                    }
+
+                    if( doWrite )
+                    {
+                        // Obviously, we can't rewrite the log file on each log store.
+                        // log entries stored before writing out this log is configurable.
+                        LogCheckDeDupeLogWriter.write(currDeDupeLog, deDupeFileName);
+                        shouldWrite = false;
+                    }
                 }
+            }
+            catch( LogCheckException ex )
+            {
+                log.warn("Error writing deduplication logs", ex);
             }
 
             if( putRes == null )

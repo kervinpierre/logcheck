@@ -264,6 +264,11 @@ public final class LogCheckTail implements Callable<LogCheckResult>
 
         final ScheduledExecutorService statsSchedulerExe;
 
+        if( logFile == null )
+        {
+            throw new LogCheckException("Log File cannot be null.");
+        }
+
         TailerStatistics stats = TailerStatistics.from(logFile,
                 stateFile,
                 errorFile,
@@ -338,15 +343,22 @@ public final class LogCheckTail implements Callable<LogCheckResult>
 
         LCTailerResult tailerRes = LCTailerResult.NONE;
 
+        boolean firstPass = true;
         try
         {
             // Tailer start
             // Main Tailer should be restarted if 'reOpen' option is set.
             do
             {
-                if( BooleanUtils.isTrue(continueState) )
+                if( BooleanUtils.isTrue(continueState) ||
+                        ( firstPass == false &&  currReOpen ) )
                 {
-                    if( Files.notExists(stateFile) )
+                    // Reopen implies continue.  Because we use the logs to serialize state.
+
+                    // We don't read the state on the first pass of the loop, unless --continue is present
+                    // We do on the other passes though.
+
+                    if( stateFile == null || Files.notExists(stateFile) )
                     {
                         log.debug(
                                 String.format("Trying to 'continue' but the state file does not exist. '%s'",
@@ -384,6 +396,24 @@ public final class LogCheckTail implements Callable<LogCheckResult>
 
                 // Wait until Tailer thread has completed.
                 tailerRes = tailerExeRes.get();
+
+                // FIXME : Set tail from end to be true or false based on Tailer result.
+                // This should help implement log-rotate support
+
+                // At this point we should make sure that the statistics have been saved.
+                if( stats.getLastProcessedPosition() < 1
+                        && currReOpen
+                        && BooleanUtils.isNotTrue(continueState) )
+                {
+                    // Reset the start position on disk
+                    stats.save(true);
+                }
+                else
+                {
+                    stats.save();
+                }
+
+                firstPass = false;
             }
             while( tailerRes == LCTailerResult.REOPEN && exitNow.get() == false);
         }
@@ -412,7 +442,6 @@ public final class LogCheckTail implements Callable<LogCheckResult>
             {
                 stopSchedulerExe.shutdownNow();
             }
-
         }
 
         return res;

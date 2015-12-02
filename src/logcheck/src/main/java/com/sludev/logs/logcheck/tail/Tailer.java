@@ -86,6 +86,8 @@ public final class Tailer implements Callable<LCTailerResult>
      */
     private volatile boolean run = true;
 
+    private String lineRemainder;
+
     /**
      * Creates a Tailer for the given file, with a specified buffer size.
      *
@@ -121,6 +123,8 @@ public final class Tailer implements Callable<LCTailerResult>
         this.statistics = stats;
 
         this.startPosition = startPosition;
+
+        this.lineRemainder = null;
     }
 
     public static Tailer from(final Path file,
@@ -176,7 +180,7 @@ public final class Tailer implements Callable<LCTailerResult>
      * for each new line.
      */
     @Override
-    public LCTailerResult call() throws Exception
+    public LCTailerResult call() throws LogCheckException, IOException
     {
         log.debug(String.format("Starting Tailer on '%s'", file));
 
@@ -190,6 +194,11 @@ public final class Tailer implements Callable<LCTailerResult>
             // Open the file
             if( run )
             {
+                if( file == null )
+                {
+                    throw new LogCheckException("Log File cannot be null");
+                }
+
                 reader = FileChannel.open(file, StandardOpenOption.READ);
 
                 // The current position in the file
@@ -213,7 +222,7 @@ public final class Tailer implements Callable<LCTailerResult>
                     }
 
                     // Start where instructed
-                    position = startPosition;
+                    position = (startPosition>reader.size())?reader.size():startPosition;
                 }
                 else
                 {
@@ -230,7 +239,7 @@ public final class Tailer implements Callable<LCTailerResult>
             while( run )
             {
                 // The file has more content than it did last time
-                position = readLines(reader);
+                readLines(reader);
 
                 if( reOpen )
                 {
@@ -254,7 +263,10 @@ public final class Tailer implements Callable<LCTailerResult>
         }
         finally
         {
-            IOUtils.closeQuietly(reader);
+            if( reader != null )
+            {
+                IOUtils.closeQuietly(reader);
+            }
         }
 
         return res;
@@ -275,17 +287,22 @@ public final class Tailer implements Callable<LCTailerResult>
      * @return The new position after the lines have been read
      * @throws java.io.IOException if an I/O error occurs.
      */
-    private long readLines(final FileChannel reader) throws IOException, LogCheckException, InterruptedException
+    private void readLines( final FileChannel reader )
+            throws IOException, LogCheckException, InterruptedException
     {
         ByteArrayOutputStream lineBuf = new ByteArrayOutputStream(64);
-        long pos = reader.position();
-        long rePos = pos; // position to re-read
-        boolean seenCR = false;
         ByteBuffer buffer = ByteBuffer.allocate(64);
-
+        boolean seenCR = false;
         int bytesRead;
+
+        // Debugging variables
+        long readCount = 0;
+        String previousLine = null;
+
         while( run && ((bytesRead  = reader.read(buffer))!= -1))
         {
+            readCount++;
+
             buffer.flip();
 
             for(int i = 0; i<buffer.limit(); i++)
@@ -319,26 +336,42 @@ public final class Tailer implements Callable<LCTailerResult>
                 if( doHandle )
                 {
                     String ts = new String(lineBuf.toByteArray(), cset);
+
+                    if( ts.matches(".*?2015-12.*") == false )
+                    {
+                        log.debug(String.format("%s", ts));
+                    }
+
                     for( ILogEntryBuilder ib : builders)
                     {
                         ib.handleLogLine(ts);
                     }
 
                     lineBuf.reset();
-                    rePos = pos + i + 1;
 
                     // Collect statistics
-                    statistics.setLastProcessedPosition(pos);
+                    statistics.setLastProcessedPosition(reader.position());
+
+                    previousLine = ts;
                 }
             }
 
-            pos = reader.position();
             buffer.clear();
         }
 
+        if( run == false )
+        {
+            // We've been asked to stop running
+            log.debug("Tailer process stopping by request.");
+        }
+
+        if( lineBuf.size() > 0 )
+        {
+            log.debug(String.format("leaving %d in the line buffer...\n'%s'",
+                    lineBuf.size(), lineBuf));
+        }
+
         IOUtils.closeQuietly(lineBuf); // not strictly necessary
-        reader.position(rePos); // Ensure we can re-read if necessary
-        return rePos;
     }
 
 }

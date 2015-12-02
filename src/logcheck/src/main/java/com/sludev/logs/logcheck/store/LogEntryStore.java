@@ -18,6 +18,7 @@
 
 package com.sludev.logs.logcheck.store;
 
+import com.sludev.logs.logcheck.enums.LCResultStatus;
 import com.sludev.logs.logcheck.log.ILogEntrySource;
 import com.sludev.logs.logcheck.utils.LogCheckConstants;
 import com.sludev.logs.logcheck.utils.LogCheckException;
@@ -94,7 +95,7 @@ public final class LogEntryStore implements Callable<LogCheckResult>
     @Override
     public LogCheckResult call() throws Exception
     {
-        LogCheckResult res;
+        LogCheckResult res = LogCheckResult.from(LCResultStatus.NONE);
 
         String currJobName = jobName;
         if( StringUtils.isBlank(currJobName) )
@@ -126,13 +127,21 @@ public final class LogEntryStore implements Callable<LogCheckResult>
             }
         }
 
-        res = ILogEntryStore.process(mainLogEntrySource,
-                entryStores,
-                currDeDupePath,
-                runUUID,
-                deDupeMaxLogsBeforeWrite,
-                deDupeMaxLogsPerFile,
-                deDupeMaxLogFiles);
+        try
+        {
+            res = ILogEntryStore.process(mainLogEntrySource,
+                    entryStores,
+                    currDeDupePath,
+                    runUUID,
+                    deDupeMaxLogsBeforeWrite,
+                    deDupeMaxLogsPerFile,
+                    deDupeMaxLogFiles);
+        }
+        catch( InterruptedException ex )
+        {
+            log.debug("ILogEntryStore.process() interrupted.", ex);
+            res = LogCheckResult.from(LCResultStatus.INTERRUPTED);
+        }
 
         return res;
     }

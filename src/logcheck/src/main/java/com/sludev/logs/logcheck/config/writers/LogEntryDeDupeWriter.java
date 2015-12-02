@@ -21,6 +21,7 @@ package com.sludev.logs.logcheck.config.writers;
 import com.sludev.logs.logcheck.config.entities.LogCheckDeDupeLog;
 import com.sludev.logs.logcheck.config.entities.LogEntryDeDupe;
 import com.sludev.logs.logcheck.utils.LogCheckException;
+import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -59,20 +60,20 @@ public final class LogEntryDeDupeWriter
         }
 
         // HashCode
-        String currStr = lcs.getLogHashCode();
-        if( StringUtils.isBlank(currStr) )
+        byte[] currBtyes = lcs.getLogHashCode();
+        if( currBtyes == null || currBtyes.length < 1)
         {
             throw new LogCheckException("Missing Log Hash Code");
         }
         else
         {
             currElem = doc.createElement("logHashCode");
-            currElem.appendChild(doc.createTextNode(currStr));
+            currElem.appendChild(doc.createTextNode(Hex.encodeHexString(currBtyes)));
             res.appendChild(currElem);
         }
 
         // Error code
-        currStr = lcs.getErrorCode();
+        String currStr = lcs.getErrorCode();
         if( StringUtils.isBlank(currStr) )
         {
             ; // throw new LogCheckException("Missing Id");
