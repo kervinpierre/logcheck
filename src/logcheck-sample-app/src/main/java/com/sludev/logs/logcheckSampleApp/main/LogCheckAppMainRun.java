@@ -186,7 +186,7 @@ public final class LogCheckAppMainRun implements Callable<LCSAResult>
         }
 
         final AtomicReference<LCSAResult> threadRes = new AtomicReference<>();
-        final AtomicInteger callCount = new AtomicInteger(0);
+        final AtomicInteger callCount = new AtomicInteger(1);
 
         final Long stopAfter = config.getStopAfterCount();
 
@@ -206,7 +206,7 @@ public final class LogCheckAppMainRun implements Callable<LCSAResult>
                 return;
             }
 
-            currStr = idg.getLine(String.format("Random Line number %d ", callCount.getAndIncrement()));
+            currStr = idg.getLine(String.format(" [%d] Random Line", callCount.getAndIncrement()));
 
             try
             {
@@ -215,7 +215,7 @@ public final class LogCheckAppMainRun implements Callable<LCSAResult>
                 if( resWrite != LCSAResult.SUCCESS
                         || ( stopAfter != null
                           && stopAfter > 0
-                          && stopAfter < callCount.getAndIncrement()) )
+                          && stopAfter < callCount.get()) )
                 {
                     threadRes.set(resWrite);
                     schedulerExe.shutdown();
