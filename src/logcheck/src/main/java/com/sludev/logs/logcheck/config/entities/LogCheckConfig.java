@@ -23,7 +23,9 @@ import com.sludev.logs.logcheck.enums.LCLogEntryBuilderType;
 import com.sludev.logs.logcheck.enums.LCLogEntryStoreType;
 import com.sludev.logs.logcheck.utils.LogCheckConstants;
 import com.sludev.logs.logcheck.utils.LogCheckException;
+import com.sludev.logs.logcheck.utils.ParseNumberWithSuffix;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 
 import java.net.MalformedURLException;
@@ -34,6 +36,7 @@ import java.time.Duration;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  * The main configuration class for the LogCheck application.
@@ -1376,7 +1379,8 @@ public final class LogCheckConfig
         {
             try
             {
-                stopAfter = Long.parseLong(stopAfterStr);
+                Pair<Long,TimeUnit> stop = ParseNumberWithSuffix.parseIntWithTimeUnits(stopAfterStr);
+                stopAfter = stop.getRight().toSeconds(stop.getLeft());
             }
             catch( NumberFormatException ex )
             {

@@ -24,6 +24,7 @@ import com.sludev.logs.logcheck.config.entities.LogFileState;
 import com.sludev.logs.logcheck.config.writers.LogCheckStateWriter;
 import com.sludev.logs.logcheck.enums.LCHashType;
 import com.sludev.logs.logcheck.utils.LogCheckException;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -167,10 +168,18 @@ public class TailerStatistics
 
     public void save() throws LogCheckException
     {
-        save(getState(), stateFile, errorFile);
+        save( false );
     }
 
-    public static void save(LogCheckState state, Path stateFile, Path errorFile) throws LogCheckException
+    public void save(Boolean resetPosition) throws LogCheckException
+    {
+        save(getState(), stateFile, errorFile, resetPosition);
+    }
+
+    public static void save(final LogCheckState state,
+                            final Path stateFile,
+                            final Path errorFile,
+                            final Boolean resetPosition) throws LogCheckException
     {
         log.debug(String.format("Saving statistics to '%s'.", stateFile));
 
@@ -181,7 +190,8 @@ public class TailerStatistics
             throw new LogCheckException("LogFile cannot be null.");
         }
 
-        if( state.getLogFile().getLastProcessedPosition() < 1 )
+        if( BooleanUtils.isNotTrue(resetPosition)
+                && state.getLogFile().getLastProcessedPosition() < 1 )
         {
             // Don't save a log file that hasn't processed data
             log.debug(String.format("TailerStatistics::save() called but no data processed since LastProcessedPosition is %d",

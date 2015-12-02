@@ -42,10 +42,12 @@ import org.junit.rules.TestWatcher;
 import org.junit.runners.MethodSorters;
 
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -133,14 +135,16 @@ public class LogCheckRunTest
      * @throws Exception
      */
     @Test
-    public void A002_testCallGenericWithLogs30s() throws Exception
+    public void A002_testCallGenericWithLogs60s() throws Exception
     {
         String stateFile = "/tmp/current-state.xml";
 
         String[] args;
         List<String> argsList = new ArrayList<>();
 
-        argsList.add("--output-file /tmp/logcheck-sample-app-output.txt");
+        String logFileStr = "/tmp/logcheck-sample-app-output.txt";
+
+        argsList.add(String.format("--output-file %s", logFileStr));
         argsList.add("--delete-logs");
         argsList.add("--output-frequency 50ms");
         argsList.add("--stop-after-count 1K");
@@ -159,20 +163,22 @@ public class LogCheckRunTest
 
         argsList.clear();
 
-        argsList.add("--stop-after=30");
-        argsList.add("--log-file /tmp/logcheck-sample-app-output.txt");
+        String storeLogFile = "/tmp/store-log.txt";
+        Files.deleteIfExists(Paths.get(storeLogFile));
+
+        argsList.add("--stop-after=1M");
+        argsList.add(String.format("--log-file %s", logFileStr));
         argsList.add("--log-entry-builder-type=singleline ");
         argsList.add("--log-entry-store-type=console,simplefile");
-        argsList.add("--store-log-file /tmp/store-log.txt");
+        argsList.add(String.format("--store-log-file %s", storeLogFile ));
         argsList.add("--save-state");
-        argsList.add("--start-position-ignore-error");
         argsList.add(String.format("--state-file %s", stateFile));
         argsList.add("--set-name=\"test app\"");
         argsList.add("--dedupe-dir-path /tmp/dedupe");
         argsList.add("--dedupe-max-before-write=5");
         argsList.add("--dedupe-log-per-file 10");
         argsList.add("--dedupe-max-log-files=5");
-        argsList.add("--continue");
+        argsList.add("--file-from-start");
         argsList.add("--read-reopen-log-file");
 
         args = FSSArgFile.getArgArray(argsList);
@@ -203,7 +209,19 @@ public class LogCheckRunTest
             }
         }
 
-       Assert.assertNotNull(lcResult);
-       Assert.assertTrue(lcResult.getStatus() == LCResultStatus.SUCCESS);
+        Assert.assertNotNull(lcResult);
+        Assert.assertTrue(lcResult.getStatus() == LCResultStatus.SUCCESS);
+
+        Path logFilePath = Paths.get(logFileStr);
+        long logFileCount = Files.lines(logFilePath).count();
+
+        Path storeFilePath = Paths.get(storeLogFile);
+        long storeFileCount = Files.lines(storeFilePath).count();
+
+        log.debug(String.format("\nLog File Count : %d\nStore File Count: %d\n",
+                logFileCount, storeFileCount));
+
+        Assert.assertTrue(logFileCount == 1024);
+        Assert.assertTrue(storeFileCount == 1024);
     }
 }
