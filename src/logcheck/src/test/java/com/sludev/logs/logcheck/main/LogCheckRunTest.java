@@ -34,11 +34,11 @@ import com.sludev.logs.logcheckSampleApp.main.LogCheckAppInitialize;
 import com.sludev.logs.logcheckSampleApp.main.LogCheckAppMainRun;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.concurrent.BasicThreadFactory;
-import org.junit.Assert;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.After;
 import org.junit.AfterClass;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.FixMethodOrder;
 import org.junit.Rule;
@@ -46,17 +46,16 @@ import org.junit.Test;
 import org.junit.rules.TestWatcher;
 import org.junit.runners.MethodSorters;
 
-import java.io.File;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
-import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -101,29 +100,44 @@ public class LogCheckRunTest
     /**
      * Generic call with some of the safer parameters.
      *
-     * Runs then stops after 20s.
+     * Runs then stops after 20s.  No "--continue"
      *
      * @throws Exception
      */
     @Test
     public void A001_testCallGeneric20s() throws Exception
     {
+        Path testDir = Paths.get("/tmp/A001_testCallGeneric20s");
+
+        if( Files.exists(testDir) )
+        {
+            FileUtils.deleteDirectory(testDir.toFile());
+        }
+
+        Files.createDirectory(testDir);
+
         String[] args;
         List<String> argsList = new ArrayList<>();
 
+        Path logFile = testDir.resolve("logcheck-sample-app-output.txt");
+        Path storeLogFile = testDir.resolve("store-log.txt");
+        Path stateFile = testDir.resolve("current-state.xml");
+        Path dedupeDir = testDir.resolve("dedupe");
+
+        Files.createDirectory(dedupeDir);
+
         argsList.add("--stop-after=20");
-        argsList.add("--log-file /tmp/logcheck-sample-app-output.txt");
+        argsList.add(String.format("--log-file %s", logFile));
         argsList.add("--log-entry-builder-type=singleline ");
         argsList.add("--log-entry-store-type=console,simplefile");
-        argsList.add("--store-log-file /tmp/store-log.txt");
+        argsList.add(String.format("--store-log-file %s", storeLogFile ));
         argsList.add("--save-state");
-        argsList.add("--state-file /tmp/current-state.xml");
+        argsList.add(String.format("--state-file %s", stateFile));
         argsList.add("--set-name=\"test app\"");
-        argsList.add("--dedupe-dir-path /tmp/dedupe");
+        argsList.add(String.format("--dedupe-dir-path %s", dedupeDir));
         argsList.add("--dedupe-max-before-write=5");
         argsList.add("--dedupe-log-per-file 10");
         argsList.add("--dedupe-max-log-files=5");
-        argsList.add("--continue");
         argsList.add("--read-reopen-log-file");
 
         args = FSSArgFile.getArgArray(argsList);
@@ -132,10 +146,53 @@ public class LogCheckRunTest
 
         LogCheckRun currRun = new LogCheckRun(config);
 
-        LogCheckResult res = currRun.call();
+        String tempStr =
+                "2015-12-03T16:30:09.562Z :  [1015] Random Line : 446a7379-5283-4483-af7d-a2f3c239caaa\n" +
+                "2015-12-03T16:30:09.586Z :  [1016] Random Line : a1d5412c-ee36-4560-89e7-792c775a9c71\n" +
+                "2015-12-03T16:30:09.612Z :  [1017] Random Line : ce097710-feeb-4643-ad1c-af86e2ac3492\n" +
+                "2015-12-03T16:30:09.637Z :  [1018] Random Line : af835242-9d83-41f7-96c1-b7ac99c328d0\n" +
+                "2015-12-03T16:30:09.662Z :  [1019] Random Line : c52cbcc7-db8c-4766-9b78-ea53d6d08d61\n" +
+                "2015-12-03T16:30:09.687Z :  [1020] Random Line : 6d392b86-483a-41db-acbd-6b5d74d90b8e\n" +
+                "2015-12-03T16:30:09.711Z :  [1021] Random Line : 8d7ff1f7-9cbd-4f02-9b73-6ac56a36afee\n" +
+                "2015-12-03T16:30:09.736Z :  [1022] Random Line : e7c03d4a-3269-463f-ade8-b4f01b8629f3\n" +
+                "2015-12-03T16:30:09.762Z :  [1023] Random Line : 520bc16b-74b6-418c-a591-d2754ed70124\n" +
+                "2015-12-03T16:30:09.787Z :  [1024] Random Line : d2c025d6-8f54-4865-b788-239968f3c0d9\n";
 
-        Assert.assertNotNull(res);
-        Assert.assertTrue(res.getStatus() == LCResultStatus.SUCCESS);
+        ByteBuffer bb = ByteBuffer.wrap(tempStr.getBytes());
+
+        BasicThreadFactory thFactory = new BasicThreadFactory.Builder()
+                .namingPattern("logcheck-run-thread-%d")
+                .build();
+        ExecutorService lcThreadExe = Executors.newSingleThreadExecutor(thFactory);
+        Future<LogCheckResult> lcFuture = lcThreadExe.submit(currRun);
+        lcThreadExe.shutdown();
+
+        LogCheckResult lcResult;
+
+        try
+        {
+            // Sleep 7 seconds, then supply some logs
+            Thread.sleep(7000);
+            try( FileChannel logFC = FileChannel.open(logFile, StandardOpenOption.CREATE_NEW,
+                    StandardOpenOption.WRITE) )
+            {
+                // Read the first block from file
+                logFC.write(bb);
+            }
+
+            // Wait for the logging to be completed
+            lcResult = lcFuture.get();
+        }
+        finally
+        {
+            ;
+        }
+
+        Assert.assertNotNull(lcResult);
+        Assert.assertTrue(lcResult.getStatus() == LCResultStatus.SUCCESS);
+
+        long storeFileCount = Files.lines(storeLogFile).count();
+        Assert.assertTrue(storeFileCount==10);
     }
 
     /**
