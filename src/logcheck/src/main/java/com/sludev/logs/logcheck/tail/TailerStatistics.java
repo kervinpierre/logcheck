@@ -28,6 +28,7 @@ import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.message.StringFormattedMessage;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -229,7 +230,23 @@ public class TailerStatistics
             }
         }
 
-        if( errorFile != null )
+        if( errorFile == null )
+        {
+            try
+            {
+                Files.delete(files.getRight());
+            }
+            catch( IOException ex )
+            {
+                String errMsg = String.format("Error deleting temp file '%s'",
+                        files.getRight());
+
+                log.debug(errMsg, ex);
+
+                throw new LogCheckException(errMsg, ex);
+            }
+        }
+        else
         {
             try
             {

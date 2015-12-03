@@ -57,7 +57,7 @@ public final class LogFileBlockParser
         }
         catch (XPathExpressionException ex)
         {
-            log.debug("configuration parsing error.", ex);
+            log.debug("Configuration parsing error. retrieving <name>");
         }
 
         try

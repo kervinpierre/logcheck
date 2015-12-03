@@ -490,7 +490,7 @@ public final class LogCheckConfig
         }
         else
         {
-            this.idBlockHashType = LCHashType.SHA1;
+            this.idBlockHashType = LCHashType.SHA2;
         }
 
         if( logEntryBuilders != null )
