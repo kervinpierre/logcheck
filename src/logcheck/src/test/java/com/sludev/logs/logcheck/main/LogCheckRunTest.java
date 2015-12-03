@@ -141,7 +141,9 @@ public class LogCheckRunTest
     /**
      * Generic call with some of the safer parameters.
      *
-     * Runs then stops after 30s.  Relies on the log sample application.
+     * Runs then stops after 60s.  Relies on the log sample application to generate the logs.
+     *
+     * After running some validation is done on the stored logs and also on the serialized state.
      *
      * @throws Exception
      */
@@ -277,6 +279,7 @@ public class LogCheckRunTest
         ByteBuffer bb = ByteBuffer.allocate(1000);
         try( FileChannel logFC = FileChannel.open(logFile) )
         {
+            // Read the first block from file
             logFC.read(bb);
         }
 
@@ -290,8 +293,10 @@ public class LogCheckRunTest
 
         Assert.assertArrayEquals(currDigest, firstDigest);
 
+        bb.clear();
         try( FileChannel logFC = FileChannel.open(logFile) )
         {
+            // Read the last block from file.
             logFC.position(logFC.size()-1000);
             logFC.read(bb);
         }
