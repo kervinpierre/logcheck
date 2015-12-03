@@ -38,6 +38,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.time.Instant;
@@ -290,7 +291,7 @@ public final class LogCheckTail implements Callable<LogCheckResult>
             {
                 try
                 {
-                    stats.save();
+                    stats.save(false, true);
                 }
                 catch( LogCheckException ex )
                 {
@@ -406,11 +407,11 @@ public final class LogCheckTail implements Callable<LogCheckResult>
                         && BooleanUtils.isNotTrue(continueState) )
                 {
                     // Reset the start position on disk
-                    stats.save(true);
+                    stats.save(true, true);
                 }
                 else
                 {
-                    stats.save();
+                    stats.save(false, true);
                 }
 
                 firstPass = false;

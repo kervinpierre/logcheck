@@ -99,9 +99,13 @@ public final class LogCheckFileWriter
         LogFileBlock currBlock = lcf.getFirstBlock();
         if( currBlock == null )
         {
-            throw new LogCheckException("Missing first block");
+            log.info("Missing first block. <firstBlock />");; // throw new LogCheckException("Missing first block");
+            currElem = doc.createElement("firstBlock");
         }
-        currElem = LogFileBlockWriter.toElement(doc, "firstBlock", currBlock);
+        else
+        {
+            currElem = LogFileBlockWriter.toElement(doc, "firstBlock", currBlock);
+        }
         if( currElem != null )
         {
             res.appendChild(currElem);

@@ -138,7 +138,9 @@ public class TailerStatistics
 
     public LogFileBlock getFirstBlock( ) throws LogCheckException
     {
-        LogFileBlock res = LogFileBlock.from("FIRST_BLOCK",
+        LogFileBlock res = null;
+
+        res = LogFileBlock.from("FIRST_BLOCK",
                 logFile,
                 0L,
                 idBlockSize,
@@ -167,38 +169,39 @@ public class TailerStatistics
         return res;
     }
 
-    public void save() throws LogCheckException
+    public void save(final Boolean resetPosition,
+                     final Boolean ignoreMissingLogFile) throws LogCheckException
     {
-        save( false );
-    }
-
-    public void save(Boolean resetPosition) throws LogCheckException
-    {
-        save(getState(), stateFile, errorFile, resetPosition);
+        save(getState(ignoreMissingLogFile), stateFile, errorFile, resetPosition, ignoreMissingLogFile);
     }
 
     public static void save(final LogCheckState state,
                             final Path stateFile,
                             final Path errorFile,
-                            final Boolean resetPosition) throws LogCheckException
+                            final Boolean resetPosition,
+                            final Boolean ignoreMissingLogFile) throws LogCheckException
     {
         log.debug(String.format("Saving statistics to '%s'.", stateFile));
 
         Pair<Path,Path> files = null;
+        LogFileState currLFS = state.getLogFile();
 
-        if( state.getLogFile() == null )
+        if( currLFS == null && BooleanUtils.isNotTrue(ignoreMissingLogFile) )
         {
             throw new LogCheckException("LogFile cannot be null.");
         }
 
-        if( BooleanUtils.isNotTrue(resetPosition)
-                && state.getLogFile().getLastProcessedPosition() < 1 )
+        if( BooleanUtils.isNotTrue(resetPosition) )
         {
-            // Don't save a log file that hasn't processed data
-            log.debug(String.format("TailerStatistics::save() called but no data processed since LastProcessedPosition is %d",
+            if( currLFS != null
+                    && currLFS.getLastProcessedPosition() < 1 )
+            {
+                // Don't save a log file that hasn't processed data
+                log.debug(String.format("TailerStatistics::save() called but no data processed since LastProcessedPosition is %d",
                             state.getLogFile().getLastProcessedPosition()));
 
-            return;
+                return;
+            }
         }
 
         // Serialize state
@@ -280,7 +283,7 @@ public class TailerStatistics
         return res;
     }
 
-    public LogCheckState getState()
+    public LogCheckState getState(final Boolean ignoreMissingLogFile)
     {
         LogCheckState res = null;
 
@@ -289,14 +292,30 @@ public class TailerStatistics
         // Generate the logFile tailer statistics
         try
         {
+            LogFileBlock firstBlock = null;
+            LogFileBlock lastBlock = null;
+
+            if( Files.notExists(logFile)
+                    && BooleanUtils.isNotTrue(ignoreMissingLogFile))
+            {
+                throw new LogCheckException(String.format("Log File does not exist '%s",
+                        logFile));
+            }
+
+            if( Files.exists(logFile) )
+            {
+                firstBlock = getFirstBlock();
+                lastBlock = getLastBlock();
+            }
+
             currLogFile = LogFileState.from(logFile,
                     getLastProcessedTimeStart(),
                     Instant.now(),
                     getLastProcessedPosition(),
                     null,
                     null,
-                    getLastBlock(),
-                    getFirstBlock());
+                    lastBlock,
+                    firstBlock);
         }
         catch( LogCheckException ex )
         {

@@ -186,12 +186,17 @@ public final class Tailer implements Callable<LCTailerResult>
 
         LCTailerResult res = LCTailerResult.NONE;
         FileChannel reader = null;
+        long position = 0; // position within the file
+
+        if( reOpen )
+        {
+            // Default result for re-open, is REOPEN
+            res = LCTailerResult.REOPEN;
+        }
 
         try
         {
-            long position = 0; // position within the file
-
-            // Open the file
+            // Open the log file for reading
             if( run )
             {
                 if( file == null )
@@ -199,9 +204,34 @@ public final class Tailer implements Callable<LCTailerResult>
                     throw new LogCheckException("Log File cannot be null");
                 }
 
-                reader = FileChannel.open(file, StandardOpenOption.READ);
+                try
+                {
+                    reader = FileChannel.open(file, StandardOpenOption.READ);
+                }
+                catch( IOException ex )
+                {
+                    String errMSg = String.format("Error opening log file '%s'", file);
 
-                // The current position in the file
+                    log.info(errMSg, ex);
+                    run = false;
+
+                    // Delay here in case re-open is attempted
+                    if( delayMillis > 0 )
+                    {
+                        Thread.sleep(delayMillis);
+                    }
+                }
+            }
+
+            if( run && reader == null )
+            {
+                log.debug("Log file reader cannot be null");
+                throw new LogCheckException("Log file reader cannot be null");
+            }
+
+            // Set the current position in the log file
+            if( run && reader != null )
+            {
                 if( startPosition != null && startPosition >= 0 )
                 {
                     if( end )
@@ -236,9 +266,9 @@ public final class Tailer implements Callable<LCTailerResult>
                 reader.position(position);
             }
 
-            while( run )
+            // Now loop the log file
+            while( run && reader != null )
             {
-                // The file has more content than it did last time
                 readLines(reader);
 
                 if( reOpen )
@@ -247,16 +277,18 @@ public final class Tailer implements Callable<LCTailerResult>
                     // The monitoring thread should relaunch after a period
                     // of time.
                     stop();
-
-                    res = LCTailerResult.REOPEN;
-                    // TODO : Ensure the LogCheckState is saved here
                 }
 
-                // Delay if requested
-                Thread.sleep(delayMillis);
+                // Delay exit if requested.
+                // This gives us a fixed interval *between* calls.
+                // BUG : Delay has to be inside this loop for non-reopen tailing
+                if( delayMillis > 0 )
+                {
+                    Thread.sleep(delayMillis);
+                }
             }
         }
-        catch (final InterruptedException e)
+        catch( final InterruptedException ex )
         {
             Thread.currentThread().interrupt();
             res = LCTailerResult.INTERRUPTED;
