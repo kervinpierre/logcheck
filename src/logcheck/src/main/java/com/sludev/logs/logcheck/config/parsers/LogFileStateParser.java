@@ -139,7 +139,7 @@ public final class LogFileStateParser
         }
         catch (XPathExpressionException ex)
         {
-            log.debug("configuration parsing error.", ex);
+            log.debug("configuration parsing error retrieving <lastProcessedBlock>");
         }
 
         try

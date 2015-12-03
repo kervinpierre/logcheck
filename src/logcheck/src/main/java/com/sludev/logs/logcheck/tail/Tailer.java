@@ -337,10 +337,10 @@ public final class Tailer implements Callable<LCTailerResult>
                 {
                     String ts = new String(lineBuf.toByteArray(), cset);
 
-                    if( ts.matches(".*?2015-12.*") == false )
-                    {
-                        log.debug(String.format("%s", ts));
-                    }
+//                    if( ts.matches(".*?2015-12.*") == false )
+//                    {
+//                        log.debug(String.format("%s", ts));
+//                    }
 
                     for( ILogEntryBuilder ib : builders)
                     {
@@ -367,7 +367,7 @@ public final class Tailer implements Callable<LCTailerResult>
 
         if( lineBuf.size() > 0 )
         {
-            log.debug(String.format("leaving %d in the line buffer...\n'%s'",
+            log.warn(String.format("leaving %d in the line buffer...\n'%s'",
                     lineBuf.size(), lineBuf));
         }
 
