@@ -70,6 +70,7 @@ public class LogCheckInitialize
         Boolean currReadReOpenLogFile = null;
         Boolean currStoreReOpenLogFile = null;
         Boolean currStartPositionIgnoreError = null;
+        Boolean currValidateTailerStats = null;
         String currPollIntervalSeconds = null;
         String currEmailOnError = null;
         String currSmtpServer = null;
@@ -368,10 +369,15 @@ public class LogCheckInitialize
                         currStoreLogFile = currOpt.getValue();
                         break;
 
-
                     case "start-position-ignore-error":
                         // If there is a discrepancy between the State File and the Log File
                         currStartPositionIgnoreError = true;
+                        break;
+
+                    case "tailer-validate-log-file":
+                        // Validate Tailer Statistics on disk periodically to make sure the logs
+                        // have not been rotated.
+                        currValidateTailerStats = true;
                         break;
                 }
             }
@@ -394,6 +400,7 @@ public class LogCheckInitialize
                     currSaveState,  // saveState
                     currContinue,
                     currStartPositionIgnoreError,
+                    currValidateTailerStats,
                     currLockFile,
                     currLogPath,
                     currStoreLogFile,
@@ -670,6 +677,11 @@ public class LogCheckInitialize
 
         options.addOption( Option.builder().longOpt( "start-position-ignore-error" )
                 .desc( "If there is a discrepancy between the State File and the Log File, e.g. invalid position.  Then ignore the state file" )
+                .build() );
+
+        options.addOption( Option.builder().longOpt( "tailer-validate-log-file" )
+                .desc( "Validate Tailer Log File on disk using Statistics periodically to make sure the logs" +
+                        " have not been rotated." )
                 .build() );
 
         return options;

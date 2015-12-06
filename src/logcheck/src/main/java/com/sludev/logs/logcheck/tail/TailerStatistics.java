@@ -18,23 +18,29 @@
 
 package com.sludev.logs.logcheck.tail;
 
+import com.sludev.logs.logcheck.config.entities.LogCheckDeDupeLog;
 import com.sludev.logs.logcheck.config.entities.LogCheckState;
+import com.sludev.logs.logcheck.config.entities.LogEntryDeDupe;
 import com.sludev.logs.logcheck.config.entities.LogFileBlock;
 import com.sludev.logs.logcheck.config.entities.LogFileState;
+import com.sludev.logs.logcheck.config.parsers.LogCheckStateParser;
+import com.sludev.logs.logcheck.config.parsers.ParserUtil;
 import com.sludev.logs.logcheck.config.writers.LogCheckStateWriter;
+import com.sludev.logs.logcheck.dedupe.ContinueUtil;
+import com.sludev.logs.logcheck.enums.LCFileFormats;
 import com.sludev.logs.logcheck.enums.LCHashType;
 import com.sludev.logs.logcheck.utils.LogCheckException;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.message.StringFormattedMessage;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -47,59 +53,59 @@ import java.util.UUID;
  */
 public class TailerStatistics
 {
-    private static final Logger log
+    private static final Logger LOGGER
                 = LogManager.getLogger(TailerStatistics.class);
 
-    private final Path logFile;
-    private final Path stateFile;
-    private final Path errorFile;
-    private final LCHashType hashType;
-    private final Integer idBlockSize;
-    private final String setName;
+    private final Path m_logFile;
+    private final Path m_stateFile;
+    private final Path m_errorFile;
+    private final LCHashType m_hashType;
+    private final Integer m_idBlockSize;
+    private final String m_setName;
 
     // Mutable
-    private volatile long lastProcessedPosition;
-    private Instant lastProcessedTimeStart;
-    private Instant lastProcessedTimeEnd;
+    private volatile long m_lastProcessedPosition;
+    private Instant m_lastProcessedTimeStart;
+    private Instant m_lastProcessedTimeEnd;
 
     public Path getLogFile()
     {
-        return logFile;
+        return m_logFile;
     }
 
     private LCHashType getHashType()
     {
-        return hashType;
+        return m_hashType;
     }
 
     public Instant getLastProcessedTimeStart()
     {
-        return lastProcessedTimeStart;
+        return m_lastProcessedTimeStart;
     }
 
     public void setLastProcessedTimeStart(Instant lastProcessedTimeStart)
     {
-        this.lastProcessedTimeStart = lastProcessedTimeStart;
+        this.m_lastProcessedTimeStart = lastProcessedTimeStart;
     }
 
     public Instant getLastProcessedTimeEnd()
     {
-        return lastProcessedTimeEnd;
+        return m_lastProcessedTimeEnd;
     }
 
     public void setLastProcessedTimeEnd(Instant lastProcessedTimeEnd)
     {
-        this.lastProcessedTimeEnd = lastProcessedTimeEnd;
+        this.m_lastProcessedTimeEnd = lastProcessedTimeEnd;
     }
 
     public long getLastProcessedPosition()
     {
-        return lastProcessedPosition;
+        return m_lastProcessedPosition;
     }
 
     public void setLastProcessedPosition(long lastProcessedPosition)
     {
-        this.lastProcessedPosition = lastProcessedPosition;
+        this.m_lastProcessedPosition = lastProcessedPosition;
     }
 
     private TailerStatistics(final Path logFile,
@@ -109,14 +115,14 @@ public class TailerStatistics
                              final Integer idBlockSize,
                              final String setName)
     {
-        this.logFile = logFile;
-        this.stateFile = stateFile;
-        this.errorFile = errorFile;
-        this.idBlockSize = idBlockSize;
+        this.m_logFile = logFile;
+        this.m_stateFile = stateFile;
+        this.m_errorFile = errorFile;
+        this.m_idBlockSize = idBlockSize;
 
-        this.lastProcessedPosition = 0L;
-        this.hashType = hashType;
-        this.setName = setName;
+        this.m_lastProcessedPosition = 0L;
+        this.m_hashType = hashType;
+        this.m_setName = setName;
     }
 
     public static TailerStatistics from(final Path logFile,
@@ -141,30 +147,30 @@ public class TailerStatistics
         LogFileBlock res = null;
 
         res = LogFileBlock.from("FIRST_BLOCK",
-                logFile,
+                m_logFile,
                 0L,
-                idBlockSize,
-                hashType);
+                m_idBlockSize,
+                m_hashType);
 
         return res;
     }
 
     public LogFileBlock getLastBlock() throws LogCheckException
     {
-        long pos = lastProcessedPosition - idBlockSize;
+        long pos = m_lastProcessedPosition - m_idBlockSize;
         if( pos < 0 )
         {
-            log.debug(String.format("Not enough data. Last Position = %d, ID Block Size = %d",
-                    lastProcessedPosition, idBlockSize));
+            LOGGER.debug(String.format("Not enough data. Last Position = %d, ID Block Size = %d",
+                    m_lastProcessedPosition, m_idBlockSize));
 
             return null;
         }
 
         LogFileBlock res = LogFileBlock.from("LAST_BLOCK",
-                logFile,
+                m_logFile,
                 pos,
-                idBlockSize,
-                hashType);
+                m_idBlockSize,
+                m_hashType);
 
         return res;
     }
@@ -172,7 +178,7 @@ public class TailerStatistics
     public void save(final Boolean resetPosition,
                      final Boolean ignoreMissingLogFile) throws LogCheckException
     {
-        save(getState(ignoreMissingLogFile), stateFile, errorFile, resetPosition, ignoreMissingLogFile);
+        save(getState(ignoreMissingLogFile), m_stateFile, m_errorFile, resetPosition, ignoreMissingLogFile);
     }
 
     public static void save(final LogCheckState state,
@@ -181,7 +187,7 @@ public class TailerStatistics
                             final Boolean resetPosition,
                             final Boolean ignoreMissingLogFile) throws LogCheckException
     {
-        log.debug(String.format("Saving statistics to '%s'.", stateFile));
+        LOGGER.debug(String.format("Saving statistics to '%s'.", stateFile));
 
         Pair<Path,Path> files = null;
         LogFileState currLFS = state.getLogFile();
@@ -197,7 +203,7 @@ public class TailerStatistics
                     && currLFS.getLastProcessedPosition() < 1 )
             {
                 // Don't save a log file that hasn't processed data
-                log.debug(String.format("TailerStatistics::save() called but no data processed since LastProcessedPosition is %d",
+                LOGGER.debug(String.format("TailerStatistics::save() called but no data processed since LastProcessedPosition is %d",
                             state.getLogFile().getLastProcessedPosition()));
 
                 return;
@@ -211,7 +217,7 @@ public class TailerStatistics
         }
         catch( LogCheckException ex )
         {
-            log.debug("Error creating temp state files.", ex);
+            LOGGER.debug("Error creating temp state files.", ex);
 
             throw ex;
         }
@@ -227,7 +233,7 @@ public class TailerStatistics
                 String errMsg = String.format("Error saving state to the file-system for '%s' and '%s'",
                         files.getLeft(), stateFile);
 
-                log.debug(errMsg, ex);
+                LOGGER.debug(errMsg, ex);
 
                 throw new LogCheckException(errMsg, ex);
             }
@@ -244,7 +250,7 @@ public class TailerStatistics
                 String errMsg = String.format("Error deleting temp file '%s'",
                         files.getRight());
 
-                log.debug(errMsg, ex);
+                LOGGER.debug(errMsg, ex);
 
                 throw new LogCheckException(errMsg, ex);
             }
@@ -260,27 +266,49 @@ public class TailerStatistics
                 String errMsg = String.format("Error saving state-error file to the file-system for '%s' and '%s'",
                         files.getRight(), errorFile);
 
-                log.debug(errMsg, ex);
+                LOGGER.debug(errMsg, ex);
 
                 throw new LogCheckException(errMsg, ex);
             }
         }
     }
 
-    public LogCheckState restore() throws LogCheckException
+    public LogCheckState restore(final Path deDupeDir,
+                                 final Integer logFileCount,
+                                 final Integer maxLogEntries) throws LogCheckException
     {
         LogCheckState res;
 
-        res = restore(stateFile, errorFile);
+        res = restore(m_stateFile, deDupeDir, m_setName, logFileCount, maxLogEntries);
 
         return res;
     }
 
-    public static LogCheckState restore(Path stateFile, Path errorFile) throws LogCheckException
-    {
-        LogCheckState res = null;
 
-        return res;
+    public static LogCheckState restore(final Path stateFile,
+                                              final Path deDupeDir,
+                                              final String setName,
+                                              final Integer logFileCount,
+                                              final Integer maxLogEntries) throws LogCheckException
+    {
+        // Read the last run's deduplication logs
+        List<LogCheckDeDupeLog> ddLogs
+                = ContinueUtil.readLastDeDupeLogs(deDupeDir,
+                setName,
+                null,
+                logFileCount);
+
+        List<LogEntryDeDupe> ddObjs
+                = ContinueUtil.lastLogEntryDeDupes(ddLogs, maxLogEntries);
+
+        // Read state file for information about the last run
+        LogCheckState lcConf = LogCheckStateParser.readConfig(
+                ParserUtil.readConfig(stateFile,
+                        LCFileFormats.LCSTATE));
+
+        // TODO : Allow 'look back' support to allow using the deduplication logs for confirming the file pointer's accuracy
+
+        return lcConf;
     }
 
     public LogCheckState getState(final Boolean ignoreMissingLogFile)
@@ -289,29 +317,29 @@ public class TailerStatistics
 
         LogFileState currLogFile = null;
 
-        // Generate the logFile tailer statistics
+        // Generate the Log File tailer statistics
         try
         {
             LogFileBlock firstBlock = null;
             LogFileBlock lastBlock = null;
 
-            if( Files.notExists(logFile)
+            if( Files.notExists(m_logFile)
                     && BooleanUtils.isNotTrue(ignoreMissingLogFile))
             {
                 throw new LogCheckException(String.format("Log File does not exist '%s",
-                        logFile));
+                        m_logFile));
             }
 
-            if( Files.exists(logFile) )
+            if( Files.exists(m_logFile) )
             {
                 firstBlock = getFirstBlock();
                 lastBlock = getLastBlock();
             }
 
-            currLogFile = LogFileState.from(logFile,
-                    getLastProcessedTimeStart(),
+            currLogFile = LogFileState.from(m_logFile,
+                    m_lastProcessedTimeStart,
                     Instant.now(),
-                    getLastProcessedPosition(),
+                    m_lastProcessedPosition,
                     null,
                     null,
                     lastBlock,
@@ -320,15 +348,15 @@ public class TailerStatistics
         catch( LogCheckException ex )
         {
             String errMsg = String.format("Error generating statistics for '%s'",
-                    logFile);
+                    m_logFile);
 
-            log.debug(errMsg, ex);
+            LOGGER.debug(errMsg, ex);
         }
 
         res = LogCheckState.from(currLogFile,
                 Instant.now(),
                 UUID.randomUUID(),
-                setName,
+                m_setName,
                 null);
 
         return res;

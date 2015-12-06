@@ -22,7 +22,12 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
 
@@ -33,56 +38,56 @@ import java.time.format.DateTimeParseException;
  */
 public final class LogFileState
 {
-    private static final Logger log
+    private static final Logger LOGGER
             = LogManager.getLogger(LogFileState.class);
 
-    private final Path file;
-    private final Instant lastProcessedTimeStart;
-    private final Instant lastProcessedTimeEnd;
-    private final Long lastProcessedPosition;
-    private final Long lastProcessedLineNumber;
-    private final Long lastProcessedCharNumber;
-    private final LogFileBlock lastProcessedBlock;
-    private final LogFileBlock firstBlock;
+    private final Path m_file;
+    private final Instant m_lastProcessedTimeStart;
+    private final Instant m_lastProcessedTimeEnd;
+    private final Long m_lastProcessedPosition;
+    private final Long m_lastProcessedLineNumber;
+    private final Long m_lastProcessedCharNumber;
+    private final LogFileBlock m_lastProcessedBlock;
+    private final LogFileBlock m_firstBlock;
 
     public Path getFile()
     {
-        return file;
+        return m_file;
     }
 
     public Instant getLastProcessedTimeStart()
     {
-        return lastProcessedTimeStart;
+        return m_lastProcessedTimeStart;
     }
 
     public Instant getLastProcessedTimeEnd()
     {
-        return lastProcessedTimeEnd;
+        return m_lastProcessedTimeEnd;
     }
 
     public long getLastProcessedPosition()
     {
-        return lastProcessedPosition;
+        return m_lastProcessedPosition;
     }
 
     public Long getLastProcessedLineNumber()
     {
-        return lastProcessedLineNumber;
+        return m_lastProcessedLineNumber;
     }
 
     public Long getLastProcessedCharNumber()
     {
-        return lastProcessedCharNumber;
+        return m_lastProcessedCharNumber;
     }
 
     public LogFileBlock getLastProcessedBlock()
     {
-        return lastProcessedBlock;
+        return m_lastProcessedBlock;
     }
 
     public LogFileBlock getFirstBlock()
     {
-        return firstBlock;
+        return m_firstBlock;
     }
 
     private LogFileState( final Path file,
@@ -94,14 +99,14 @@ public final class LogFileState
                           final LogFileBlock lastProcessedBlock,
                           final LogFileBlock firstBlock)
     {
-        this.file = file;
-        this.lastProcessedTimeStart = lastProcessedTimeStart;
-        this.lastProcessedTimeEnd = lastProcessedTimeEnd;
-        this.lastProcessedPosition = lastProcessedPosition;
-        this.lastProcessedLineNumber = lastProcessedLineNumber;
-        this.lastProcessedCharNumber = lastProcessedCharNumber;
-        this.lastProcessedBlock = lastProcessedBlock;
-        this.firstBlock = firstBlock;
+        this.m_file = file;
+        this.m_lastProcessedTimeStart = lastProcessedTimeStart;
+        this.m_lastProcessedTimeEnd = lastProcessedTimeEnd;
+        this.m_lastProcessedPosition = lastProcessedPosition;
+        this.m_lastProcessedLineNumber = lastProcessedLineNumber;
+        this.m_lastProcessedCharNumber = lastProcessedCharNumber;
+        this.m_lastProcessedBlock = lastProcessedBlock;
+        this.m_firstBlock = firstBlock;
     }
 
     public static LogFileState from( final Path file,
@@ -142,6 +147,11 @@ public final class LogFileState
         Long lastProcessedLineNumber = null;
         Long lastProcessedCharNumber = null;
 
+        if( StringUtils.isNoneBlank(fileStr) )
+        {
+            file = Paths.get(fileStr);
+        }
+
         if( StringUtils.isNoneBlank(lastProcessedPositionStr) )
         {
             try
@@ -152,7 +162,7 @@ public final class LogFileState
             {
                 String errMsg = String.format("Invalid integer for Last Processed Position '%s'",
                         lastProcessedPositionStr);
-                log.debug(errMsg, ex);
+                LOGGER.debug(errMsg, ex);
 
                 throw new LogCheckException(errMsg, ex);
             }
@@ -168,7 +178,7 @@ public final class LogFileState
             {
                 String errMsg = String.format("Invalid integer for Last Processed Line Number '%s'",
                         lastProcessedLineNumberStr);
-                log.debug(errMsg, ex);
+                LOGGER.debug(errMsg, ex);
 
                 throw new LogCheckException(errMsg, ex);
             }
@@ -184,7 +194,7 @@ public final class LogFileState
             {
                 String errMsg = String.format("Invalid integer for Last Processed Char Number '%s'",
                         lastProcessedCharNumberStr);
-                log.debug(errMsg, ex);
+                LOGGER.debug(errMsg, ex);
 
                 throw new LogCheckException(errMsg, ex);
             }
@@ -200,7 +210,7 @@ public final class LogFileState
             {
                 String errMsg = String.format("Invalid integer for Last Processed Time Start '%s'",
                         lastProcessedTimeStartStr);
-                log.debug(errMsg, ex);
+                LOGGER.debug(errMsg, ex);
 
                 throw new LogCheckException(errMsg, ex);
             }
@@ -216,7 +226,7 @@ public final class LogFileState
             {
                 String errMsg = String.format("Invalid integer for Last Processed Time End '%s'",
                         lastProcessedTimeEndStr);
-                log.debug(errMsg, ex);
+                LOGGER.debug(errMsg, ex);
 
                 throw new LogCheckException(errMsg, ex);
             }
@@ -232,5 +242,111 @@ public final class LogFileState
                 firstBlock);
 
         return res;
+    }
+
+    public static Long positionFromLogFile(LogFileState state) throws LogCheckException
+    {
+        Long res = null;
+
+        Long stateStartPos = state.getLastProcessedPosition();
+        Long stateStartLine = state.getLastProcessedLineNumber();
+        Long stateStartChar = state.getLastProcessedCharNumber();
+
+        if( stateStartPos != null && stateStartPos >= 0 )
+        {
+            res = stateStartPos;
+        }
+        else
+        {
+            if( stateStartLine != null && stateStartLine >= 0
+                    && stateStartChar != null && stateStartChar >= 0 )
+            {
+                // Use the line and char numbers to calculate the starting position
+                try
+                {
+                    ByteBuffer buffer = ByteBuffer.allocate(64);
+                    long lineCount = 0;
+                    long charCount = 0;
+
+                    FileChannel reader = FileChannel.open(state.getFile(),
+                            StandardOpenOption.READ);
+                    while( reader.read(buffer)!= -1 )
+                    {
+                        buffer.flip();
+
+                        for( int i = 0; i < buffer.limit(); i++ )
+                        {
+                            final byte ch = buffer.get();
+                            if( ch == '\n' )
+                            {
+                                if( lineCount == stateStartLine
+                                        && charCount < stateStartChar)
+                                {
+                                    throw new LogCheckException(
+                                            String.format("Asked to start at Line %d and Char %d,"
+                                                            + " but line only has %d characters",
+                                                    stateStartLine, stateStartChar, charCount));
+                                }
+
+                                lineCount++;
+                            }
+                            else
+                            {
+                                if( lineCount == stateStartLine )
+                                {
+                                    charCount++;
+                                }
+                            }
+
+                            if( lineCount == stateStartLine && charCount == stateStartChar )
+                            {
+                                res = reader.position();
+                            }
+                        }
+                    }
+                }
+                catch( IOException ex )
+                {
+                    LOGGER.debug("Error calculating line position.", ex);
+                }
+            }
+        }
+
+        return res;
+    }
+
+    public static boolean isValidFileBlocks( final LogFileState state,
+                                             final boolean ignoreMissingBlocks ) throws LogCheckException
+    {
+        if( state == null )
+        {
+            throw new LogCheckException("Log File State cannot be null.");
+        }
+
+        LogFileBlock firstBlock = state.getFirstBlock();
+        LogFileBlock lastBlock = state.getLastProcessedBlock();
+
+        boolean firstValid = false;
+        boolean lastValid = false;
+
+        if( firstBlock == null )
+        {
+            firstValid = ignoreMissingBlocks;
+        }
+        else
+        {
+            firstValid = LogFileBlock.isValidFileBlock(state.getFile(), firstBlock);
+        }
+
+        if( lastBlock == null )
+        {
+            lastValid = ignoreMissingBlocks;
+        }
+        else
+        {
+            lastValid = LogFileBlock.isValidFileBlock(state.getFile(), lastBlock);
+        }
+
+        return firstValid && lastValid;
     }
 }

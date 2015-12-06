@@ -29,6 +29,7 @@ public enum LCTailerResult
     NONE,
     SUCCESS,
     FAIL,
+    VALIDATION_FAIL,
     REOPEN,
     INTERRUPTED;
 
