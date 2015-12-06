@@ -1,6 +1,5 @@
 package com.sludev.logs.logcheck.config.writers;
 
-import com.sludev.logs.logcheck.config.entities.LogCheckState;
 import com.sludev.logs.logcheck.config.entities.LogFileBlock;
 import com.sludev.logs.logcheck.config.entities.LogFileState;
 import com.sludev.logs.logcheck.utils.LogCheckException;
@@ -11,7 +10,6 @@ import org.w3c.dom.Element;
 
 import java.nio.file.Path;
 import java.time.Instant;
-import java.util.UUID;
 
 /**
  * Created by kervin on 2015-10-30.

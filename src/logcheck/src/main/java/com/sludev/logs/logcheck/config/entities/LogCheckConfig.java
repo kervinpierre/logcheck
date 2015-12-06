@@ -45,288 +45,284 @@ import java.util.concurrent.TimeUnit;
  */
 public final class LogCheckConfig
 {
-    private static final org.apache.logging.log4j.Logger log 
+    private static final org.apache.logging.log4j.Logger LOGGER
                              = LogManager.getLogger(LogCheckConfig.class);
     
-    private final Boolean service;
-    private final Long pollIntervalSeconds;
-    private final Long stopAfter;
-    private final Integer idBlockSize;
-    private final Integer deDupeMaxLogsPerFile;
-    private final Integer deDupeMaxLogsBeforeWrite;
-    private final Integer deDupeMaxLogFiles;
-    private final Integer readLogFileCount;
-    private final Integer readMaxDeDupeEntries;
-    private final String emailOnError;
-    private final String smtpServer;
-    private final String smtpPort;
-    private final String smtpPass;
-    private final String smtpUser;
-    private final String smtpProto;
-    private final String setName;
-    private final Boolean dryRun;
-    private final Boolean showVersion;
-    private final Boolean tailFromEnd;
-    private final Boolean printLog;
-    private final Boolean saveState;
-    private final Boolean continueState;
-    private final Boolean readReOpenLogFile;
-    private final Boolean storeReOpenLogFile;
-    private final Boolean startPositionIgnoreError;
-    private final Path lockFilePath;
-    private final Path logPath;
-    private final Path storeLogPath;
-    private final Path statusFilePath;
-    private final Path stateFilePath;
-    private final Path errorFilePath;
-    private final Path configFilePath;
-    private final Path holdingDirPath;
-    private final Path deDupeDirPath;
-    private final URL elasticsearchURL;
-    private final String elasticsearchIndexName;
-    private final String elasticsearchIndexPrefix;
-    private final String elasticsearchLogType;
-    private final LocalTime logCutoffDate;
-    private final Duration logCutoffDuration;
-    private final Duration logDeduplicationDuration;
-    private final LCIndexNameFormat elasticsearchIndexNameFormat;
-    private final List<LCLogEntryBuilderType> logEntryBuilders;
-    private final List<LCLogEntryStoreType> logEntryStores;
-    private final LCHashType idBlockHashType;
+    private final Boolean m_service;
+    private final Long m_pollIntervalSeconds;
+    private final Long m_stopAfter;
+    private final Integer m_idBlockSize;
+    private final Integer m_deDupeMaxLogsPerFile;
+    private final Integer m_deDupeMaxLogsBeforeWrite;
+    private final Integer m_deDupeMaxLogFiles;
+    private final Integer m_readLogFileCount;
+    private final Integer m_readMaxDeDupeEntries;
+    private final String m_emailOnError;
+    private final String m_smtpServer;
+    private final String m_smtpPort;
+    private final String m_smtpPass;
+    private final String m_smtpUser;
+    private final String m_smtpProto;
+    private final String m_setName;
+    private final Boolean m_dryRun;
+    private final Boolean m_showVersion;
+    private final Boolean m_tailFromEnd;
+    private final Boolean m_printLog;
+    private final Boolean m_saveState;
+    private final Boolean m_continueState;
+    private final Boolean m_readReOpenLogFile;
+    private final Boolean m_storeReOpenLogFile;
+    private final Boolean m_startPositionIgnoreError;
+    private final Boolean m_validateTailerStats;
+    private final Path m_lockFilePath;
+    private final Path m_logPath;
+    private final Path m_storeLogPath;
+    private final Path m_statusFilePath;
+    private final Path m_stateFilePath;
+    private final Path m_errorFilePath;
+    private final Path m_configFilePath;
+    private final Path m_holdingDirPath;
+    private final Path m_deDupeDirPath;
+    private final URL m_elasticsearchURL;
+    private final String m_elasticsearchIndexName;
+    private final String m_elasticsearchIndexPrefix;
+    private final String m_elasticsearchLogType;
+    private final LocalTime m_logCutoffDate;
+    private final Duration m_logCutoffDuration;
+    private final Duration m_logDeduplicationDuration;
+    private final LCIndexNameFormat m_elasticsearchIndexNameFormat;
+    private final List<LCLogEntryBuilderType> m_logEntryBuilders;
+    private final List<LCLogEntryStoreType> m_logEntryStores;
+    private final LCHashType m_idBlockHashType;
 
     public Path getErrorFilePath()
     {
-        return errorFilePath;
+        return m_errorFilePath;
     }
 
     public Integer getIdBlockSize()
     {
-        return idBlockSize;
+        return m_idBlockSize;
     }
 
     public LCHashType getIdBlockHashType()
     {
-        return idBlockHashType;
+        return m_idBlockHashType;
     }
 
-    public Boolean getSaveState()
+    public Boolean willSaveState()
     {
-        return saveState;
+        return m_saveState;
     }
 
-    public Boolean getContinueState()
+    public Boolean willContinueState()
     {
-        return continueState;
+        return m_continueState;
     }
 
-    public Boolean getStartPositionIgnoreError()
+    public Boolean willIgnoreStartPositionError()
     {
-        return startPositionIgnoreError;
+        return m_startPositionIgnoreError;
     }
 
     public Path getStateFilePath()
     {
-        return stateFilePath;
+        return m_stateFilePath;
     }
 
     public List<LCLogEntryBuilderType> getLogEntryBuilders()
     {
-        return logEntryBuilders;
+        return m_logEntryBuilders;
     }
 
     public List<LCLogEntryStoreType> getLogEntryStores()
     {
-        return logEntryStores;
+        return m_logEntryStores;
     }
 
     public String getElasticsearchLogType()
     {
-        return elasticsearchLogType;
+        return m_elasticsearchLogType;
     }
 
-    public Boolean getPrintLog()
+    public Boolean willPrintLog()
     {
-        return printLog;
+        return m_printLog;
     }
 
-    public Boolean getService()
+    public Boolean isDryRun()
     {
-        return service;
+        return m_dryRun;
     }
 
-    public Boolean getDryRun()
+    public Boolean isShowVersion()
     {
-        return dryRun;
-    }
-
-    public Boolean getShowVersion()
-    {
-        return showVersion;
-    }
-
-    public Boolean getTailFromEnd()
-    {
-        return tailFromEnd;
+        return m_showVersion;
     }
 
     public Duration getLogDeduplicationDuration()
     {
-        return logDeduplicationDuration;
+        return m_logDeduplicationDuration;
     }
     
     public LocalTime getLogCutoffDate()
     {
-        return logCutoffDate;
+        return m_logCutoffDate;
     }
 
     public Duration getLogCutoffDuration()
     {
-        return logCutoffDuration;
+        return m_logCutoffDuration;
     }
 
     public LCIndexNameFormat getElasticsearchIndexNameFormat()
     {
-        return elasticsearchIndexNameFormat;
+        return m_elasticsearchIndexNameFormat;
     }
 
     public String getSetName()
     {
-        return setName;
+        return m_setName;
     }
 
     public String getElasticsearchIndexName()
     {
-        return elasticsearchIndexName;
+        return m_elasticsearchIndexName;
     }
 
     public String getElasticsearchIndexPrefix()
     {
-        return elasticsearchIndexPrefix;
+        return m_elasticsearchIndexPrefix;
     }
 
     public Boolean isTailFromEnd()
     {
-        return tailFromEnd;
+        return m_tailFromEnd;
     }
 
     public Path getHoldingDirPath()
     {
-        return holdingDirPath;
+        return m_holdingDirPath;
     }
 
     public Path getConfigFilePath()
     {
-        return configFilePath;
+        return m_configFilePath;
     }
 
     public Path getDeDupeDirPath()
     {
-        return deDupeDirPath;
+        return m_deDupeDirPath;
     }
 
     public Boolean isService()
     {
-        return service;
+        return m_service;
     }
 
-    public Boolean getReadReOpenLogFile()
+    public Boolean willReadReOpenLogFile()
     {
-        return readReOpenLogFile;
+        return m_readReOpenLogFile;
     }
 
-    public Boolean getStoreReOpenLogFile()
+    public Boolean willStoreReOpenLogFile()
     {
-        return storeReOpenLogFile;
+        return m_storeReOpenLogFile;
+    }
+
+    public Boolean willValidateTailerStats()
+    {
+        return m_validateTailerStats;
     }
 
     public Path getStoreLogPath()
     {
-        return storeLogPath;
+        return m_storeLogPath;
     }
 
     public Long getPollIntervalSeconds()
     {
-        return pollIntervalSeconds;
+        return m_pollIntervalSeconds;
     }
 
     public String getEmailOnError()
     {
-        return emailOnError;
+        return m_emailOnError;
     }
 
     public String getSmtpServer()
     {
-        return smtpServer;
+        return m_smtpServer;
     }
 
     public String getSmtpPort()
     {
-        return smtpPort;
+        return m_smtpPort;
     }
 
     public String getSmtpPass()
     {
-        return smtpPass;
+        return m_smtpPass;
     }
 
     public String getSmtpUser()
     {
-        return smtpUser;
+        return m_smtpUser;
     }
 
     public String getSmtpProto()
     {
-        return smtpProto;
+        return m_smtpProto;
     }
 
     public Path getLockFilePath()
     {
-        return lockFilePath;
+        return m_lockFilePath;
     }
 
     public Path getLogPath()
     {
-        return logPath;
+        return m_logPath;
     }
 
     public Path getStatusFilePath()
     {
-        return statusFilePath;
+        return m_statusFilePath;
     }
     
     public URL getElasticsearchURL()
     {
-        return elasticsearchURL;
+        return m_elasticsearchURL;
     }
 
     public Integer getDeDupeMaxLogsPerFile()
     {
-        return deDupeMaxLogsPerFile;
+        return m_deDupeMaxLogsPerFile;
     }
 
     public Integer getDeDupeMaxLogsBeforeWrite()
     {
-        return deDupeMaxLogsBeforeWrite;
+        return m_deDupeMaxLogsBeforeWrite;
     }
 
     public Integer getDeDupeMaxLogFiles()
     {
-        return deDupeMaxLogFiles;
+        return m_deDupeMaxLogFiles;
     }
 
     public Integer getReadLogFileCount()
     {
-        return readLogFileCount;
+        return m_readLogFileCount;
     }
 
     public Integer getReadMaxDeDupeEntries()
     {
-        return readMaxDeDupeEntries;
+        return m_readMaxDeDupeEntries;
     }
 
     public Long getStopAfter()
     {
-        return stopAfter;
+        return m_stopAfter;
     }
 
     private LogCheckConfig(final LogCheckConfig orig,
@@ -347,6 +343,7 @@ public final class LogCheckConfig
                            final Boolean saveState,
                            final Boolean continueState,
                            final Boolean startPositionIgnoreError,
+                           final Boolean validateTailerStats,
                            final Path lockFilePath,
                            final Path logPath,
                            final Path storeLogPath,
@@ -378,175 +375,188 @@ public final class LogCheckConfig
     {
         if( logEntryStores != null )
         {
-            this.logEntryStores = logEntryStores;
+            this.m_logEntryStores = logEntryStores;
         }
         else if( orig != null && orig.getLogEntryStores() != null )
         {
-            this.logEntryStores = orig.getLogEntryStores();
+            this.m_logEntryStores = orig.getLogEntryStores();
         }
         else
         {
-            this.logEntryStores = null;
+            this.m_logEntryStores = null;
         }
 
         if( storeReOpenLogFile != null )
         {
-            this.storeReOpenLogFile = storeReOpenLogFile;
+            this.m_storeReOpenLogFile = storeReOpenLogFile;
         }
-        else if( orig != null && orig.getStoreReOpenLogFile() != null )
+        else if( orig != null && orig.willStoreReOpenLogFile() != null )
         {
-            this.storeReOpenLogFile = orig.getStoreReOpenLogFile();
+            this.m_storeReOpenLogFile = orig.willStoreReOpenLogFile();
         }
         else
         {
-            this.storeReOpenLogFile = false;
+            this.m_storeReOpenLogFile = false;
         }
 
         if( storeLogPath != null )
         {
-            this.storeLogPath = storeLogPath;
+            this.m_storeLogPath = storeLogPath;
         }
         else if( orig != null && orig.getStoreLogPath() != null )
         {
-            this.storeLogPath = orig.getStoreLogPath();
+            this.m_storeLogPath = orig.getStoreLogPath();
         }
         else
         {
-            this.storeLogPath = null;
+            this.m_storeLogPath = null;
         }
 
         if( service != null )
         {
-            this.service = service;
+            this.m_service = service;
         }
         else if( orig != null && orig.isService() != null )
         {
-            this.service = orig.isService();
+            this.m_service = orig.isService();
         }
         else
         {
-            this.service = false;
+            this.m_service = false;
         }
 
+        if( validateTailerStats != null )
+        {
+            this.m_validateTailerStats = validateTailerStats;
+        }
+        else if( orig != null && orig.willValidateTailerStats() != null )
+        {
+            this.m_validateTailerStats = orig.willValidateTailerStats();
+        }
+        else
+        {
+            this.m_validateTailerStats = false;
+        }
+        
         if( deDupeMaxLogsBeforeWrite != null )
         {
-            this.deDupeMaxLogsBeforeWrite = deDupeMaxLogsBeforeWrite;
+            this.m_deDupeMaxLogsBeforeWrite = deDupeMaxLogsBeforeWrite;
         }
         else if( orig != null && orig.getDeDupeMaxLogsBeforeWrite() != null )
         {
-            this.deDupeMaxLogsBeforeWrite = orig.getDeDupeMaxLogsBeforeWrite();
+            this.m_deDupeMaxLogsBeforeWrite = orig.getDeDupeMaxLogsBeforeWrite();
         }
         else
         {
-            this.deDupeMaxLogsBeforeWrite = LogCheckConstants.DEFAULT_DEDUPE_LOGS_BEFORE_WRITE;
+            this.m_deDupeMaxLogsBeforeWrite = LogCheckConstants.DEFAULT_DEDUPE_LOGS_BEFORE_WRITE;
         }
 
         if( deDupeMaxLogsPerFile != null )
         {
-            this.deDupeMaxLogsPerFile = deDupeMaxLogsPerFile;
+            this.m_deDupeMaxLogsPerFile = deDupeMaxLogsPerFile;
         }
         else if( orig != null && orig.getDeDupeMaxLogsPerFile() != null )
         {
-            this.deDupeMaxLogsPerFile = orig.getDeDupeMaxLogsPerFile();
+            this.m_deDupeMaxLogsPerFile = orig.getDeDupeMaxLogsPerFile();
         }
         else
         {
-            this.deDupeMaxLogsPerFile = LogCheckConstants.MAX_DEDUPE_LOGS_PER_FILE;
+            this.m_deDupeMaxLogsPerFile = LogCheckConstants.MAX_DEDUPE_LOGS_PER_FILE;
         }
 
         if( deDupeMaxLogFiles != null )
         {
-            this.deDupeMaxLogFiles = deDupeMaxLogFiles;
+            this.m_deDupeMaxLogFiles = deDupeMaxLogFiles;
         }
         else if( orig != null && orig.getDeDupeMaxLogFiles() != null )
         {
-            this.deDupeMaxLogFiles = orig.getDeDupeMaxLogFiles();
+            this.m_deDupeMaxLogFiles = orig.getDeDupeMaxLogFiles();
         }
         else
         {
-            this.deDupeMaxLogFiles = LogCheckConstants.DEFAULT_DEDUPE_LOG_FILES_ROTATE;
+            this.m_deDupeMaxLogFiles = LogCheckConstants.DEFAULT_DEDUPE_LOG_FILES_ROTATE;
         }
 
         if( idBlockSize != null )
         {
-            this.idBlockSize = idBlockSize;
+            this.m_idBlockSize = idBlockSize;
         }
         else if( orig != null && orig.getIdBlockSize() != null )
         {
-            this.idBlockSize = orig.getIdBlockSize();
+            this.m_idBlockSize = orig.getIdBlockSize();
         }
         else
         {
-            this.idBlockSize = LogCheckConstants.DEFAULT_ID_BLOCK_SIZE;
+            this.m_idBlockSize = LogCheckConstants.DEFAULT_ID_BLOCK_SIZE;
         }
 
         if( idBlockHashType != null )
         {
-            this.idBlockHashType = idBlockHashType;
+            this.m_idBlockHashType = idBlockHashType;
         }
         else if( orig != null && orig.getIdBlockHashType() != null )
         {
-            this.idBlockHashType = orig.getIdBlockHashType();
+            this.m_idBlockHashType = orig.getIdBlockHashType();
         }
         else
         {
-            this.idBlockHashType = LCHashType.SHA2;
+            this.m_idBlockHashType = LCHashType.SHA2;
         }
 
         if( logEntryBuilders != null )
         {
-            this.logEntryBuilders = logEntryBuilders;
+            this.m_logEntryBuilders = logEntryBuilders;
         }
         else if( orig != null && orig.getLogEntryBuilders() != null )
         {
-            this.logEntryBuilders = orig.getLogEntryBuilders();
+            this.m_logEntryBuilders = orig.getLogEntryBuilders();
         }
         else
         {
-            this.logEntryBuilders = null;
+            this.m_logEntryBuilders = null;
         }
 
         if( emailOnError != null )
         {
-            this.emailOnError = emailOnError;
+            this.m_emailOnError = emailOnError;
         }
         else if( orig != null && orig.getEmailOnError() != null )
         {
-            this.emailOnError = orig.getEmailOnError();
+            this.m_emailOnError = orig.getEmailOnError();
         }
         else
         {
-            this.emailOnError = null;
+            this.m_emailOnError = null;
         }
 
         if( startPositionIgnoreError != null )
         {
-            this.startPositionIgnoreError = startPositionIgnoreError;
+            this.m_startPositionIgnoreError = startPositionIgnoreError;
         }
-        else if( orig != null && orig.getStartPositionIgnoreError() != null )
+        else if( orig != null && orig.willIgnoreStartPositionError() != null )
         {
-            this.startPositionIgnoreError = orig.getStartPositionIgnoreError();
+            this.m_startPositionIgnoreError = orig.willIgnoreStartPositionError();
         }
         else
         {
-            this.startPositionIgnoreError = null;
+            this.m_startPositionIgnoreError = null;
         }
 
         if( elasticsearchURL != null )
         {
-            this.elasticsearchURL
+            this.m_elasticsearchURL
                     = elasticsearchURL;
         }
         else if( orig != null && orig.getElasticsearchURL() != null )
         {
-            this.elasticsearchURL
+            this.m_elasticsearchURL
                     = orig.getElasticsearchURL();
         }
         else
         {
 //            try
 //            {
-//                this.elasticsearchURL
+//                this.m_elasticsearchURL
 //                        = new URL(LogCheckConstants.DEFAULT_ELASTICSEARCH_URL);
 //            }
 //            catch(MalformedURLException ex)
@@ -558,436 +568,436 @@ public final class LogCheckConfig
 //                throw new LogCheckException(errMsg, ex);
 //            }
 
-            this.elasticsearchURL = null;
+            this.m_elasticsearchURL = null;
         }
 
         if( elasticsearchIndexPrefix != null )
         {
-            this.elasticsearchIndexPrefix
+            this.m_elasticsearchIndexPrefix
                     = elasticsearchIndexPrefix;
         }
         else if( orig != null && orig.getElasticsearchIndexPrefix() != null )
         {
-            this.elasticsearchIndexPrefix
+            this.m_elasticsearchIndexPrefix
                     = orig.getElasticsearchIndexPrefix();
         }
         else
         {
-            this.elasticsearchIndexPrefix
+            this.m_elasticsearchIndexPrefix
                     = LogCheckConstants.DEFAULT_ELASTICSEARCH_INDEX_PREFIX;
         }
 
         if( elasticsearchIndexNameFormat  != null )
         {
-            this.elasticsearchIndexNameFormat
+            this.m_elasticsearchIndexNameFormat
                     = elasticsearchIndexNameFormat ;
         }
         else if( orig != null
                 && orig.getElasticsearchIndexNameFormat() != null )
         {
-            this.elasticsearchIndexNameFormat
+            this.m_elasticsearchIndexNameFormat
                     = orig.getElasticsearchIndexNameFormat();
         }
         else
         {
-            this.elasticsearchIndexNameFormat
+            this.m_elasticsearchIndexNameFormat
                     = LogCheckConstants.DEFAULT_ELASTICSEARCH_INDEX_NAME_FORMAT;
         }
 
         if( elasticsearchLogType  != null )
         {
-            this.elasticsearchLogType
+            this.m_elasticsearchLogType
                     = elasticsearchLogType;
         }
         else if( orig != null
                 && orig.getElasticsearchLogType() != null )
         {
-            this.elasticsearchLogType
+            this.m_elasticsearchLogType
                     = orig.getElasticsearchLogType();
         }
         else
         {
-            this.elasticsearchLogType
+            this.m_elasticsearchLogType
                     = LogCheckConstants.DEFAULT_LOG_TYPE;
         }
 
         if( elasticsearchIndexName != null )
         {
-            this.elasticsearchIndexName = elasticsearchIndexName;
+            this.m_elasticsearchIndexName = elasticsearchIndexName;
         }
         else if( orig != null && orig.isService() != null )
         {
-            this.elasticsearchIndexName = orig.getElasticsearchIndexName();
+            this.m_elasticsearchIndexName = orig.getElasticsearchIndexName();
         }
         else
         {
-            this.elasticsearchIndexName = null;
+            this.m_elasticsearchIndexName = null;
         }
 
         if( smtpServer != null )
         {
-            this.smtpServer = smtpServer;
+            this.m_smtpServer = smtpServer;
         }
         else if( orig != null && orig.getSmtpServer() != null )
         {
-            this.smtpServer = orig.getSmtpServer();
+            this.m_smtpServer = orig.getSmtpServer();
         }
         else
         {
-            this.smtpServer = null;
+            this.m_smtpServer = null;
         }
 
         if( smtpPort != null )
         {
-            this.smtpPort = smtpPort;
+            this.m_smtpPort = smtpPort;
         }
         else if( orig != null && orig.getSmtpPort() != null )
         {
-            this.smtpPort = orig.getSmtpPort();
+            this.m_smtpPort = orig.getSmtpPort();
         }
         else
         {
-            this.smtpPort = null;
+            this.m_smtpPort = null;
         }
 
         if( smtpPass != null )
         {
-            this.smtpPass = smtpPass;
+            this.m_smtpPass = smtpPass;
         }
         else if( orig != null && orig.getSmtpPass() != null )
         {
-            this.smtpPass = orig.getSmtpPass();
+            this.m_smtpPass = orig.getSmtpPass();
         }
         else
         {
-            this.smtpPass = null;
+            this.m_smtpPass = null;
         }
 
         if( smtpUser != null )
         {
-            this.smtpUser = smtpUser;
+            this.m_smtpUser = smtpUser;
         }
         else if( orig != null && orig.getSmtpUser() != null )
         {
-            this.smtpUser = orig.getSmtpUser();
+            this.m_smtpUser = orig.getSmtpUser();
         }
         else
         {
-            this.smtpUser = null;
+            this.m_smtpUser = null;
         }
 
         if( smtpProto != null )
         {
-            this.smtpProto = smtpProto;
+            this.m_smtpProto = smtpProto;
         }
         else if( orig != null && orig.getSmtpProto() != null )
         {
-            this.smtpProto = orig.getSmtpProto();
+            this.m_smtpProto = orig.getSmtpProto();
         }
         else
         {
-            this.smtpProto = null;
+            this.m_smtpProto = null;
         }
 
         if( StringUtils.isNoneBlank(setName) )
         {
-            this.setName = setName;
+            this.m_setName = setName;
         }
         else if( orig != null && StringUtils.isNoneBlank(orig.getSetName()) )
         {
-            this.setName = orig.getSetName();
+            this.m_setName = orig.getSetName();
         }
         else
         {
-            this.setName = LogCheckConstants.DEFAULT_SET_NAME;
+            this.m_setName = LogCheckConstants.DEFAULT_SET_NAME;
         }
 
         if( dryRun != null )
         {
-            this.dryRun = dryRun;
+            this.m_dryRun = dryRun;
         }
-        else if( orig != null && orig.getDryRun() != null )
+        else if( orig != null && orig.isDryRun() != null )
         {
-            this.dryRun = orig.getDryRun();
+            this.m_dryRun = orig.isDryRun();
         }
         else
         {
-            this.dryRun = null;
+            this.m_dryRun = null;
         }
 
         if( showVersion != null )
         {
-            this.showVersion = showVersion;
+            this.m_showVersion = showVersion;
         }
-        else if( orig != null && orig.getShowVersion() != null )
+        else if( orig != null && orig.isShowVersion() != null )
         {
-            this.showVersion = orig.getShowVersion();
+            this.m_showVersion = orig.isShowVersion();
         }
         else
         {
-            this.showVersion = null;
+            this.m_showVersion = null;
         }
 
         if( lockFilePath != null )
         {
-            this.lockFilePath = lockFilePath;
+            this.m_lockFilePath = lockFilePath;
         }
         else if( orig != null && orig.getLockFilePath() != null )
         {
-            this.lockFilePath = orig.getLockFilePath();
+            this.m_lockFilePath = orig.getLockFilePath();
         }
         else
         {
-            this.lockFilePath = null;
+            this.m_lockFilePath = null;
         }
 
         if( logPath != null )
         {
-            this.logPath = logPath;
+            this.m_logPath = logPath;
         }
         else if( orig != null && orig.getLogPath() != null )
         {
-            this.logPath = orig.getLogPath();
+            this.m_logPath = orig.getLogPath();
         }
         else
         {
-            this.logPath = null;
+            this.m_logPath = null;
         }
 
         if( statusFilePath != null )
         {
-            this.statusFilePath = statusFilePath;
+            this.m_statusFilePath = statusFilePath;
         }
         else if( orig != null && orig.getStatusFilePath() != null )
         {
-            this.statusFilePath = orig.getStatusFilePath();
+            this.m_statusFilePath = orig.getStatusFilePath();
         }
         else
         {
-            this.statusFilePath = null;
+            this.m_statusFilePath = null;
         }
 
         if( stateFilePath != null )
         {
-            this.stateFilePath = stateFilePath;
+            this.m_stateFilePath = stateFilePath;
         }
         else if( orig != null && orig.getStateFilePath() != null )
         {
-            this.stateFilePath = orig.getStateFilePath();
+            this.m_stateFilePath = orig.getStateFilePath();
         }
         else
         {
-            this.stateFilePath = null;
+            this.m_stateFilePath = null;
         }
 
         if( errorFilePath != null )
         {
-            this.errorFilePath = errorFilePath;
+            this.m_errorFilePath = errorFilePath;
         }
         else if( orig != null && orig.getErrorFilePath() != null )
         {
-            this.errorFilePath = orig.getErrorFilePath();
+            this.m_errorFilePath = orig.getErrorFilePath();
         }
         else
         {
-            this.errorFilePath = null;
+            this.m_errorFilePath = null;
         }
 
         if( configFilePath != null )
         {
-            this.configFilePath = configFilePath;
+            this.m_configFilePath = configFilePath;
         }
         else if( orig != null && orig.getConfigFilePath() != null )
         {
-            this.configFilePath = orig.getConfigFilePath();
+            this.m_configFilePath = orig.getConfigFilePath();
         }
         else
         {
-            this.configFilePath = null;
+            this.m_configFilePath = null;
         }
 
         if( holdingDirPath != null )
         {
-            this.holdingDirPath = holdingDirPath;
+            this.m_holdingDirPath = holdingDirPath;
         }
         else if( orig != null && orig.getHoldingDirPath() != null )
         {
-            this.holdingDirPath = orig.getHoldingDirPath();
+            this.m_holdingDirPath = orig.getHoldingDirPath();
         }
         else
         {
-            this.holdingDirPath = null;
+            this.m_holdingDirPath = null;
         }
 
         if( deDupeDirPath != null )
         {
-            this.deDupeDirPath = deDupeDirPath;
+            this.m_deDupeDirPath = deDupeDirPath;
         }
         else if( orig != null && orig.getDeDupeDirPath() != null )
         {
-            this.deDupeDirPath = orig.getDeDupeDirPath();
+            this.m_deDupeDirPath = orig.getDeDupeDirPath();
         }
         else
         {
-            this.deDupeDirPath = null;
+            this.m_deDupeDirPath = null;
         }
 
         if( logCutoffDate != null )
         {
-            this.logCutoffDate = logCutoffDate;
+            this.m_logCutoffDate = logCutoffDate;
         }
         else if( orig != null && orig.getLogCutoffDate() != null )
         {
-            this.logCutoffDate = orig.getLogCutoffDate();
+            this.m_logCutoffDate = orig.getLogCutoffDate();
         }
         else
         {
-            this.logCutoffDate = null;
+            this.m_logCutoffDate = null;
         }
 
         if( logCutoffDuration != null )
         {
-            this.logCutoffDuration = logCutoffDuration;
+            this.m_logCutoffDuration = logCutoffDuration;
         }
         else if( orig != null && orig.getLogCutoffDuration() != null )
         {
-            this.logCutoffDuration = orig.getLogCutoffDuration();
+            this.m_logCutoffDuration = orig.getLogCutoffDuration();
         }
         else
         {
-            this.logCutoffDuration = null;
+            this.m_logCutoffDuration = null;
         }
 
         if( logDeduplicationDuration != null )
         {
-            this.logDeduplicationDuration
+            this.m_logDeduplicationDuration
                     = logDeduplicationDuration;
         }
         else if( orig != null && orig.getLogDeduplicationDuration() != null )
         {
-            this.logDeduplicationDuration
+            this.m_logDeduplicationDuration
                     = orig.getLogDeduplicationDuration();
         }
         else
         {
-            this.logDeduplicationDuration = null;
+            this.m_logDeduplicationDuration = null;
         }
 
         if( stopAfter != null )
         {
-            this.stopAfter = stopAfter;
+            this.m_stopAfter = stopAfter;
         }
         else if( orig != null && orig.getStopAfter() != null )
         {
-            this.stopAfter = orig.getStopAfter();
+            this.m_stopAfter = orig.getStopAfter();
         }
         else
         {
-            this.stopAfter = null;
+            this.m_stopAfter = null;
         }
 
         if( printLog != null )
         {
-            this.printLog = printLog;
+            this.m_printLog = printLog;
         }
-        else if( orig != null && orig.getPrintLog() != null )
+        else if( orig != null && orig.willPrintLog() != null )
         {
-            this.printLog = orig.getPrintLog();
+            this.m_printLog = orig.willPrintLog();
         }
         else
         {
-            this.printLog = null;
+            this.m_printLog = null;
         }
 
         if( saveState != null )
         {
-            this.saveState = saveState;
+            this.m_saveState = saveState;
         }
-        else if( orig != null && orig.getSaveState() != null )
+        else if( orig != null && orig.willSaveState() != null )
         {
-            this.saveState = orig.getSaveState();
+            this.m_saveState = orig.willSaveState();
         }
         else
         {
-            this.saveState = null;
+            this.m_saveState = null;
         }
 
         if( readReOpenLogFile != null )
         {
-            this.readReOpenLogFile = readReOpenLogFile;
+            this.m_readReOpenLogFile = readReOpenLogFile;
         }
-        else if( orig != null && orig.getReadReOpenLogFile() != null )
+        else if( orig != null && orig.willReadReOpenLogFile() != null )
         {
-            this.readReOpenLogFile = orig.getReadReOpenLogFile();
+            this.m_readReOpenLogFile = orig.willReadReOpenLogFile();
         }
         else
         {
-            this.readReOpenLogFile = null;
+            this.m_readReOpenLogFile = null;
         }
 
         if( continueState != null )
         {
-            this.continueState = continueState;
+            this.m_continueState = continueState;
         }
-        else if( orig != null && orig.getContinueState() != null )
+        else if( orig != null && orig.willContinueState() != null )
         {
-            this.continueState = orig.getContinueState();
+            this.m_continueState = orig.willContinueState();
         }
         else
         {
-            this.continueState = null;
+            this.m_continueState = null;
         }
 
         if( pollIntervalSeconds != null )
         {
-            this.pollIntervalSeconds = pollIntervalSeconds;
+            this.m_pollIntervalSeconds = pollIntervalSeconds;
         }
         else if( orig != null && orig.getPollIntervalSeconds() != null )
         {
-            this.pollIntervalSeconds = orig.getPollIntervalSeconds();
+            this.m_pollIntervalSeconds = orig.getPollIntervalSeconds();
         }
         else
         {
-            this.pollIntervalSeconds = null;
+            this.m_pollIntervalSeconds = null;
         }
 
         if( readLogFileCount != null )
         {
-            this.readLogFileCount = readLogFileCount;
+            this.m_readLogFileCount = readLogFileCount;
         }
         else if( orig != null && orig.getReadLogFileCount() != null )
         {
-            this.readLogFileCount = orig.getReadLogFileCount();
+            this.m_readLogFileCount = orig.getReadLogFileCount();
         }
         else
         {
-            this.readLogFileCount = null;
+            this.m_readLogFileCount = null;
         }
 
-        if( getReadMaxDeDupeEntries() != null )
+        if( readMaxDeDupeEntries != null )
         {
-            this.readMaxDeDupeEntries = readMaxDeDupeEntries;
+            this.m_readMaxDeDupeEntries = readMaxDeDupeEntries;
         }
         else if( orig != null && orig.getReadMaxDeDupeEntries() != null )
         {
-            this.readMaxDeDupeEntries = orig.getReadMaxDeDupeEntries();
+            this.m_readMaxDeDupeEntries = orig.getReadMaxDeDupeEntries();
         }
         else
         {
-            this.readMaxDeDupeEntries = null;
+            this.m_readMaxDeDupeEntries = null;
         }
 
         if( tailFromEnd != null )
         {
-            this.tailFromEnd = tailFromEnd;
+            this.m_tailFromEnd = tailFromEnd;
         }
-        else if( orig != null && orig.getTailFromEnd() != null )
+        else if( orig != null && orig.isTailFromEnd() != null )
         {
-            this.tailFromEnd = orig.getTailFromEnd();
+            this.m_tailFromEnd = orig.isTailFromEnd();
         }
         else
         {
-            this.tailFromEnd = null;
+            this.m_tailFromEnd = null;
         }
     }
 
@@ -1009,6 +1019,7 @@ public final class LogCheckConfig
                                       final Boolean saveState,
                                       final Boolean continueState,
                                       final Boolean startPositionIgnoreError,
+                                      final Boolean validateTailerStats,
                                       final Path lockFilePath,
                                       final Path logPath,
                                       final Path storeLogPath,
@@ -1056,6 +1067,7 @@ public final class LogCheckConfig
                 saveState,
                 continueState,
                 startPositionIgnoreError,
+                validateTailerStats,
                 lockFilePath,
                 logPath,
                 storeLogPath,
@@ -1111,6 +1123,7 @@ public final class LogCheckConfig
                                        final Boolean saveState,
                                        final Boolean continueState,
                                         final Boolean startPositionIgnoreError,
+                                        final Boolean validateTailerStats,
                                        final String lockFilePathStr,
                                        final String logPathStr,
                                         final String storeLogPathStr,
@@ -1221,7 +1234,7 @@ public final class LogCheckConfig
             {
                 String errMsg = String.format("Invalid URL string '%s'", elasticsearchURLStr);
 
-                log.debug(errMsg, ex);
+                LOGGER.debug(errMsg, ex);
                 throw new LogCheckException(errMsg, ex);
             }
         }
@@ -1258,7 +1271,7 @@ public final class LogCheckConfig
             {
                 String errMsg = String.format("Error parsing long '%s'", pollIntervalSecondsStr);
 
-                log.debug(errMsg, ex);
+                LOGGER.debug(errMsg, ex);
                 throw new LogCheckException(errMsg, ex);
             }
         }
@@ -1295,7 +1308,7 @@ public final class LogCheckConfig
             {
                 String errMsg = String.format("Error parsing integer '%s'", idBlockSizeStr);
 
-                log.debug(errMsg, ex);
+                LOGGER.debug(errMsg, ex);
                 throw new LogCheckException(errMsg, ex);
             }
         }
@@ -1310,7 +1323,7 @@ public final class LogCheckConfig
             {
                 String errMsg = String.format("Error parsing integer '%s'", deDupeMaxLogsBeforeWriteStr);
 
-                log.debug(errMsg, ex);
+                LOGGER.debug(errMsg, ex);
                 throw new LogCheckException(errMsg, ex);
             }
         }
@@ -1325,7 +1338,7 @@ public final class LogCheckConfig
             {
                 String errMsg = String.format("Error parsing integer '%s'", deDupeMaxLogsPerFileStr);
 
-                log.debug(errMsg, ex);
+                LOGGER.debug(errMsg, ex);
                 throw new LogCheckException(errMsg, ex);
             }
         }
@@ -1340,7 +1353,7 @@ public final class LogCheckConfig
             {
                 String errMsg = String.format("Error parsing integer '%s'", deDupeMaxLogFilesStr);
 
-                log.debug(errMsg, ex);
+                LOGGER.debug(errMsg, ex);
                 throw new LogCheckException(errMsg, ex);
             }
         }
@@ -1355,7 +1368,7 @@ public final class LogCheckConfig
             {
                 String errMsg = String.format("Error parsing integer '%s'", readLogFileCountStr);
 
-                log.debug(errMsg, ex);
+                LOGGER.debug(errMsg, ex);
                 throw new LogCheckException(errMsg, ex);
             }
         }
@@ -1370,7 +1383,7 @@ public final class LogCheckConfig
             {
                 String errMsg = String.format("Error parsing integer '%s'", readMaxDeDupeEntriesStr);
 
-                log.debug(errMsg, ex);
+                LOGGER.debug(errMsg, ex);
                 throw new LogCheckException(errMsg, ex);
             }
         }
@@ -1386,7 +1399,22 @@ public final class LogCheckConfig
             {
                 String errMsg = String.format("Error parsing integer '%s'", stopAfterStr);
 
-                log.debug(errMsg, ex);
+                LOGGER.debug(errMsg, ex);
+                throw new LogCheckException(errMsg, ex);
+            }
+        }
+
+        if(StringUtils.isNoneBlank(idBlockHashTypeStr))
+        {
+            try
+            {
+                idBlockHash = LCHashType.from(idBlockHashTypeStr);
+            }
+            catch( LogCheckException ex )
+            {
+                String errMsg = String.format("Error parsing ID Block Hash '%s'", idBlockHashTypeStr);
+
+                LOGGER.debug(errMsg, ex);
                 throw new LogCheckException(errMsg, ex);
             }
         }
@@ -1409,6 +1437,7 @@ public final class LogCheckConfig
                 saveState,
                 continueState,
                 startPositionIgnoreError,
+                validateTailerStats,
                 lockFilePath,
                 logPath,
                 storeLogPath,

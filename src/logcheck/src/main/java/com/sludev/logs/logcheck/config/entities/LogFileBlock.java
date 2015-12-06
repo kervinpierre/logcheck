@@ -34,44 +34,45 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 
 /**
  * Created by kervin on 10/27/2015.
  */
 public final class LogFileBlock
 {
-    private static final Logger log
+    private static final Logger LOGGER
             = LogManager.getLogger(LogFileBlock.class);
 
-    private final String name;
-    private final Long startPosition;
-    private final Integer size;
-    private final LCHashType hashType;
-    private final byte[] hashDigest;
+    private final String m_name;
+    private final Long m_startPosition;
+    private final Integer m_size;
+    private final LCHashType m_hashType;
+    private final byte[] m_hashDigest;
 
     public Long getStartPosition()
     {
-        return startPosition;
+        return m_startPosition;
     }
 
     public byte[] getHashDigest()
     {
-        return hashDigest;
+        return m_hashDigest;
     }
 
     public LCHashType getHashType()
     {
-        return hashType;
+        return m_hashType;
     }
 
     public Integer getSize()
     {
-        return size;
+        return m_size;
     }
 
     public String getName()
     {
-        return name;
+        return m_name;
     }
 
     private LogFileBlock(final String name,
@@ -80,11 +81,11 @@ public final class LogFileBlock
                          final LCHashType hashType,
                          final byte[] hashDigest)
     {
-        this.name = name;
-        this.startPosition = startPosition;
-        this.size = size;
-        this.hashType = hashType;
-        this.hashDigest = hashDigest;
+        this.m_name = name;
+        this.m_startPosition = startPosition;
+        this.m_size = size;
+        this.m_hashType = hashType;
+        this.m_hashDigest = hashDigest;
     }
 
     public static LogFileBlock from(final String name,
@@ -122,7 +123,7 @@ public final class LogFileBlock
             catch( IllegalArgumentException ex )
             {
                 String errMsg = String.format("Invalid integer for Start Position '%s'", startPositionStr);
-                log.debug(errMsg, ex);
+                LOGGER.debug(errMsg, ex);
 
                 throw new LogCheckException(errMsg, ex);
             }
@@ -137,7 +138,7 @@ public final class LogFileBlock
             catch( IllegalArgumentException ex )
             {
                 String errMsg = String.format("Invalid integer size '%s'", sizeStr);
-                log.debug(errMsg, ex);
+                LOGGER.debug(errMsg, ex);
 
                 throw new LogCheckException(errMsg, ex);
             }
@@ -152,7 +153,7 @@ public final class LogFileBlock
             catch( IllegalArgumentException ex )
             {
                 String errMsg = String.format("Invalid Hash Type '%s'", hashTypeStr);
-                log.debug(errMsg, ex);
+                LOGGER.debug(errMsg, ex);
 
                 throw new LogCheckException(errMsg, ex);
             }
@@ -167,7 +168,7 @@ public final class LogFileBlock
             catch( DecoderException  ex )
             {
                 String errMsg = String.format("Invalid Hash Digest '%s'", hashDigestStr);
-                log.debug(errMsg, ex);
+                LOGGER.debug(errMsg, ex);
 
                 throw new LogCheckException(errMsg, ex);
             }
@@ -195,16 +196,16 @@ public final class LogFileBlock
             throw new LogCheckException("Invalid block");
         }
 
-        if( log.isDebugEnabled() )
+        if( LOGGER.isDebugEnabled() )
         {
             if( block.length > LogCheckConstants.MAX_ID_BLOCK_SIZE )
             {
-                log.debug(String.format("Block size is greater than ID max. Size = %d",
+                LOGGER.debug(String.format("Block size is greater than ID max. Size = %d",
                         block.length));
             }
             else
             {
-                log.debug(String.format("Block size %d : \n=======\n%s\n=======\n",
+                LOGGER.debug(String.format("Block size %d : \n=======\n%s\n=======\n",
                         block.length, new String(block)));
             }
         }
@@ -222,7 +223,7 @@ public final class LogFileBlock
                 }
                 catch( NoSuchAlgorithmException ex )
                 {
-                    log.debug("Failed getting SHA-1 Hash", ex);
+                    LOGGER.debug("Failed getting SHA-1 Hash", ex);
                 }
                 break;
 
@@ -233,7 +234,7 @@ public final class LogFileBlock
                 }
                 catch( NoSuchAlgorithmException ex )
                 {
-                    log.debug("Failed getting SHA-256 Hash", ex);
+                    LOGGER.debug("Failed getting SHA-256 Hash", ex);
                 }
                 break;
 
@@ -250,9 +251,9 @@ public final class LogFileBlock
 
         byte[] value = md.digest();
 
-        if( log.isDebugEnabled() )
+        if( LOGGER.isDebugEnabled() )
         {
-            log.debug(String.format("Hash '%s' : %x", hashType, new java.math.BigInteger(1, value)));
+            LOGGER.debug(String.format("Hash '%s' : %x", hashType, new java.math.BigInteger(1, value)));
         }
 
         res = from(name,
@@ -290,7 +291,7 @@ public final class LogFileBlock
         {
             String errMsg = String.format("Error reading file size '%s'", fl);
 
-            log.debug(errMsg, ex);
+            LOGGER.debug(errMsg, ex);
             throw new LogCheckException(errMsg, ex);
         }
 
@@ -308,7 +309,7 @@ public final class LogFileBlock
         {
             String errMsg = String.format("Error opening file '%s'", fl);
 
-            log.debug(errMsg, ex);
+            LOGGER.debug(errMsg, ex);
             throw new LogCheckException(errMsg, ex);
         }
 
@@ -320,7 +321,7 @@ public final class LogFileBlock
         {
             String errMsg = String.format("Error setting file position '%s'", fl);
 
-            log.debug(errMsg, ex);
+            LOGGER.debug(errMsg, ex);
             throw new LogCheckException(errMsg, ex);
         }
 
@@ -336,16 +337,130 @@ public final class LogFileBlock
         {
             String errMsg = String.format("Error reading file '%s'", fl);
 
-            log.debug(errMsg, ex);
+            LOGGER.debug(errMsg, ex);
             throw new LogCheckException(errMsg, ex);
         }
 
         buffer.flip();
 
+        byte[] actualBytes = new byte[buffer.remaining()];
+        buffer.get(actualBytes);
+
         LogFileBlock res = LogFileBlock.from(name,
                 pos,
                 hs,
-                buffer.array());
+                actualBytes);
+
+        return res;
+    }
+
+    public static boolean isValidFileBlock( final Path file,
+                                            final LogFileBlock block ) throws LogCheckException
+    {
+        boolean res = false;
+        Integer size = null;
+        ByteBuffer bb = null;
+        Long pos = null;
+
+        if( block == null )
+        {
+            throw new IllegalArgumentException("Log File Block cannot be null.");
+        }
+
+        if( file == null )
+        {
+            throw new IllegalArgumentException("Log File Path cannot be null.");
+        }
+
+        size = block.getSize();
+        pos = block.getStartPosition();
+
+        if( size == null || size < 1 || size > LogCheckConstants.MAX_ID_BLOCK_SIZE )
+        {
+            throw new IllegalArgumentException(
+                    String.format("Invalid Log File Block Size %d.", size));
+        }
+
+        if( pos == null || pos < 0  )
+        {
+            throw new IllegalArgumentException(
+                    String.format("Invalid Log File Position %d.", pos));
+        }
+
+        bb = ByteBuffer.allocate(size);
+
+        FileChannel logFC = null;
+        try
+        {
+            logFC = FileChannel.open(file);
+
+            // Read the last block from file.
+            logFC.position(pos);
+            logFC.read(bb);
+        }
+        catch( IOException ex )
+        {
+            LOGGER.debug(String.format("Error reading Log File Block from '%s'", file), ex);
+        }
+        finally
+        {
+            if( logFC != null )
+            {
+                try
+                {
+                    logFC.close();
+                }
+                catch( IOException ex )
+                {
+                    LOGGER.debug(String.format("Error closing Log File '%s'", file), ex);
+                }
+            }
+        }
+
+        bb.flip();
+
+        if( size != bb.limit() )
+        {
+            throw new LogCheckException(
+                    String.format("Log File Block Size %d is not equal to bytes read %d.\n%s\n",
+                            size, bb.limit(), block));
+        }
+
+        String currHashType = LCHashType.toId(block.getHashType());
+        MessageDigest md = null;
+
+        try
+        {
+            md = MessageDigest.getInstance(currHashType);
+        }
+        catch( NoSuchAlgorithmException ex )
+        {
+            LOGGER.debug("Error generating message digest.", ex);
+
+            throw new LogCheckException("Error generating message digest.", ex);
+        }
+
+        md.update(bb);
+
+        byte[] currDigest = md.digest();
+        byte[] blockDigest = block.getHashDigest();
+
+        res = Arrays.equals(currDigest, blockDigest);
+
+        if( LOGGER.isDebugEnabled() && res == false )
+        {
+            LOGGER.debug(String.format(
+                    "Log File Block is invalid.\nBlock\n======\n'%s'\n", block));
+        }
+
+        return res;
+    }
+
+    @Override
+    public String toString()
+    {
+        String res = String.format("Name  : '%s'\nPos   : %d\nSize   : %d\nHash Type : %s\nHash '%s'\n",
+                m_name, m_startPosition, m_size, m_hashType, Hex.encodeHexString(m_hashDigest));
 
         return res;
     }

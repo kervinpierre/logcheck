@@ -53,7 +53,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.FutureTask;
 import java.util.concurrent.LinkedBlockingDeque;
 
 import org.apache.commons.lang3.concurrent.BasicThreadFactory;
@@ -103,8 +102,8 @@ public class LogCheckRun implements Callable<LogCheckResult>
 
         LogCheckResult res = LogCheckResult.from(LCResultStatus.SUCCESS);
         
-        if( config.getShowVersion() != null
-                && config.getShowVersion() )
+        if( config.isShowVersion() != null
+                && config.isShowVersion() )
         {
             LogCheckUtil.displayVersion();
             res = LogCheckResult.from(LCResultStatus.SUCCESS);
@@ -181,11 +180,12 @@ public class LogCheckRun implements Callable<LogCheckResult>
                 config.getLogPath(),
                 config.getDeDupeDirPath(),
                 config.getPollIntervalSeconds(),
-                config.getContinueState(),
+                config.willContinueState(),
                 config.isTailFromEnd(),
-                config.getReadReOpenLogFile(),
-                config.getSaveState(),
-                config.getStartPositionIgnoreError(),
+                config.willReadReOpenLogFile(),
+                config.willSaveState(),
+                config.willIgnoreStartPositionError(),
+                config.willValidateTailerStats(),
                 null, // bufferSize
                 config.getReadLogFileCount(),
                 config.getReadMaxDeDupeEntries(),
@@ -228,7 +228,7 @@ public class LogCheckRun implements Callable<LogCheckResult>
 
                 case SIMPLEFILE:
                     LogEntrySimpleFile lesf = LogEntrySimpleFile.from(config.getStoreLogPath(),
-                            config.getStoreReOpenLogFile());
+                            config.willStoreReOpenLogFile());
 
                     currStores.add(lesf);
                     break;

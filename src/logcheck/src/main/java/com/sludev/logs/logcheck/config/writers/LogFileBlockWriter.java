@@ -1,6 +1,5 @@
 package com.sludev.logs.logcheck.config.writers;
 
-import com.sludev.logs.logcheck.config.entities.LogCheckState;
 import com.sludev.logs.logcheck.config.entities.LogFileBlock;
 import com.sludev.logs.logcheck.enums.LCHashType;
 import com.sludev.logs.logcheck.utils.LogCheckException;
@@ -9,8 +8,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-
-import java.util.UUID;
 
 /**
  * Created by kervin on 2015-10-30.

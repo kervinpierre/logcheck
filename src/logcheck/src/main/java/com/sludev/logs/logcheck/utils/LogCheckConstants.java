@@ -43,8 +43,10 @@ public class LogCheckConstants
 
     public static final String DEFAULT_MULTILINE_IGNORE_LINE = "^[=]{5,}$";
 
-    public static final int    DEFAULT_LOG_READ_BUFFER_SIZE_BYTES = 80;
-    
+    //public static final int    DEFAULT_LOG_READ_BUFFER_SIZE_BYTES = 4096;
+    // For testing...
+    public static final int    DEFAULT_LOG_READ_BUFFER_SIZE_BYTES = 64;
+
     public static final LCIndexNameFormat DEFAULT_ELASTICSEARCH_INDEX_NAME_FORMAT
                                         = LCIndexNameFormat.PREFIX_DATE;
     public static final String DEFAULT_ELASTICSEARCH_INDEX_PREFIX = "logstash-";

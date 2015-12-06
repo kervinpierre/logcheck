@@ -139,6 +139,7 @@ public class LogCheckRunTest
         argsList.add("--dedupe-log-per-file 10");
         argsList.add("--dedupe-max-log-files=5");
         argsList.add("--read-reopen-log-file");
+        argsList.add("--tailer-validate-log-file");
 
         args = FSSArgFile.getArgArray(argsList);
 
@@ -262,6 +263,7 @@ public class LogCheckRunTest
         argsList.add("--file-from-start");
         argsList.add("--read-reopen-log-file");
         argsList.add("--poll-interval=1");
+        argsList.add("--tailer-validate-log-file");
 
         args = FSSArgFile.getArgArray(argsList);
         LogCheckConfig config = LogCheckInitialize.initialize(args);

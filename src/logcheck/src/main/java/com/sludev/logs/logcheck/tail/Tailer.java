@@ -16,6 +16,8 @@
  */
 package com.sludev.logs.logcheck.tail;
 
+import com.sludev.logs.logcheck.config.entities.LogCheckState;
+import com.sludev.logs.logcheck.config.entities.LogFileState;
 import com.sludev.logs.logcheck.enums.LCTailerResult;
 import com.sludev.logs.logcheck.log.ILogEntryBuilder;
 import com.sludev.logs.logcheck.utils.LogCheckException;
@@ -38,66 +40,68 @@ import java.util.concurrent.Callable;
  */
 public final class Tailer implements Callable<LCTailerResult>
 {
-    private static final Logger log
+    private static final Logger LOGGER
                     = LogManager.getLogger(Tailer.class);
 
-    public static final int DEFAULT_BUFSIZE = 4096;
+    /**
+     * The m_file which will be tailed.
+     */
+    private final Path m_file;
 
     /**
-     * The file which will be tailed.
+     * The character set that will be used to read the m_file.
      */
-    private final Path file;
+    private final Charset m_cset;
 
     /**
-     * The character set that will be used to read the file.
+     * The amount of time to wait for the m_file to be updated.
      */
-    private final Charset cset;
+    private final long m_delayMillis;
+
+    private final Long m_startPosition;
+
+    private final int m_bufferSize;
 
     /**
-     * The amount of time to wait for the file to be updated.
+     * Whether to tail from the end or start of m_file
      */
-    private final long delayMillis;
+    private final boolean m_end;
 
-    private final Long startPosition;
-
-    /**
-     * Whether to tail from the end or start of file
-     */
-    private final boolean end;
+    private final boolean m_validateTailerStatistics;
 
     /**
      * The listener to notify of events when tailing.
      */
-    private final List<ILogEntryBuilder> builders;
+    private final List<ILogEntryBuilder> m_builders;
 
     /**
-     * Whether to close and reopen the file whilst waiting for more input.
+     * Whether to close and reopen the m_file whilst waiting for more input.
      */
-    private final boolean reOpen;
+    private final boolean m_reOpen;
 
-    private final boolean startPositionIgnoreError;
+    private final boolean m_startPosIgnoreErr;
 
-    private final TailerStatistics statistics;
+    private final TailerStatistics m_statistics;
 
     // Mutable
 
     /**
      * The tailer will run as long as this value is true.
      */
-    private volatile boolean run = true;
+    private volatile boolean m_run = true;
 
     private String lineRemainder;
 
     /**
-     * Creates a Tailer for the given file, with a specified buffer size.
+     * Creates a Tailer for the given m_file, with a specified buffer size.
      *
-     * @param file the file to follow.
-     * @param cset the Charset to be used for reading the file
-     * @param delayMillis the delay between checks of the file for new content
+     * @param file the m_file to follow.
+     * @param cset the Charset to be used for reading the m_file
+     * @param delayMillis the delay between checks of the m_file for new content
      * in milliseconds.
-     * @param end Set to true to tail from the end of the file, false to tail
-     * from the beginning of the file.
-     * @param reOpen if true, close and reopen the file between reading chunks
+     * @param end Set to true to tail from the end of the m_file, false to tail
+     * from the beginning of the m_file.
+     * @param reOpen if true, close and reopen the m_file between reading chunks
      * @param bufSize Buffer size
      */
     private Tailer(final Path file,
@@ -107,22 +111,25 @@ public final class Tailer implements Callable<LCTailerResult>
                    final long delayMillis,
                    final boolean end,
                    final boolean reOpen,
-                   final boolean startPositionIgnoreError,
+                   final boolean startPosIgnoreErr,
+                   final boolean validateTailerStatistics,
                    final int bufSize,
                    final TailerStatistics stats)
     {
-        this.file = file;
-        this.delayMillis = delayMillis;
-        this.end = end;
-        this.startPositionIgnoreError = startPositionIgnoreError;
+        this.m_file = file;
+        this.m_delayMillis = delayMillis;
+        this.m_end = end;
+        this.m_startPosIgnoreErr = startPosIgnoreErr;
+        this.m_bufferSize = bufSize;
 
         // Save and prepare the listener
-        this.builders = builders;
-        this.reOpen = reOpen;
-        this.cset = cset;
-        this.statistics = stats;
+        this.m_builders = builders;
+        this.m_reOpen = reOpen;
+        this.m_validateTailerStatistics = validateTailerStatistics;
+        this.m_cset = cset;
+        this.m_statistics = stats;
 
-        this.startPosition = startPosition;
+        this.m_startPosition = startPosition;
 
         this.lineRemainder = null;
     }
@@ -134,11 +141,10 @@ public final class Tailer implements Callable<LCTailerResult>
                        final long delayMillis,
                        final boolean end,
                        final boolean reOpen,
-                       final boolean startPositionIgnoreError,
+                       final boolean startPosIgnoreErr,
+                       final boolean validateTailerStatistics,
                        final int bufSize,
-                       final TailerStatistics stats,
-                       final String setName,
-                       final Path stateFile)
+                       final TailerStatistics stats)
     {
         Tailer res = new Tailer(file,
                 startPosition,
@@ -147,7 +153,8 @@ public final class Tailer implements Callable<LCTailerResult>
                 delayMillis,
                 end,
                 reOpen,
-                startPositionIgnoreError,
+                startPosIgnoreErr,
+                validateTailerStatistics,
                 bufSize,
                 stats);
 
@@ -155,40 +162,34 @@ public final class Tailer implements Callable<LCTailerResult>
     }
 
     /**
-     * Return the file.
+     * Return the m_file.
      *
-     * @return the file
+     * @return the m_file
      */
     public Path getFile()
     {
-        return file;
+        return m_file;
     }
 
-    /**
-     * Gets whether to keep on running.
-     *
-     * @return whether to keep on running.
-     * @since 2.5
-     */
-    protected boolean getRun()
+    protected boolean isRunning()
     {
-        return run;
+        return m_run;
     }
 
     /**
-     * Follows changes in the file, calling the ITailerListener's handle method
+     * Follows changes in the m_file, calling the ITailerListener's handle method
      * for each new line.
      */
     @Override
     public LCTailerResult call() throws LogCheckException, IOException
     {
-        log.debug(String.format("Starting Tailer on '%s'", file));
+        LOGGER.debug(String.format("Starting Tailer on '%s'", m_file));
 
         LCTailerResult res = LCTailerResult.NONE;
         FileChannel reader = null;
-        long position = 0; // position within the file
+        long position = 0; // position within the m_file
 
-        if( reOpen )
+        if( m_reOpen )
         {
             // Default result for re-open, is REOPEN
             res = LCTailerResult.REOPEN;
@@ -196,69 +197,69 @@ public final class Tailer implements Callable<LCTailerResult>
 
         try
         {
-            // Open the log file for reading
-            if( run )
+            // Open the log m_file for reading
+            if( m_run )
             {
-                if( file == null )
+                if( m_file == null )
                 {
                     throw new LogCheckException("Log File cannot be null");
                 }
 
                 try
                 {
-                    reader = FileChannel.open(file, StandardOpenOption.READ);
+                    reader = FileChannel.open(m_file, StandardOpenOption.READ);
                 }
                 catch( IOException ex )
                 {
-                    String errMSg = String.format("Error opening log file '%s'", file);
+                    String errMSg = String.format("Error opening log file '%s'", m_file);
 
-                    log.info(errMSg, ex);
-                    run = false;
+                    LOGGER.info(errMSg, ex);
+                    m_run = false;
 
                     // Delay here in case re-open is attempted
-                    if( delayMillis > 0 )
+                    if( m_delayMillis > 0 )
                     {
-                        Thread.sleep(delayMillis);
+                        Thread.sleep(m_delayMillis);
                     }
                 }
             }
 
-            if( run && reader == null )
+            if( m_run && reader == null )
             {
-                log.debug("Log file reader cannot be null");
+                LOGGER.debug("Log file reader cannot be null");
                 throw new LogCheckException("Log file reader cannot be null");
             }
 
-            // Set the current position in the log file
-            if( run && reader != null )
+            // Set the current position in the log m_file
+            if( m_run && reader != null )
             {
-                if( startPosition != null && startPosition >= 0 )
+                if( m_startPosition != null && m_startPosition >= 0 )
                 {
-                    if( end )
+                    if( m_end )
                     {
-                        log.debug(
+                        LOGGER.debug(
                                 String.format("Both '--tail-from-end' and a "
                                         + "starting byte position of %d where provided. Start Position has precedence",
-                                        startPosition));
+                                        m_startPosition));
                     }
 
-                    if( startPosition > reader.size()
-                            && startPositionIgnoreError == false )
+                    if( m_startPosition > reader.size()
+                            && m_startPosIgnoreErr == false )
                     {
                         throw new LogCheckException(
                                 String.format("File start position ( %d ) can not be further than the file's"
                                 + " last position ( %d ).  Was the file truncated since last run?",
-                                        startPosition, reader.size()));
+                                        m_startPosition, reader.size()));
                     }
 
                     // Start where instructed
-                    position = (startPosition>reader.size())?reader.size():startPosition;
+                    position = (m_startPosition >reader.size())?reader.size(): m_startPosition;
                 }
                 else
                 {
-                    if( end )
+                    if( m_end )
                     {
-                        // Tail from the end of the file
+                        // Tail from the end of the m_file
                         position = reader.size();
                     }
                 }
@@ -266,25 +267,50 @@ public final class Tailer implements Callable<LCTailerResult>
                 reader.position(position);
             }
 
-            // Now loop the log file
-            while( run && reader != null )
+            // Now loop the log m_file
+            while( m_run && reader != null )
             {
+                if( m_validateTailerStatistics )
+                {
+                    // Validate start and stop blocks are correct?
+                    LogCheckState currState = m_statistics.getState(true);
+                    LogFileState currFState = currState.getLogFile();
+                    if( currFState != null )
+                    {
+                        if( LogFileState.isValidFileBlocks(currFState, true) == false )
+                        {
+                            res = LCTailerResult.VALIDATION_FAIL;
+
+                            LOGGER.debug("Log Check File Block Validation failed.");
+
+                            throw new LogCheckException("Log Check File Block Validation failed.");
+                        }
+                    }
+                }
+
+                // Read from the file on disk
                 readLines(reader);
 
-                if( reOpen )
+                if( m_reOpen )
                 {
-                    // reOpen means read to the end of file then quit.
+                    // reOpen means read to the end of m_file then quit.
                     // The monitoring thread should relaunch after a period
                     // of time.
                     stop();
+
+                    // Close the reader before the delay so other processes
+                    // are less likely to deal with m_file locking issues on
+                    // Windows.
+                    IOUtils.closeQuietly(reader);
+                    reader = null;
                 }
 
                 // Delay exit if requested.
                 // This gives us a fixed interval *between* calls.
                 // BUG : Delay has to be inside this loop for non-reopen tailing
-                if( delayMillis > 0 )
+                if( m_delayMillis > 0 )
                 {
-                    Thread.sleep(delayMillis);
+                    Thread.sleep(m_delayMillis);
                 }
             }
         }
@@ -309,21 +335,20 @@ public final class Tailer implements Callable<LCTailerResult>
      */
     public void stop()
     {
-        this.run = false;
+        this.m_run = false;
     }
 
     /**
      * Read new lines.
      *
-     * @param reader The file to read
-     * @return The new position after the lines have been read
+     * @param reader The m_file to read
      * @throws java.io.IOException if an I/O error occurs.
      */
     private void readLines( final FileChannel reader )
             throws IOException, LogCheckException, InterruptedException
     {
-        ByteArrayOutputStream lineBuf = new ByteArrayOutputStream(64);
-        ByteBuffer buffer = ByteBuffer.allocate(64);
+        ByteArrayOutputStream lineBuf = new ByteArrayOutputStream(m_bufferSize);
+        ByteBuffer buffer = ByteBuffer.allocate(m_bufferSize);
         boolean seenCR = false;
         int bytesRead;
 
@@ -331,7 +356,7 @@ public final class Tailer implements Callable<LCTailerResult>
         long readCount = 0;
         String previousLine = null;
 
-        while( run && ((bytesRead  = reader.read(buffer))!= -1))
+        while( m_run && ((bytesRead  = reader.read(buffer))!= -1))
         {
             readCount++;
 
@@ -367,14 +392,14 @@ public final class Tailer implements Callable<LCTailerResult>
 
                 if( doHandle )
                 {
-                    String ts = new String(lineBuf.toByteArray(), cset);
+                    String ts = new String(lineBuf.toByteArray(), m_cset);
 
 //                    if( ts.matches(".*?2015-12.*") == false )
 //                    {
 //                        log.debug(String.format("%s", ts));
 //                    }
 
-                    for( ILogEntryBuilder ib : builders)
+                    for( ILogEntryBuilder ib : m_builders )
                     {
                         ib.handleLogLine(ts);
                     }
@@ -382,7 +407,7 @@ public final class Tailer implements Callable<LCTailerResult>
                     lineBuf.reset();
 
                     // Collect statistics
-                    statistics.setLastProcessedPosition(reader.position());
+                    m_statistics.setLastProcessedPosition(reader.position());
 
                     previousLine = ts;
                 }
@@ -391,15 +416,15 @@ public final class Tailer implements Callable<LCTailerResult>
             buffer.clear();
         }
 
-        if( run == false )
+        if( m_run == false )
         {
             // We've been asked to stop running
-            log.debug("Tailer process stopping by request.");
+            LOGGER.debug("Tailer process stopping by request.");
         }
 
         if( lineBuf.size() > 0 )
         {
-            log.warn(String.format("leaving %d in the line buffer...\n'%s'",
+            LOGGER.warn(String.format("leaving %d in the line buffer...\n'%s'",
                     lineBuf.size(), lineBuf));
         }
 

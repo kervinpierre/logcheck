@@ -69,4 +69,5 @@
 #--stop-after=20                                \
   # Close/reopen the log file during reads
 --read-reopen-log-file                         \
+--tailer-validate-log-file                     \
 --print-logs
