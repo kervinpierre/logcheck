@@ -20,7 +20,7 @@ import com.sludev.logs.logcheck.config.entities.LogCheckState;
 import com.sludev.logs.logcheck.config.entities.LogFileState;
 import com.sludev.logs.logcheck.enums.LCTailerResult;
 import com.sludev.logs.logcheck.log.ILogEntryBuilder;
-import com.sludev.logs.logcheck.utils.LogCheckException;
+import com.sludev.logs.logcheck.exceptions.LogCheckException;
 import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -32,13 +32,17 @@ import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
+import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.Callable;
 
 /**
  * Simple implementation of the unix "tail -f" functionality.
  */
-public final class Tailer implements Callable<LCTailerResult>
+public final class Tailer implements Callable<Set<LCTailerResult>>
 {
     private static final Logger LOGGER
                     = LogManager.getLogger(Tailer.class);
@@ -181,18 +185,18 @@ public final class Tailer implements Callable<LCTailerResult>
      * for each new line.
      */
     @Override
-    public LCTailerResult call() throws LogCheckException, IOException
+    public Set<LCTailerResult> call() throws LogCheckException, IOException
     {
         LOGGER.debug(String.format("Starting Tailer on '%s'", m_file));
 
-        LCTailerResult res = LCTailerResult.NONE;
+        Set<LCTailerResult> res = new HashSet<>(5);
         FileChannel reader = null;
         long position = 0; // position within the m_file
 
         if( m_reOpen )
         {
             // Default result for re-open, is REOPEN
-            res = LCTailerResult.REOPEN;
+            res.add(LCTailerResult.REOPEN);
         }
 
         try
@@ -246,14 +250,29 @@ public final class Tailer implements Callable<LCTailerResult>
                     if( m_startPosition > reader.size()
                             && m_startPosIgnoreErr == false )
                     {
-                        throw new LogCheckException(
-                                String.format("File start position ( %d ) can not be further than the file's"
-                                + " last position ( %d ).  Was the file truncated since last run?",
-                                        m_startPosition, reader.size()));
+                        String errMsg = String.format("File start position ( %d ) can not be further than the file's"
+                                        + " last position ( %d ).  Was the file truncated since last run?",
+                                m_startPosition, reader.size());
+
+                        LOGGER.debug(errMsg);
+
+                        if( m_validateTailerStatistics )
+                        {
+                            stop();
+                            res.add(LCTailerResult.VALIDATION_FAIL);
+                        }
+                        else
+                        {
+                            // FIXME : Start from the beginning?
+                            ;
+                        }
                     }
 
                     // Start where instructed
-                    position = (m_startPosition >reader.size())?reader.size(): m_startPosition;
+                    if( m_run )
+                    {
+                        position = (m_startPosition > reader.size()) ? reader.size() : m_startPosition;
+                    }
                 }
                 else
                 {
@@ -272,19 +291,13 @@ public final class Tailer implements Callable<LCTailerResult>
             {
                 if( m_validateTailerStatistics )
                 {
-                    // Validate start and stop blocks are correct?
-                    LogCheckState currState = m_statistics.getState(true);
-                    LogFileState currFState = currState.getLogFile();
-                    if( currFState != null )
+                    LCTailerResult valRes = validateStatistics(m_statistics);
+                    if( valRes != LCTailerResult.SUCCESS )
                     {
-                        if( LogFileState.isValidFileBlocks(currFState, true) == false )
-                        {
-                            res = LCTailerResult.VALIDATION_FAIL;
-
-                            LOGGER.debug("Log Check File Block Validation failed.");
-
-                            throw new LogCheckException("Log Check File Block Validation failed.");
-                        }
+                        // Statistics validation from disk failed.
+                        res.add(valRes);
+                        stop();
+                        break;
                     }
                 }
 
@@ -317,7 +330,7 @@ public final class Tailer implements Callable<LCTailerResult>
         catch( final InterruptedException ex )
         {
             Thread.currentThread().interrupt();
-            res = LCTailerResult.INTERRUPTED;
+            res.add(LCTailerResult.INTERRUPTED);
         }
         finally
         {
@@ -431,4 +444,34 @@ public final class Tailer implements Callable<LCTailerResult>
         IOUtils.closeQuietly(lineBuf); // not strictly necessary
     }
 
+    public static LCTailerResult validateStatistics(TailerStatistics stats) throws LogCheckException
+    {
+        LCTailerResult res = LCTailerResult.SUCCESS;
+
+        // Validate start and stop blocks are correct?
+        LogCheckState currState = stats.getState(true);
+        LogFileState currFState = currState.getLogFile();
+        if( currFState != null )
+        {
+            boolean valRes = false;
+
+            try
+            {
+                valRes = LogFileState.isValidFileBlocks(currFState, true);
+            }
+            catch( LogCheckException ex )
+            {
+                LOGGER.debug("Error validating file block", ex);
+            }
+
+            if( valRes == false )
+            {
+                res = LCTailerResult.VALIDATION_FAIL;
+
+                LOGGER.debug("Log Check File Block Validation failed.");
+            }
+        }
+
+        return res;
+    }
 }

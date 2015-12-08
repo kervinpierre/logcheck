@@ -19,12 +19,10 @@ package com.sludev.logs.logcheck.store.impl;
 
 import com.sludev.logs.logcheck.enums.LCIndexNameFormat;
 import com.sludev.logs.logcheck.enums.LCResultStatus;
-import com.sludev.logs.logcheck.log.ILogEntrySource;
-import com.sludev.logs.logcheck.log.LogEntry;
 import com.sludev.logs.logcheck.config.entities.LogEntryVO;
 import com.sludev.logs.logcheck.store.ILogEntryStore;
 import com.sludev.logs.logcheck.utils.LogCheckConstants;
-import com.sludev.logs.logcheck.utils.LogCheckException;
+import com.sludev.logs.logcheck.exceptions.LogCheckException;
 import com.sludev.logs.logcheck.utils.LogCheckResult;
 import io.searchbox.client.JestClient;
 import io.searchbox.client.JestClientFactory;

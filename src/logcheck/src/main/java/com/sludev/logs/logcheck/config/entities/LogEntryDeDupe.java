@@ -18,7 +18,7 @@
 
 package com.sludev.logs.logcheck.config.entities;
 
-import com.sludev.logs.logcheck.utils.LogCheckException;
+import com.sludev.logs.logcheck.exceptions.LogCheckException;
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.lang3.builder.EqualsBuilder;

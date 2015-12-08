@@ -18,7 +18,7 @@
 package com.sludev.logs.logcheck.config.parsers;
 
 import com.sludev.logs.logcheck.config.entities.LogCheckConfig;
-import com.sludev.logs.logcheck.utils.LogCheckException;
+import com.sludev.logs.logcheck.exceptions.LogCheckException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.w3c.dom.Document;
@@ -387,6 +387,7 @@ public class LogCheckConfigParser
                 continueState, // continueState
                 null, // startPositionIgnoreError
                 null,
+                null, // tailerBackupReadLog
                 lockFileStr,
                 logFileStr,
                 null, // storeLogFile
@@ -396,6 +397,7 @@ public class LogCheckConfigParser
                 null, // configFilePath,
                 holdingDirStr,
                 deDupeDir,
+                null, // tailerLogBackupDir
                 elasticsearchURLStr,
                 null, // elasticsearchIndexName,
                 null, // elasticsearchIndexPrefix,
@@ -414,7 +416,11 @@ public class LogCheckConfigParser
                 deDupeMaxLogFiles,
                 leBuilderType,
                 leStoreType,
-                idBlockHashType);
+                null, // tailerBackupLogNameComp
+                idBlockHashType,
+                null, // tailerBackupLogCompression
+                null  // tailerBackupLogNameRegexStr
+                 );
 
         return res;
     }

@@ -20,10 +20,11 @@ package com.sludev.logs.logcheck.utils;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+
+import com.sludev.logs.logcheck.exceptions.LogCheckException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.w3c.dom.Document;

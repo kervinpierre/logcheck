@@ -23,7 +23,7 @@ import com.sludev.logs.logcheck.config.entities.LogEntryDeDupe;
 import com.sludev.logs.logcheck.config.parsers.LogCheckDeDupeLogParser;
 import com.sludev.logs.logcheck.config.parsers.ParserUtil;
 import com.sludev.logs.logcheck.enums.LCFileFormats;
-import com.sludev.logs.logcheck.utils.LogCheckException;
+import com.sludev.logs.logcheck.exceptions.LogCheckException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -57,7 +57,7 @@ public final class ContinueUtil
             currSetDirPrefix = setName.replaceAll("[^a-zA-Z0-9.-]", "_").trim();
         }
 
-        List allFiles = new ArrayList<>();
+        List<Path> allFiles = new ArrayList<>(10);
         try
         {
             final String pre = currSetDirPrefix;

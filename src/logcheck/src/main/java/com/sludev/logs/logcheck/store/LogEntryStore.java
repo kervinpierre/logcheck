@@ -21,7 +21,7 @@ package com.sludev.logs.logcheck.store;
 import com.sludev.logs.logcheck.enums.LCResultStatus;
 import com.sludev.logs.logcheck.log.ILogEntrySource;
 import com.sludev.logs.logcheck.utils.LogCheckConstants;
-import com.sludev.logs.logcheck.utils.LogCheckException;
+import com.sludev.logs.logcheck.exceptions.LogCheckException;
 import com.sludev.logs.logcheck.utils.LogCheckResult;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;

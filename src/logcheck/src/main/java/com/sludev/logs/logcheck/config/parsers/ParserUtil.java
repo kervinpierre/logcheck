@@ -21,7 +21,7 @@ package com.sludev.logs.logcheck.config.parsers;
 
 import com.sludev.logs.logcheck.enums.LCFileFormats;
 import com.sludev.logs.logcheck.utils.FSSConfigurationFile;
-import com.sludev.logs.logcheck.utils.LogCheckException;
+import com.sludev.logs.logcheck.exceptions.LogCheckException;
 import com.sludev.logs.logcheck.utils.LogCheckLSResourceResolver;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

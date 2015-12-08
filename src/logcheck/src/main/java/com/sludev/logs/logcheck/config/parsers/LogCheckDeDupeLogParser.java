@@ -18,10 +18,9 @@
 
 package com.sludev.logs.logcheck.config.parsers;
 
-import com.sludev.logs.logcheck.config.entities.LogCheckConfig;
 import com.sludev.logs.logcheck.config.entities.LogCheckDeDupeLog;
 import com.sludev.logs.logcheck.config.entities.LogEntryDeDupe;
-import com.sludev.logs.logcheck.utils.LogCheckException;
+import com.sludev.logs.logcheck.exceptions.LogCheckException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.w3c.dom.Document;

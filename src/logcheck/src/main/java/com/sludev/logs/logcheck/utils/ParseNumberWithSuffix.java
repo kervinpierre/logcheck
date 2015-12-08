@@ -1,5 +1,6 @@
 package com.sludev.logs.logcheck.utils;
 
+import com.sludev.logs.logcheck.exceptions.LogCheckException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;

@@ -29,7 +29,7 @@ import com.sludev.logs.logcheck.config.writers.LogCheckStateWriter;
 import com.sludev.logs.logcheck.dedupe.ContinueUtil;
 import com.sludev.logs.logcheck.enums.LCFileFormats;
 import com.sludev.logs.logcheck.enums.LCHashType;
-import com.sludev.logs.logcheck.utils.LogCheckException;
+import com.sludev.logs.logcheck.exceptions.LogCheckException;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
@@ -51,7 +51,7 @@ import java.util.UUID;
  *
  * Created by kervin on 10/27/2015.
  */
-public class TailerStatistics
+public final class TailerStatistics
 {
     private static final Logger LOGGER
                 = LogManager.getLogger(TailerStatistics.class);
@@ -311,7 +311,7 @@ public class TailerStatistics
         return lcConf;
     }
 
-    public LogCheckState getState(final Boolean ignoreMissingLogFile)
+    public LogCheckState getState(final Boolean ignoreMissingLogFile) throws LogCheckException
     {
         LogCheckState res = null;
 
@@ -332,8 +332,23 @@ public class TailerStatistics
 
             if( Files.exists(m_logFile) )
             {
-                firstBlock = getFirstBlock();
-                lastBlock = getLastBlock();
+                try
+                {
+                    firstBlock = getFirstBlock();
+                }
+                catch( LogCheckException ex )
+                {
+                    LOGGER.debug("Error retrieving first block.", ex);
+                }
+
+                try
+                {
+                    lastBlock = getLastBlock();
+                }
+                catch( LogCheckException ex )
+                {
+                    LOGGER.debug("Error retrieving last block", ex);
+                }
             }
 
             currLogFile = LogFileState.from(m_logFile,
