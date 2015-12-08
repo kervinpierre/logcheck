@@ -15,7 +15,10 @@
  *   is strictly forbidden unless prior written permission is obtained
  *   from SLU Dev Inc.
  */
-package com.sludev.logs.logcheck.utils;
+package com.sludev.logs.logcheck.exceptions;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  *
@@ -23,6 +26,9 @@ package com.sludev.logs.logcheck.utils;
  */
 public class LogCheckException extends Exception
 {
+    private static final Logger LOGGER
+                            = LogManager.getLogger(LogCheckException.class);
+
     public LogCheckException(String msg)
     {
         super(msg);

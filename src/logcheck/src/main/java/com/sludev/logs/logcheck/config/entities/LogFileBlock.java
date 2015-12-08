@@ -19,7 +19,7 @@ package com.sludev.logs.logcheck.config.entities;
 
 import com.sludev.logs.logcheck.enums.LCHashType;
 import com.sludev.logs.logcheck.utils.LogCheckConstants;
-import com.sludev.logs.logcheck.utils.LogCheckException;
+import com.sludev.logs.logcheck.exceptions.LogCheckException;
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.lang3.StringUtils;
@@ -37,6 +37,10 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 
 /**
+ * Represents a data block in a file on disk.
+ *
+ * Stores the blocks location ( start of byte number ) and also its digest.
+ *
  * Created by kervin on 10/27/2015.
  */
 public final class LogFileBlock
@@ -183,7 +187,7 @@ public final class LogFileBlock
         return res;
     }
 
-    /*
+    /**
     ** Generate the hash value
      */
     public static LogFileBlock from(final String name,
@@ -266,48 +270,49 @@ public final class LogFileBlock
     }
 
     public static LogFileBlock from(final String name,
-                                    final Path fl,
+                                    final Path file,
                                     final long pos,
-                                    final int sz,
-                                    final LCHashType hs) throws LogCheckException
+                                    final int size,
+                                    final LCHashType hashType) throws LogCheckException
     {
         FileChannel fc;
 
         try
         {
-            if( Files.size(fl)<1)
+            if( Files.size(file)<1)
             {
                 throw new LogCheckException(
-                        String.format("Empty file '%s'", fl));
+                        String.format("Empty file '%s'", file));
             }
 
-            if(pos < 0 || pos > Files.size(fl)-1)
+            if(pos < 0 || pos > Files.size(file)-1)
             {
                 throw new LogCheckException(
-                        String.format("Invalid position %d for file '%s'", pos, fl));
+                        String.format("Invalid position %d for file with size %d '%s'",
+                                                                pos, Files.size(file), file));
             }
         }
         catch(IOException ex)
         {
-            String errMsg = String.format("Error reading file size '%s'", fl);
+            String errMsg = String.format("Error reading file size '%s'", file);
 
             LOGGER.debug(errMsg, ex);
             throw new LogCheckException(errMsg, ex);
         }
 
-        if( sz < 0 || sz > LogCheckConstants.MAX_ID_BLOCK_SIZE)
+        if( size < 0 || size > LogCheckConstants.MAX_ID_BLOCK_SIZE)
         {
             throw new LogCheckException(
-                    String.format("Invalid size %d for file '%s'", sz, fl));
+                    String.format("Invalid size %d for file '%s'", size, file));
         }
 
         try
         {
-            fc = FileChannel.open(fl, StandardOpenOption.READ);
+            fc = FileChannel.open(file, StandardOpenOption.READ);
         }
         catch(IOException ex)
         {
-            String errMsg = String.format("Error opening file '%s'", fl);
+            String errMsg = String.format("Error opening file '%s'", file);
 
             LOGGER.debug(errMsg, ex);
             throw new LogCheckException(errMsg, ex);
@@ -319,13 +324,13 @@ public final class LogFileBlock
         }
         catch(IOException ex)
         {
-            String errMsg = String.format("Error setting file position '%s'", fl);
+            String errMsg = String.format("Error setting file position '%s'", file);
 
             LOGGER.debug(errMsg, ex);
             throw new LogCheckException(errMsg, ex);
         }
 
-        ByteBuffer buffer = ByteBuffer.allocate(sz);
+        ByteBuffer buffer = ByteBuffer.allocate(size);
 
         int bytesRead;
 
@@ -335,7 +340,7 @@ public final class LogFileBlock
         }
         catch(IOException ex)
         {
-            String errMsg = String.format("Error reading file '%s'", fl);
+            String errMsg = String.format("Error reading file '%s'", file);
 
             LOGGER.debug(errMsg, ex);
             throw new LogCheckException(errMsg, ex);
@@ -348,7 +353,7 @@ public final class LogFileBlock
 
         LogFileBlock res = LogFileBlock.from(name,
                 pos,
-                hs,
+                hashType,
                 actualBytes);
 
         return res;

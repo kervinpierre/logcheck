@@ -2,8 +2,7 @@ package com.sludev.logs.logcheck.config.writers;
 
 import com.sludev.logs.logcheck.config.entities.LogCheckState;
 import com.sludev.logs.logcheck.config.entities.LogFileState;
-import com.sludev.logs.logcheck.utils.LogCheckException;
-import org.apache.commons.lang3.StringUtils;
+import com.sludev.logs.logcheck.exceptions.LogCheckException;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

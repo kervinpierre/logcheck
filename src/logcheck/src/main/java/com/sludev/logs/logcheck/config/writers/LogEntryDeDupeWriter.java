@@ -18,9 +18,8 @@
 
 package com.sludev.logs.logcheck.config.writers;
 
-import com.sludev.logs.logcheck.config.entities.LogCheckDeDupeLog;
 import com.sludev.logs.logcheck.config.entities.LogEntryDeDupe;
-import com.sludev.logs.logcheck.utils.LogCheckException;
+import com.sludev.logs.logcheck.exceptions.LogCheckException;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;

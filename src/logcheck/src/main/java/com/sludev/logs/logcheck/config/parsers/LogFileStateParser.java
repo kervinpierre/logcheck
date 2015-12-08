@@ -20,12 +20,10 @@ package com.sludev.logs.logcheck.config.parsers;
 
 import com.sludev.logs.logcheck.config.entities.LogFileBlock;
 import com.sludev.logs.logcheck.config.entities.LogFileState;
-import com.sludev.logs.logcheck.utils.LogCheckException;
+import com.sludev.logs.logcheck.exceptions.LogCheckException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;

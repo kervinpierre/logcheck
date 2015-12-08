@@ -17,12 +17,14 @@
  */
 package com.sludev.logs.logcheck.config.entities;
 
+import com.sludev.logs.logcheck.enums.LCCompressionType;
+import com.sludev.logs.logcheck.enums.LCFileRegexComponent;
 import com.sludev.logs.logcheck.enums.LCHashType;
 import com.sludev.logs.logcheck.enums.LCIndexNameFormat;
 import com.sludev.logs.logcheck.enums.LCLogEntryBuilderType;
 import com.sludev.logs.logcheck.enums.LCLogEntryStoreType;
 import com.sludev.logs.logcheck.utils.LogCheckConstants;
-import com.sludev.logs.logcheck.utils.LogCheckException;
+import com.sludev.logs.logcheck.exceptions.LogCheckException;
 import com.sludev.logs.logcheck.utils.ParseNumberWithSuffix;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -37,6 +39,7 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 
 /**
  * The main configuration class for the LogCheck application.
@@ -47,8 +50,7 @@ public final class LogCheckConfig
 {
     private static final org.apache.logging.log4j.Logger LOGGER
                              = LogManager.getLogger(LogCheckConfig.class);
-    
-    private final Boolean m_service;
+
     private final Long m_pollIntervalSeconds;
     private final Long m_stopAfter;
     private final Integer m_idBlockSize;
@@ -64,6 +66,10 @@ public final class LogCheckConfig
     private final String m_smtpUser;
     private final String m_smtpProto;
     private final String m_setName;
+    private final String m_elasticsearchIndexName;
+    private final String m_elasticsearchIndexPrefix;
+    private final String m_elasticsearchLogType;
+    private final Boolean m_service;
     private final Boolean m_dryRun;
     private final Boolean m_showVersion;
     private final Boolean m_tailFromEnd;
@@ -74,6 +80,7 @@ public final class LogCheckConfig
     private final Boolean m_storeReOpenLogFile;
     private final Boolean m_startPositionIgnoreError;
     private final Boolean m_validateTailerStats;
+    private final Boolean m_tailerBackupReadLog;
     private final Path m_lockFilePath;
     private final Path m_logPath;
     private final Path m_storeLogPath;
@@ -83,21 +90,47 @@ public final class LogCheckConfig
     private final Path m_configFilePath;
     private final Path m_holdingDirPath;
     private final Path m_deDupeDirPath;
+    private final Path m_tailerLogBackupDir;
     private final URL m_elasticsearchURL;
-    private final String m_elasticsearchIndexName;
-    private final String m_elasticsearchIndexPrefix;
-    private final String m_elasticsearchLogType;
     private final LocalTime m_logCutoffDate;
     private final Duration m_logCutoffDuration;
     private final Duration m_logDeduplicationDuration;
     private final LCIndexNameFormat m_elasticsearchIndexNameFormat;
     private final List<LCLogEntryBuilderType> m_logEntryBuilders;
     private final List<LCLogEntryStoreType> m_logEntryStores;
+    private final List<LCFileRegexComponent> m_tailerBackupLogNameComps;
     private final LCHashType m_idBlockHashType;
+    private final LCCompressionType m_tailerBackupLogCompression;
+    private final Pattern m_tailerBackupLogNameRegex;
 
     public Path getErrorFilePath()
     {
         return m_errorFilePath;
+    }
+
+    public Path getTailerLogBackupDir()
+    {
+        return m_tailerLogBackupDir;
+    }
+
+    public Boolean willTailerBackupReadLog()
+    {
+        return m_tailerBackupReadLog;
+    }
+
+    public List<LCFileRegexComponent> getTailerBackupLogNameComps()
+    {
+        return m_tailerBackupLogNameComps;
+    }
+
+    public LCCompressionType getTailerBackupLogCompression()
+    {
+        return m_tailerBackupLogCompression;
+    }
+
+    public Pattern getTailerBackupLogNameRegex()
+    {
+        return m_tailerBackupLogNameRegex;
     }
 
     public Integer getIdBlockSize()
@@ -344,6 +377,7 @@ public final class LogCheckConfig
                            final Boolean continueState,
                            final Boolean startPositionIgnoreError,
                            final Boolean validateTailerStats,
+                           final Boolean tailerBackupReadLog,
                            final Path lockFilePath,
                            final Path logPath,
                            final Path storeLogPath,
@@ -353,6 +387,7 @@ public final class LogCheckConfig
                            final Path configFilePath,
                            final Path holdingDirPath,
                            final Path deDupeDirPath,
+                           final Path tailerLogBackupDir,
                            final URL elasticsearchURL,
                            final String elasticsearchIndexName,
                            final String elasticsearchIndexPrefix,
@@ -371,8 +406,76 @@ public final class LogCheckConfig
                            final Integer deDupeMaxLogFiles,
                            final List<LCLogEntryBuilderType> logEntryBuilders,
                            final List<LCLogEntryStoreType> logEntryStores,
-                           final LCHashType idBlockHashType) throws LogCheckException
+                           final List<LCFileRegexComponent> tailerBackupLogNameComps,
+                           final LCHashType idBlockHashType,
+                           final LCCompressionType tailerBackupLogCompression,
+                           final Pattern tailerBackupLogNameRegex) throws LogCheckException
     {
+        if( tailerBackupReadLog != null )
+        {
+            this.m_tailerBackupReadLog = tailerBackupReadLog;
+        }
+        else if( orig != null && orig.willTailerBackupReadLog() != null )
+        {
+            this.m_tailerBackupReadLog = orig.willTailerBackupReadLog();
+        }
+        else
+        {
+            this.m_tailerBackupReadLog = null;
+        }
+
+        if( tailerLogBackupDir != null )
+        {
+            this.m_tailerLogBackupDir = tailerLogBackupDir;
+        }
+        else if( orig != null && orig.getTailerLogBackupDir() != null )
+        {
+            this.m_tailerLogBackupDir = orig.getTailerLogBackupDir();
+        }
+        else
+        {
+            this.m_tailerLogBackupDir = null;
+        }
+
+        if( tailerBackupLogNameComps != null )
+        {
+            this.m_tailerBackupLogNameComps = tailerBackupLogNameComps;
+        }
+        else if( orig != null && orig.getLogEntryStores() != null )
+        {
+            this.m_tailerBackupLogNameComps = orig.getTailerBackupLogNameComps();
+        }
+        else
+        {
+            this.m_tailerBackupLogNameComps = new ArrayList<>();
+        }
+
+        if( tailerBackupLogCompression != null )
+        {
+            this.m_tailerBackupLogCompression = tailerBackupLogCompression;
+        }
+        else if( orig != null && orig.getTailerBackupLogCompression() != null )
+        {
+            this.m_tailerBackupLogCompression = orig.getTailerBackupLogCompression();
+        }
+        else
+        {
+            this.m_tailerBackupLogCompression = null;
+        }
+
+        if( tailerBackupLogNameRegex != null )
+        {
+            this.m_tailerBackupLogNameRegex = tailerBackupLogNameRegex;
+        }
+        else if( orig != null && orig.getTailerBackupLogNameRegex() != null )
+        {
+            this.m_tailerBackupLogNameRegex = orig.getTailerBackupLogNameRegex();
+        }
+        else
+        {
+            this.m_tailerBackupLogNameRegex = null;
+        }
+
         if( logEntryStores != null )
         {
             this.m_logEntryStores = logEntryStores;
@@ -1020,6 +1123,7 @@ public final class LogCheckConfig
                                       final Boolean continueState,
                                       final Boolean startPositionIgnoreError,
                                       final Boolean validateTailerStats,
+                                      final Boolean tailerBackupReadLog,
                                       final Path lockFilePath,
                                       final Path logPath,
                                       final Path storeLogPath,
@@ -1029,6 +1133,7 @@ public final class LogCheckConfig
                                       final Path configFilePath,
                                       final Path holdingDirPath,
                                       final Path deDupeDirPath,
+                                      final Path tailerLogBackupDir,
                                       final URL elasticsearchURL,
                                       final String elasticsearchIndexName,
                                       final String elasticsearchIndexPrefix,
@@ -1047,7 +1152,10 @@ public final class LogCheckConfig
                                       final Integer deDupeMaxLogFiles,
                                       final List<LCLogEntryBuilderType> logEntryBuilders,
                                       final List<LCLogEntryStoreType> logEntryStores,
-                                      final LCHashType idBlockHashType) throws LogCheckException
+                                      final List<LCFileRegexComponent> tailerBackupLogNameComps,
+                                      final LCHashType idBlockHashType,
+                                      final LCCompressionType tailerBackupLogCompression,
+                                      final Pattern tailerBackupLogNameRegex) throws LogCheckException
     {
         LogCheckConfig res = new LogCheckConfig(orig,
                 service,
@@ -1068,6 +1176,7 @@ public final class LogCheckConfig
                 continueState,
                 startPositionIgnoreError,
                 validateTailerStats,
+                tailerBackupReadLog,
                 lockFilePath,
                 logPath,
                 storeLogPath,
@@ -1077,6 +1186,7 @@ public final class LogCheckConfig
                 configFilePath,
                 holdingDirPath,
                 deDupeDirPath,
+                tailerLogBackupDir,
                 elasticsearchURL,
                 elasticsearchIndexName,
                 elasticsearchIndexPrefix,
@@ -1095,7 +1205,10 @@ public final class LogCheckConfig
                 deDupeMaxLogFiles,
                 logEntryBuilders,
                 logEntryStores,
-                idBlockHashType);
+                tailerBackupLogNameComps,
+                idBlockHashType,
+                tailerBackupLogCompression,
+                tailerBackupLogNameRegex);
 
         return res;
     }
@@ -1124,6 +1237,7 @@ public final class LogCheckConfig
                                        final Boolean continueState,
                                         final Boolean startPositionIgnoreError,
                                         final Boolean validateTailerStats,
+                                        final Boolean tailerBackupReadLog,
                                        final String lockFilePathStr,
                                        final String logPathStr,
                                         final String storeLogPathStr,
@@ -1133,6 +1247,7 @@ public final class LogCheckConfig
                                        final String configFilePathStr,
                                        final String holdingDirPathStr,
                                        final String deDupeDirPathStr,
+                                        final String tailerLogBackupDirStr,
                                        final String elasticsearchURLStr,
                                        final String elasticsearchIndexName,
                                        final String elasticsearchIndexPrefix,
@@ -1151,7 +1266,10 @@ public final class LogCheckConfig
                                         final String deDupeMaxLogFilesStr,
                                        final String[] logEntryBuilderStrs,
                                         final String[] logEntryStoreStrs,
-                                       final String idBlockHashTypeStr) throws LogCheckException
+                                        final String[] tailerBackupLogNameCompStrs,
+                                       final String idBlockHashTypeStr,
+                                        final String tailBackupLogCompressionStr,
+                                        final String tailBackupLogNameRegexStr) throws LogCheckException
     {
         Path lockFilePath = null;
         Path logPath = null;
@@ -1162,14 +1280,16 @@ public final class LogCheckConfig
         Path configFilePath = null;
         Path holdingDirPath = null;
         Path deDupeDirPath = null;
+        Path tailerLogBackupDir = null;
         URL elasticsearchURL = null;
         LCIndexNameFormat elasticsearchIndexNameFormat = null;
         LocalTime logCutoffDate = null;
         Duration logCutoffDuration = null;
         Duration logDeduplicationDuration = null;
         Long pollIntervalSeconds = null;
-        List<LCLogEntryBuilderType> logEntryBuilders  = new ArrayList<>();
-        List<LCLogEntryStoreType> logEntryStores = new ArrayList<>();
+        List<LCLogEntryBuilderType> logEntryBuilders  = new ArrayList<>(10);
+        List<LCLogEntryStoreType> logEntryStores = new ArrayList<>(10);
+        List<LCFileRegexComponent> tailerBackupLogNameComps = new ArrayList<>(10);
         Integer readLogFileCount = null;
         Integer readMaxDeDupeEntries = null;
         Integer idBlockSize = null;
@@ -1178,6 +1298,18 @@ public final class LogCheckConfig
         Integer deDupeMaxLogFiles = null;
         Long stopAfter = null;
         LCHashType idBlockHash = null;
+        LCCompressionType tailerBackupLogCompression = null;
+        Pattern tailerBackupLogNameRegex = null;
+
+        if(StringUtils.isNoneBlank(tailBackupLogCompressionStr))
+        {
+            tailerBackupLogCompression = LCCompressionType.from(tailBackupLogCompressionStr);
+        }
+
+        if(StringUtils.isNoneBlank(tailBackupLogNameRegexStr))
+        {
+            tailerBackupLogNameRegex = Pattern.compile(tailBackupLogNameRegexStr);
+        }
 
         if(StringUtils.isNoneBlank(lockFilePathStr))
         {
@@ -1222,6 +1354,11 @@ public final class LogCheckConfig
         if(StringUtils.isNoneBlank(deDupeDirPathStr))
         {
             deDupeDirPath = Paths.get(deDupeDirPathStr);
+        }
+
+        if(StringUtils.isNoneBlank(tailerLogBackupDirStr))
+        {
+            tailerLogBackupDir = Paths.get(tailerLogBackupDirStr);
         }
 
         if(StringUtils.isNoneBlank(elasticsearchURLStr))
@@ -1276,24 +1413,35 @@ public final class LogCheckConfig
             }
         }
 
+        if(tailerBackupLogNameCompStrs != null )
+        {
+            for( String nameComp : tailerBackupLogNameCompStrs )
+            {
+                if( StringUtils.isNoneBlank(nameComp) )
+                {
+                    tailerBackupLogNameComps.add(LCFileRegexComponent.from(nameComp));
+                }
+            }
+        }
+
         if(logEntryBuilderStrs != null )
         {
-            for( String b : logEntryBuilderStrs )
+            for( String builder : logEntryBuilderStrs )
             {
-                if( StringUtils.isNoneBlank(b) )
+                if( StringUtils.isNoneBlank(builder) )
                 {
-                    logEntryBuilders.add(LCLogEntryBuilderType.from(b));
+                    logEntryBuilders.add(LCLogEntryBuilderType.from(builder));
                 }
             }
         }
 
         if(logEntryStoreStrs != null )
         {
-            for( String s : logEntryStoreStrs )
+            for( String store : logEntryStoreStrs )
             {
-                if( StringUtils.isNoneBlank(s) )
+                if( StringUtils.isNoneBlank(store) )
                 {
-                    logEntryStores.add(LCLogEntryStoreType.from(s));
+                    logEntryStores.add(LCLogEntryStoreType.from(store));
                 }
             }
         }
@@ -1438,6 +1586,7 @@ public final class LogCheckConfig
                 continueState,
                 startPositionIgnoreError,
                 validateTailerStats,
+                tailerBackupReadLog,
                 lockFilePath,
                 logPath,
                 storeLogPath,
@@ -1447,6 +1596,7 @@ public final class LogCheckConfig
                 configFilePath,
                 holdingDirPath,
                 deDupeDirPath,
+                tailerLogBackupDir,
                 elasticsearchURL,
                 elasticsearchIndexName,
                 elasticsearchIndexPrefix,
@@ -1465,7 +1615,10 @@ public final class LogCheckConfig
                 deDupeMaxLogFiles,
                 logEntryBuilders,
                 logEntryStores,
-                idBlockHash);
+                tailerBackupLogNameComps,
+                idBlockHash,
+                tailerBackupLogCompression,
+                tailerBackupLogNameRegex);
 
         return res;
     }

@@ -22,7 +22,7 @@ import com.sludev.logs.logcheck.config.parsers.LogCheckConfigParser;
 import com.sludev.logs.logcheck.config.parsers.ParserUtil;
 import com.sludev.logs.logcheck.enums.LCFileFormats;
 import com.sludev.logs.logcheck.utils.FSSArgFile;
-import com.sludev.logs.logcheck.utils.LogCheckException;
+import com.sludev.logs.logcheck.exceptions.LogCheckException;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -34,6 +34,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.file.Files;
@@ -48,7 +49,7 @@ import java.util.Iterator;
  */
 public class LogCheckInitialize 
 {
-    private static final Logger log 
+    private static final Logger LOGGER
                              = LogManager.getLogger(LogCheckInitialize.class);
     
     /**
@@ -71,6 +72,7 @@ public class LogCheckInitialize
         Boolean currStoreReOpenLogFile = null;
         Boolean currStartPositionIgnoreError = null;
         Boolean currValidateTailerStats = null;
+        Boolean currTailerBackupReadLogs = null;
         String currPollIntervalSeconds = null;
         String currEmailOnError = null;
         String currSmtpServer = null;
@@ -98,8 +100,12 @@ public class LogCheckInitialize
         String currReadLogFileCount = null;
         String currReadMaxDeDupeEntries = null;
         String currStoreLogFile = null;
+        String currTailerBackupLogNameRegex = null;
+        String currTailerBackupLogCompression = null;
+        String currTailerBackupLogDir = null;
         String[] currLEBuilderType = null;
         String[] currLEStoreType = null;
+        String[] currTailerBackupLogNameComps = null;
 
         try
         {
@@ -127,7 +133,7 @@ public class LogCheckInitialize
 
                 String[] argArray = FSSArgFile.getArgArray( Paths.get(argfile) );
 
-                log.debug( String.format("LogCheckMain main() : Argfile parsed : %s\n",
+                LOGGER.debug( String.format("LogCheckMain main() : Argfile parsed : %s\n",
                         Arrays.toString(argArray)) );
 
                 try
@@ -379,6 +385,31 @@ public class LogCheckInitialize
                         // have not been rotated.
                         currValidateTailerStats = true;
                         break;
+
+                    case "tailer-read-backup-log":
+                        // Find the backup log files after they've been rotated.
+                        currTailerBackupReadLogs = true;
+                        break;
+
+                    case "tailer-backup-log-file-name-regex":
+                        // The file regular expression for matching backup log files.
+                        currTailerBackupLogNameRegex = currOpt.getValue();
+                        break;
+
+                    case "tailer-backup-log-file-name-component":
+                        // These match the file name grouping the the related file name regex.
+                        currTailerBackupLogNameComps = currOpt.getValues();
+                        break;
+
+                    case "tailer-backup-log-file-compression":
+                        // Decompress the already backed up log file before reading.
+                        currTailerBackupLogCompression = currOpt.getValue();
+                        break;
+
+                    case "tailer-backup-log-dir":
+                        // Log backups folder
+                        currTailerBackupLogDir = currOpt.getValue();
+                        break;
                 }
             }
 
@@ -401,6 +432,7 @@ public class LogCheckInitialize
                     currContinue,
                     currStartPositionIgnoreError,
                     currValidateTailerStats,
+                    currTailerBackupReadLogs,
                     currLockFile,
                     currLogPath,
                     currStoreLogFile,
@@ -410,6 +442,7 @@ public class LogCheckInitialize
                     null, // configFilePath,
                     null, // holdingDir
                     currDeDupeDirPath,
+                    currTailerBackupLogDir,
                     currElasticsearchUrl,
                     null, // elasticsearchIndexName,
                     null, // elasticsearchIndexPrefix,
@@ -428,23 +461,32 @@ public class LogCheckInitialize
                     currDeDupeMaxLogFiles,
                     currLEBuilderType,
                     currLEStoreType,
-                    currIdBlockHashtype);
+                    currTailerBackupLogNameComps,
+                    currIdBlockHashtype,
+                    currTailerBackupLogCompression,
+                    currTailerBackupLogNameRegex);
         }
         catch (LogCheckException ex)
         {
-            StringWriter sw = new StringWriter();
-            PrintWriter pw = new PrintWriter(sw);
-            
-            pw.append( String.format("Error : '%s'\n\n", ex.getMessage()));
-            
-            HelpFormatter formatter = new HelpFormatter();
-            formatter.printHelp( pw, 80,"\njava -jar logcheck-0.9.jar ", 
-                                        "\nThe logcheck application can be used in a variety of options and modes.\n", options,
-                                        0, 2, "© All Rights Reserved.",
-                                        true);
-            
-            System.out.println(sw.toString());
-            
+
+            try(StringWriter sw = new StringWriter();
+                PrintWriter pw = new PrintWriter(sw))
+            {
+                pw.append(String.format("Error : '%s'\n\n", ex.getMessage()));
+
+                HelpFormatter formatter = new HelpFormatter();
+                formatter.printHelp(pw, 80, "\njava -jar logcheck-0.9.jar ",
+                        "\nThe logcheck application can be used in a variety of options and modes.\n", options,
+                        0, 2, "© All Rights Reserved.",
+                        true);
+
+                System.out.println(sw.toString());
+            }
+            catch( IOException iex )
+            {
+                LOGGER.debug("", iex);
+            }
+
             System.exit(1);
         }
         
@@ -682,6 +724,31 @@ public class LogCheckInitialize
         options.addOption( Option.builder().longOpt( "tailer-validate-log-file" )
                 .desc( "Validate Tailer Log File on disk using Statistics periodically to make sure the logs" +
                         " have not been rotated." )
+                .build() );
+
+        options.addOption( Option.builder().longOpt( "tailer-read-backup-log" )
+                .desc( "Find the backup log files after they've been rotated.  Read those backups before continuing." )
+                .build() );
+
+        options.addOption( Option.builder().longOpt( "tailer-backup-log-file-name-regex" )
+                .desc( "The file regular expression for matching backup log files. E.g. (.*?).(\\d).bak" )
+                .hasArg()
+                .build() );
+
+        options.addOption( Option.builder().longOpt( "tailer-backup-log-file-name-component" )
+                .desc( "These match the file name grouping the the related file name regex."
+                        + "  Values include FILENAME_PREFIX, INTEGER_INC, TIMESTAMP.")
+                .hasArgs()
+                .build() );
+
+        options.addOption( Option.builder().longOpt( "tailer-backup-log-file-compression" )
+                .desc( "Decompress the already backed up log file before reading." )
+                .hasArgs()
+                .build() );
+
+        options.addOption( Option.builder().longOpt( "tailer-backup-log-dir" )
+                .desc( "The directory were log files are backed up to" )
+                .hasArg()
                 .build() );
 
         return options;

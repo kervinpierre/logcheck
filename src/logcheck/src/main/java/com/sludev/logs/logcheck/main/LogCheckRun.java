@@ -38,7 +38,7 @@ import com.sludev.logs.logcheck.store.impl.LogEntrySimpleFile;
 import com.sludev.logs.logcheck.utils.LogCheckConstants;
 import com.sludev.logs.logcheck.utils.LogCheckResult;
 import com.sludev.logs.logcheck.tail.LogCheckTail;
-import com.sludev.logs.logcheck.utils.LogCheckException;
+import com.sludev.logs.logcheck.exceptions.LogCheckException;
 import com.sludev.logs.logcheck.utils.LogCheckLockFile;
 import com.sludev.logs.logcheck.utils.LogCheckUtil;
 import java.io.IOException;
@@ -186,6 +186,7 @@ public class LogCheckRun implements Callable<LogCheckResult>
                 config.willSaveState(),
                 config.willIgnoreStartPositionError(),
                 config.willValidateTailerStats(),
+                config.willTailerBackupReadLog(),
                 null, // bufferSize
                 config.getReadLogFileCount(),
                 config.getReadMaxDeDupeEntries(),
@@ -194,9 +195,13 @@ public class LogCheckRun implements Callable<LogCheckResult>
                 config.getIdBlockSize(),
                 config.getSetName(),
                 config.getStateFilePath(),
-                config.getErrorFilePath());
+                config.getErrorFilePath(),
+                config.getTailerLogBackupDir(),
+                config.getTailerBackupLogNameComps(),
+                config.getTailerBackupLogCompression(),
+                config.getTailerBackupLogNameRegex());
 
-        List<ILogEntryStore> currStores = new ArrayList<>();
+        List<ILogEntryStore> currStores = new ArrayList<>(10);
 
         for( LCLogEntryStoreType store : config.getLogEntryStores() )
         {

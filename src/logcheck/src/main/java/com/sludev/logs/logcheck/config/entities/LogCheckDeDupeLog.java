@@ -19,15 +19,13 @@
 package com.sludev.logs.logcheck.config.entities;
 
 import com.sludev.logs.logcheck.utils.LogCheckConstants;
-import com.sludev.logs.logcheck.utils.LogCheckException;
-import org.apache.commons.lang3.BooleanUtils;
+import com.sludev.logs.logcheck.exceptions.LogCheckException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.time.Instant;
 import java.util.ArrayList;

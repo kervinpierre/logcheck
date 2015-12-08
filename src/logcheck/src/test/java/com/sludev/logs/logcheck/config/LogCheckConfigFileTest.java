@@ -23,7 +23,7 @@ import com.sludev.logs.logcheck.config.entities.LogCheckConfig;
 import com.sludev.logs.logcheck.config.parsers.LogCheckConfigParser;
 import com.sludev.logs.logcheck.config.parsers.ParserUtil;
 import com.sludev.logs.logcheck.enums.LCFileFormats;
-import com.sludev.logs.logcheck.utils.LogCheckException;
+import com.sludev.logs.logcheck.exceptions.LogCheckException;
 
 import java.nio.file.Paths;
 import java.util.Properties;

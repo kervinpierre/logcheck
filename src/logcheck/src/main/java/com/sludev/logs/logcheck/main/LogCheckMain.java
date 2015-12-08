@@ -19,7 +19,7 @@ package com.sludev.logs.logcheck.main;
 
 import com.sludev.logs.logcheck.config.entities.LogCheckConfig;
 import com.sludev.logs.logcheck.enums.LCResultStatus;
-import com.sludev.logs.logcheck.utils.LogCheckException;
+import com.sludev.logs.logcheck.exceptions.LogCheckException;
 import com.sludev.logs.logcheck.utils.LogCheckResult;
 import java.util.Arrays;
 import java.util.concurrent.ExecutionException;
@@ -180,7 +180,7 @@ public class LogCheckMain
      * 
      * @param config 
      * @return  
-     * @throws com.sludev.logs.logcheck.utils.LogCheckException  
+     * @throws LogCheckException
      */
     public static LogCheckResult processStart(LogCheckConfig config) throws LogCheckException
     {

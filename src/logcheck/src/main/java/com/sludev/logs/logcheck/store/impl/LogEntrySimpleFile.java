@@ -20,9 +20,8 @@ package com.sludev.logs.logcheck.store.impl;
 
 import com.sludev.logs.logcheck.config.entities.LogEntryVO;
 import com.sludev.logs.logcheck.enums.LCResultStatus;
-import com.sludev.logs.logcheck.log.ILogEntrySource;
 import com.sludev.logs.logcheck.store.ILogEntryStore;
-import com.sludev.logs.logcheck.utils.LogCheckException;
+import com.sludev.logs.logcheck.exceptions.LogCheckException;
 import com.sludev.logs.logcheck.utils.LogCheckResult;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.logging.log4j.LogManager;

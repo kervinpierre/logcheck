@@ -1,6 +1,6 @@
 package com.sludev.logs.logcheck.enums;
 
-import com.sludev.logs.logcheck.utils.LogCheckException;
+import com.sludev.logs.logcheck.exceptions.LogCheckException;
 import org.apache.commons.lang3.StringUtils;
 
 /**
