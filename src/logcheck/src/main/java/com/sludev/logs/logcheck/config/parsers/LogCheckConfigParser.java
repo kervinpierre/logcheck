@@ -384,10 +384,13 @@ public class LogCheckConfigParser
                 reOpenLogFile, // reOpenLogFile
                 null, // storeReOpenLogFile
                 currSaveState, // saveState
+                null, // collectState
                 continueState, // continueState
                 null, // startPositionIgnoreError
                 null,
                 null, // tailerBackupReadLog
+                null, // stopOnEOF
+                null, // readOnlyFileMode
                 lockFileStr,
                 logFileStr,
                 null, // storeLogFile

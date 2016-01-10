@@ -26,6 +26,7 @@ import com.sludev.logs.logcheck.enums.LCLogEntryStoreType;
 import com.sludev.logs.logcheck.utils.LogCheckConstants;
 import com.sludev.logs.logcheck.exceptions.LogCheckException;
 import com.sludev.logs.logcheck.utils.ParseNumberWithSuffix;
+import com.sun.org.apache.xpath.internal.operations.Bool;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
@@ -75,12 +76,15 @@ public final class LogCheckConfig
     private final Boolean m_tailFromEnd;
     private final Boolean m_printLog;
     private final Boolean m_saveState;
+    private final Boolean m_collectState;
     private final Boolean m_continueState;
     private final Boolean m_readReOpenLogFile;
     private final Boolean m_storeReOpenLogFile;
     private final Boolean m_startPositionIgnoreError;
     private final Boolean m_validateTailerStats;
     private final Boolean m_tailerBackupReadLog;
+    private final Boolean m_stopOnEOF;
+    private final Boolean m_readOnlyFileMode;
     private final Path m_lockFilePath;
     private final Path m_logPath;
     private final Path m_storeLogPath;
@@ -102,6 +106,16 @@ public final class LogCheckConfig
     private final LCHashType m_idBlockHashType;
     private final LCCompressionType m_tailerBackupLogCompression;
     private final Pattern m_tailerBackupLogNameRegex;
+
+    public Boolean isReadOnlyFileMode()
+    {
+        return m_readOnlyFileMode;
+    }
+
+    public Boolean willStopOnEOF()
+    {
+        return m_stopOnEOF;
+    }
 
     public Path getErrorFilePath()
     {
@@ -146,6 +160,11 @@ public final class LogCheckConfig
     public Boolean willSaveState()
     {
         return m_saveState;
+    }
+
+    public Boolean willCollectState()
+    {
+        return m_collectState;
     }
 
     public Boolean willContinueState()
@@ -374,10 +393,13 @@ public final class LogCheckConfig
                            final Boolean readReOpenLogFile,
                            final Boolean storeReOpenLogFile,
                            final Boolean saveState,
+                           final Boolean collectState,
                            final Boolean continueState,
                            final Boolean startPositionIgnoreError,
                            final Boolean validateTailerStats,
                            final Boolean tailerBackupReadLog,
+                           final Boolean stopOnEOF,
+                           final Boolean readOnlyFileMode,
                            final Path lockFilePath,
                            final Path logPath,
                            final Path storeLogPath,
@@ -411,6 +433,32 @@ public final class LogCheckConfig
                            final LCCompressionType tailerBackupLogCompression,
                            final Pattern tailerBackupLogNameRegex) throws LogCheckException
     {
+        if( stopOnEOF != null )
+        {
+            this.m_stopOnEOF = stopOnEOF;
+        }
+        else if( orig != null && orig.willStopOnEOF() != null )
+        {
+            this.m_stopOnEOF = orig.willStopOnEOF();
+        }
+        else
+        {
+            this.m_stopOnEOF = null;
+        }
+
+        if( readOnlyFileMode != null )
+        {
+            this.m_readOnlyFileMode = readOnlyFileMode;
+        }
+        else if( orig != null && orig.isReadOnlyFileMode() != null )
+        {
+            this.m_readOnlyFileMode = orig.isReadOnlyFileMode();
+        }
+        else
+        {
+            this.m_readOnlyFileMode = null;
+        }
+
         if( tailerBackupReadLog != null )
         {
             this.m_tailerBackupReadLog = tailerBackupReadLog;
@@ -1025,6 +1073,19 @@ public final class LogCheckConfig
             this.m_saveState = null;
         }
 
+        if( collectState != null )
+        {
+            this.m_collectState= collectState;
+        }
+        else if( orig != null && orig.willCollectState() != null )
+        {
+            this.m_collectState= orig.willCollectState();
+        }
+        else
+        {
+            this.m_collectState = null;
+        }
+
         if( readReOpenLogFile != null )
         {
             this.m_readReOpenLogFile = readReOpenLogFile;
@@ -1120,10 +1181,13 @@ public final class LogCheckConfig
                                       final Boolean readReOpenLogFile,
                                       final Boolean storeReOpenLogFile,
                                       final Boolean saveState,
+                                      final Boolean collectState,
                                       final Boolean continueState,
                                       final Boolean startPositionIgnoreError,
                                       final Boolean validateTailerStats,
                                       final Boolean tailerBackupReadLog,
+                                      final Boolean stopOnEOF,
+                                      final Boolean readOnlyFileMode,
                                       final Path lockFilePath,
                                       final Path logPath,
                                       final Path storeLogPath,
@@ -1173,10 +1237,13 @@ public final class LogCheckConfig
                 readReOpenLogFile,
                 storeReOpenLogFile,
                 saveState,
+                collectState,
                 continueState,
                 startPositionIgnoreError,
                 validateTailerStats,
                 tailerBackupReadLog,
+                stopOnEOF,
+                readOnlyFileMode,
                 lockFilePath,
                 logPath,
                 storeLogPath,
@@ -1234,10 +1301,13 @@ public final class LogCheckConfig
                                        final Boolean readReOpenLogFile,
                                         final Boolean storeReOpenLogFile,
                                        final Boolean saveState,
+                                        final Boolean collectState,
                                        final Boolean continueState,
                                         final Boolean startPositionIgnoreError,
                                         final Boolean validateTailerStats,
                                         final Boolean tailerBackupReadLog,
+                                        final Boolean stopOnEOF,
+                                        final Boolean readOnlyFileMode,
                                        final String lockFilePathStr,
                                        final String logPathStr,
                                         final String storeLogPathStr,
@@ -1583,10 +1653,13 @@ public final class LogCheckConfig
                 readReOpenLogFile,
                 storeReOpenLogFile,
                 saveState,
+                collectState,
                 continueState,
                 startPositionIgnoreError,
                 validateTailerStats,
                 tailerBackupReadLog,
+                stopOnEOF,
+                readOnlyFileMode,
                 lockFilePath,
                 logPath,
                 storeLogPath,

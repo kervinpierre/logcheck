@@ -17,6 +17,7 @@
  */
 package com.sludev.logs.logcheck.config.entities;
 
+import com.sludev.logs.logcheck.enums.LCFileBlockType;
 import com.sludev.logs.logcheck.enums.LCHashType;
 import com.sludev.logs.logcheck.utils.LogCheckConstants;
 import com.sludev.logs.logcheck.exceptions.LogCheckException;
@@ -53,6 +54,12 @@ public final class LogFileBlock
     private final Integer m_size;
     private final LCHashType m_hashType;
     private final byte[] m_hashDigest;
+    private final LCFileBlockType m_type;
+
+    public LCFileBlockType getType()
+    {
+        return m_type;
+    }
 
     public Long getStartPosition()
     {
@@ -83,26 +90,30 @@ public final class LogFileBlock
                          final Long startPosition,
                          final Integer size,
                          final LCHashType hashType,
-                         final byte[] hashDigest)
+                         final byte[] hashDigest,
+                         final LCFileBlockType type)
     {
         this.m_name = name;
         this.m_startPosition = startPosition;
         this.m_size = size;
         this.m_hashType = hashType;
         this.m_hashDigest = hashDigest;
+        this.m_type = type;
     }
 
     public static LogFileBlock from(final String name,
                                     final Long startPosition,
                                     final Integer size,
                                     final LCHashType hashType,
-                                    final byte[] hashDigest)
+                                    final byte[] hashDigest,
+                                    final LCFileBlockType type)
     {
         LogFileBlock res = new LogFileBlock(name,
                 startPosition,
                 size,
                 hashType,
-                hashDigest);
+                hashDigest,
+                type);
 
         return res;
     }
@@ -111,12 +122,14 @@ public final class LogFileBlock
                                     final String startPositionStr,
                                     final String sizeStr,
                                     final String hashTypeStr,
-                                    final String hashDigestStr) throws LogCheckException
+                                    final String hashDigestStr,
+                                    final String typeStr) throws LogCheckException
     {
         Long startPosition = null;
         Integer size = null;
         LCHashType hashType = null;
         byte[] hashDigest = null;
+        LCFileBlockType type = null;
 
         if( StringUtils.isNoneBlank(startPositionStr) )
         {
@@ -178,11 +191,17 @@ public final class LogFileBlock
             }
         }
 
+        if( StringUtils.isNoneBlank(typeStr) )
+        {
+            type = LCFileBlockType.from(typeStr);
+        }
+
         LogFileBlock res = new LogFileBlock(name,
                 startPosition,
                 size,
                 hashType,
-                hashDigest);
+                hashDigest,
+                type);
 
         return res;
     }
@@ -193,7 +212,8 @@ public final class LogFileBlock
     public static LogFileBlock from(final String name,
                                     final Long startPosition,
                                     final LCHashType hashType,
-                                    final byte[] block) throws LogCheckException
+                                    final byte[] block,
+                                    final LCFileBlockType type) throws LogCheckException
     {
         if( block == null || block.length < 1 )
         {
@@ -264,7 +284,8 @@ public final class LogFileBlock
                 startPosition,
                 block.length,
                 hashType,
-                value);
+                value,
+                type);
 
         return res;
     }
@@ -273,7 +294,8 @@ public final class LogFileBlock
                                     final Path file,
                                     final long pos,
                                     final int size,
-                                    final LCHashType hashType) throws LogCheckException
+                                    final LCHashType hashType,
+                                    final LCFileBlockType type) throws LogCheckException
     {
         FileChannel fc;
 
@@ -354,7 +376,8 @@ public final class LogFileBlock
         LogFileBlock res = LogFileBlock.from(name,
                 pos,
                 hashType,
-                actualBytes);
+                actualBytes,
+                type);
 
         return res;
     }

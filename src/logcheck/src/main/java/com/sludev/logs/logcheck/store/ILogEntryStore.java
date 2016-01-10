@@ -45,7 +45,7 @@ import java.util.UUID;
  */
 public interface ILogEntryStore
 {
-    static final Logger log = LogManager.getLogger(ILogEntryStore.class);
+    static final Logger LOGGER = LogManager.getLogger(ILogEntryStore.class);
 
     public void init() throws LogCheckException;
     public void destroy() throws LogCheckException;
@@ -69,7 +69,7 @@ public interface ILogEntryStore
         Path deDupeFileName = null;
         LogCheckDeDupeLog currDeDupeLog = null;
 
-        log.debug("process() started.");
+        LOGGER.debug("process() started.");
 
         try
         {
@@ -77,7 +77,7 @@ public interface ILogEntryStore
         }
         catch( NoSuchAlgorithmException ex )
         {
-            log.debug("Failed getting SHA-256 Hash", ex);
+            LOGGER.debug("Failed getting SHA-256 Hash", ex);
         }
 
         Set<LogEntryDeDupe> currentProcessedEntries = new HashSet<>();
@@ -106,12 +106,18 @@ public interface ILogEntryStore
             }
             catch( LogCheckException ex )
             {
-                log.warn("Error writing deduplication logs", ex);
+                LOGGER.warn("Error writing deduplication logs", ex);
             }
 
             // Block until the next log entry
             currEntry = src.next();
             currEntryVO = LogEntry.toValueObject(currEntry);
+
+            if( LOGGER.isDebugEnabled() )
+            {
+                LOGGER.debug(String.format("process() : '%s'",
+                                    LogEntryVO.toJSON(currEntryVO)));
+            }
 
             // Check the deduplication list before put
             LogEntryDeDupe currLEDD = null;
@@ -130,7 +136,7 @@ public interface ILogEntryStore
                     String errMsg = String.format("This Log Entry has already been added in this process() call '%s'",
                             Hex.encodeHexString(currLEDD.getLogHashCode()));
 
-                    log.debug(errMsg);
+                    LOGGER.debug(errMsg);
 
                     // TODO : Define duplication rules E.g. skip or quit
 
@@ -179,7 +185,7 @@ public interface ILogEntryStore
             }
             catch( LogCheckException ex )
             {
-                log.warn("Error writing deduplication logs", ex);
+                LOGGER.warn("Error writing deduplication logs", ex);
             }
 
             if( putRes == null )

@@ -21,14 +21,12 @@ package com.sludev.logs.logcheck.tail;
 import com.sludev.logs.logcheck.config.entities.LogCheckDeDupeLog;
 import com.sludev.logs.logcheck.config.entities.LogCheckState;
 import com.sludev.logs.logcheck.config.entities.LogEntryDeDupe;
-import com.sludev.logs.logcheck.config.entities.LogFileBlock;
 import com.sludev.logs.logcheck.config.entities.LogFileState;
 import com.sludev.logs.logcheck.config.parsers.LogCheckStateParser;
 import com.sludev.logs.logcheck.config.parsers.ParserUtil;
 import com.sludev.logs.logcheck.config.writers.LogCheckStateWriter;
 import com.sludev.logs.logcheck.dedupe.ContinueUtil;
 import com.sludev.logs.logcheck.enums.LCFileFormats;
-import com.sludev.logs.logcheck.enums.LCHashType;
 import com.sludev.logs.logcheck.exceptions.LogCheckException;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -41,13 +39,16 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.time.Instant;
 import java.util.List;
-import java.util.UUID;
+import java.util.concurrent.BlockingDeque;
+import java.util.concurrent.LinkedBlockingDeque;
 
 /**
  * Track the statistics on an ongoing Tailer job.
  *
- * It saves and restores where in a log file we are/were.  And also whether that file is
- * still the file we think it is.
+ * It saves and restores where in a log file we are/were.
+ *
+ * * It does NOT validate
+ * * It does NOT perform or cause I/O on the log file
  *
  * Created by kervin on 10/27/2015.
  */
@@ -56,140 +57,147 @@ public final class TailerStatistics
     private static final Logger LOGGER
                 = LogManager.getLogger(TailerStatistics.class);
 
-    private final Path m_logFile;
     private final Path m_stateFile;
     private final Path m_errorFile;
-    private final LCHashType m_hashType;
-    private final Integer m_idBlockSize;
     private final String m_setName;
 
     // Mutable
-    private volatile long m_lastProcessedPosition;
-    private Instant m_lastProcessedTimeStart;
-    private Instant m_lastProcessedTimeEnd;
+    private final BlockingDeque<LogCheckState> m_savedStates;
+    private final BlockingDeque<LogCheckState> m_pendingSaveStates;
+    private final BlockingDeque<LogCheckState> m_restoredStates;
 
-    public Path getLogFile()
-    {
-        return m_logFile;
-    }
-
-    private LCHashType getHashType()
-    {
-        return m_hashType;
-    }
+    private Instant m_LastProcessedTimeStart;
 
     public Instant getLastProcessedTimeStart()
     {
-        return m_lastProcessedTimeStart;
+        return m_LastProcessedTimeStart;
     }
 
-    public void setLastProcessedTimeStart(Instant lastProcessedTimeStart)
+    public synchronized void setLastProcessedTimeStart( Instant inst)
     {
-        this.m_lastProcessedTimeStart = lastProcessedTimeStart;
+        m_LastProcessedTimeStart = inst;
     }
 
-    public Instant getLastProcessedTimeEnd()
+    public BlockingDeque<LogCheckState> getRestoredStates()
     {
-        return m_lastProcessedTimeEnd;
+        return m_restoredStates;
     }
 
-    public void setLastProcessedTimeEnd(Instant lastProcessedTimeEnd)
-    {
-        this.m_lastProcessedTimeEnd = lastProcessedTimeEnd;
-    }
-
-    public long getLastProcessedPosition()
-    {
-        return m_lastProcessedPosition;
-    }
-
-    public void setLastProcessedPosition(long lastProcessedPosition)
-    {
-        this.m_lastProcessedPosition = lastProcessedPosition;
-    }
-
-    private TailerStatistics(final Path logFile,
-                             final Path stateFile,
+    private TailerStatistics(final Path stateFile,
                              final Path errorFile,
-                             final LCHashType hashType,
-                             final Integer idBlockSize,
                              final String setName)
     {
-        this.m_logFile = logFile;
         this.m_stateFile = stateFile;
         this.m_errorFile = errorFile;
-        this.m_idBlockSize = idBlockSize;
-
-        this.m_lastProcessedPosition = 0L;
-        this.m_hashType = hashType;
         this.m_setName = setName;
+        this.m_savedStates = new LinkedBlockingDeque<>();
+        this.m_pendingSaveStates = new LinkedBlockingDeque<>();
+        this.m_restoredStates = new LinkedBlockingDeque<>();
     }
 
-    public static TailerStatistics from(final Path logFile,
-                                        final Path stateFile,
+    public static TailerStatistics from(final Path stateFile,
                                         final Path errorFile,
-                                        final LCHashType hashType,
-                                        final Integer idBlockSize,
                                         final String setName)
     {
-        TailerStatistics res = new TailerStatistics(logFile,
-                                                    stateFile,
+        TailerStatistics res = new TailerStatistics( stateFile,
                                                     errorFile,
-                                                    hashType,
-                                                    idBlockSize,
                                                     setName);
 
         return res;
     }
 
-    public LogFileBlock getFirstBlock( ) throws LogCheckException
+    public synchronized void putPendingSaveState(LogCheckState lcs) throws InterruptedException
     {
-        LogFileBlock res = null;
-
-        res = LogFileBlock.from("FIRST_BLOCK",
-                m_logFile,
-                0L,
-                m_idBlockSize,
-                m_hashType);
-
-        return res;
+        m_pendingSaveStates.putFirst(lcs);
     }
 
-    public LogFileBlock getLastBlock() throws LogCheckException
+    public synchronized void clearPendingSaveState() throws InterruptedException
     {
-        long pos = m_lastProcessedPosition - m_idBlockSize;
-        if( pos < 0 )
+        if( m_pendingSaveStates.size() > 0 )
         {
-            LOGGER.debug(String.format("Not enough data. Last Position = %d, ID Block Size = %d",
-                    m_lastProcessedPosition, m_idBlockSize));
-
-            return null;
+            LOGGER.debug(String.format("Deleting %d states in the pending queue.",
+                    m_pendingSaveStates.size()));
         }
 
-        LogFileBlock res = LogFileBlock.from("LAST_BLOCK",
-                m_logFile,
-                pos,
-                m_idBlockSize,
-                m_hashType);
-
-        return res;
+        m_pendingSaveStates.clear();
     }
 
-    public void save(final Boolean resetPosition,
-                     final Boolean ignoreMissingLogFile) throws LogCheckException
+    public synchronized void saveLastPending( final boolean clearQueue,
+                                              final boolean resetPosition,
+                                              final boolean ignoreMissingLogFile )
+            throws InterruptedException, LogCheckException
     {
-        save(getState(ignoreMissingLogFile), m_stateFile, m_errorFile, resetPosition, ignoreMissingLogFile);
+        LogCheckState state = null;
+
+        if( m_pendingSaveStates.isEmpty() )
+        {
+            return;
+        }
+
+        state = m_pendingSaveStates.removeFirst();
+
+        if( m_pendingSaveStates.size() > 0 )
+        {
+            LOGGER.debug(String.format("Skipping %d states in the pending queue.", m_pendingSaveStates.size()));
+        }
+
+        if( m_savedStates.contains(state) )
+        {
+            LOGGER.error(String.format("State has already been saved.\n%s", state));
+
+            return;
+        }
+
+        if( clearQueue )
+        {
+            clearPendingSaveState();
+        }
+
+
+        save(state, resetPosition, ignoreMissingLogFile);
     }
 
-    public static void save(final LogCheckState state,
-                            final Path stateFile,
-                            final Path errorFile,
-                            final Boolean resetPosition,
-                            final Boolean ignoreMissingLogFile) throws LogCheckException
+    public synchronized void saveOnce(  final LogCheckState currState,
+                                    final boolean resetPosition,
+                                    final boolean ignoreMissingLogFile )
+            throws LogCheckException, InterruptedException
+    {
+        if( currState == null )
+        {
+            LOGGER.debug("saveOnce() : Log Check State is null.");
+
+            return;
+        }
+
+        if( m_savedStates.contains(currState) )
+        {
+            LOGGER.debug(String.format("saveOnce() : Log Check State already saved.\n%s", currState));
+
+            return;
+        }
+
+        save(currState, resetPosition, ignoreMissingLogFile);
+    }
+
+    public synchronized void save(  final LogCheckState currState,
+                                    final boolean resetPosition,
+                                    final boolean ignoreMissingLogFile )
+            throws LogCheckException, InterruptedException
+    {
+        save(currState, m_stateFile, m_errorFile, resetPosition, ignoreMissingLogFile);
+
+        m_savedStates.putFirst(currState);
+    }
+
+    public synchronized static void save( final LogCheckState state,
+                                            final Path stateFile,
+                                            final Path errorFile,
+                                            final Boolean resetPosition,
+                                            final Boolean ignoreMissingLogFile ) throws LogCheckException
     {
         LOGGER.debug(String.format("Saving statistics to '%s'.", stateFile));
 
-        Pair<Path,Path> files = null;
+        Pair<Path,Path> files;
         LogFileState currLFS = state.getLogFile();
 
         if( currLFS == null && BooleanUtils.isNotTrue(ignoreMissingLogFile) )
@@ -271,21 +279,25 @@ public final class TailerStatistics
                 throw new LogCheckException(errMsg, ex);
             }
         }
+
+
     }
 
-    public LogCheckState restore(final Path deDupeDir,
+    public synchronized LogCheckState restore(final Path deDupeDir,
                                  final Integer logFileCount,
-                                 final Integer maxLogEntries) throws LogCheckException
+                                 final Integer maxLogEntries) throws LogCheckException, InterruptedException
     {
         LogCheckState res;
 
         res = restore(m_stateFile, deDupeDir, m_setName, logFileCount, maxLogEntries);
 
+        m_restoredStates.putFirst(res);
+
         return res;
     }
 
 
-    public static LogCheckState restore(final Path stateFile,
+    public synchronized static LogCheckState restore(final Path stateFile,
                                               final Path deDupeDir,
                                               final String setName,
                                               final Integer logFileCount,
@@ -306,75 +318,45 @@ public final class TailerStatistics
                 ParserUtil.readConfig(stateFile,
                         LCFileFormats.LCSTATE));
 
+
+        if( LOGGER.isDebugEnabled() )
+        {
+            try
+            {
+                LOGGER.debug(String.format("restore()'ed :\n%s\n", new String(Files.readAllBytes(stateFile))));
+            }
+            catch( IOException ex )
+            {
+                LOGGER.debug("Error dumping State File", ex);
+            }
+
+            if( lcConf.getLogFile() == null )
+            {
+                LOGGER.debug("restore() : getLogFile() returned null.");
+            }
+            else if( lcConf.getLogFile().getLastProcessedPosition() < 1 )
+            {
+                LOGGER.debug(String.format("restore() : Last Processed Position is %d",
+                        lcConf.getLogFile().getLastProcessedPosition()));
+            }
+        }
+
         // TODO : Allow 'look back' support to allow using the deduplication logs for confirming the file pointer's accuracy
 
         return lcConf;
     }
 
-    public LogCheckState getState(final Boolean ignoreMissingLogFile) throws LogCheckException
+    @Override
+    public String toString()
     {
-        LogCheckState res = null;
+        StringBuilder res = new StringBuilder(100);
 
-        LogFileState currLogFile = null;
+        res.append("TailerStatistics\n{\n");
+        res.append(String.format("    Set Name       : '%s'\n", m_setName));
+        res.append(String.format("    State File     : '%s'\n", m_stateFile));
+        res.append(String.format("    Error File     : '%s'\n", m_errorFile));
+        res.append("}\n");
 
-        // Generate the Log File tailer statistics
-        try
-        {
-            LogFileBlock firstBlock = null;
-            LogFileBlock lastBlock = null;
-
-            if( Files.notExists(m_logFile)
-                    && BooleanUtils.isNotTrue(ignoreMissingLogFile))
-            {
-                throw new LogCheckException(String.format("Log File does not exist '%s",
-                        m_logFile));
-            }
-
-            if( Files.exists(m_logFile) )
-            {
-                try
-                {
-                    firstBlock = getFirstBlock();
-                }
-                catch( LogCheckException ex )
-                {
-                    LOGGER.debug("Error retrieving first block.", ex);
-                }
-
-                try
-                {
-                    lastBlock = getLastBlock();
-                }
-                catch( LogCheckException ex )
-                {
-                    LOGGER.debug("Error retrieving last block", ex);
-                }
-            }
-
-            currLogFile = LogFileState.from(m_logFile,
-                    m_lastProcessedTimeStart,
-                    Instant.now(),
-                    m_lastProcessedPosition,
-                    null,
-                    null,
-                    lastBlock,
-                    firstBlock);
-        }
-        catch( LogCheckException ex )
-        {
-            String errMsg = String.format("Error generating statistics for '%s'",
-                    m_logFile);
-
-            LOGGER.debug(errMsg, ex);
-        }
-
-        res = LogCheckState.from(currLogFile,
-                Instant.now(),
-                UUID.randomUUID(),
-                m_setName,
-                null);
-
-        return res;
+        return res.toString();
     }
-
 }

@@ -35,23 +35,23 @@ import java.util.UUID;
  */
 public class LogCheckState
 {
-    private static final Logger log
+    private static final Logger LOGGER
             = LogManager.getLogger(LogCheckState.class);
 
-    private final LogFileState logFile;
-    private final Instant saveDate;
+    private final LogFileState m_logFile;
+    private final Instant m_saveDate;
     private final UUID id;
-    private final String setName;
-    private final List<LogCheckError> errors;
+    private final String m_setName;
+    private final List<LogCheckError> m_errors;
 
     public LogFileState getLogFile()
     {
-        return logFile;
+        return m_logFile;
     }
 
     public Instant getSaveDate()
     {
-        return saveDate;
+        return m_saveDate;
     }
 
     public UUID getId()
@@ -61,12 +61,12 @@ public class LogCheckState
 
     public String getSetName()
     {
-        return setName;
+        return m_setName;
     }
 
     public List<LogCheckError> getErrors()
     {
-        return errors;
+        return m_errors;
     }
 
     private LogCheckState( final LogFileState logFile,
@@ -75,18 +75,18 @@ public class LogCheckState
                            final String setName,
                            final List<LogCheckError> errors)
     {
-        this.logFile = logFile;
-        this.saveDate = saveDate;
+        this.m_logFile = logFile;
+        this.m_saveDate = saveDate;
         this.id = id;
-        this.setName = setName;
+        this.m_setName = setName;
 
         if( errors == null )
         {
-            this.errors = new ArrayList<>();
+            this.m_errors = new ArrayList<>(10);
         }
         else
         {
-            this.errors = errors;
+            this.m_errors = errors;
         }
     }
 
@@ -123,7 +123,7 @@ public class LogCheckState
             catch( DateTimeParseException ex )
             {
                 String errMsg = String.format("Invalid Timestamp Save Date'%s'", saveDateStr);
-                log.debug(errMsg, ex);
+                LOGGER.debug(errMsg, ex);
 
                 throw new LogCheckException(errMsg, ex);
             }
@@ -138,7 +138,7 @@ public class LogCheckState
             catch( DateTimeParseException ex )
             {
                 String errMsg = String.format("Invalid ID '%s'", saveDateStr);
-                log.debug(errMsg, ex);
+                LOGGER.debug(errMsg, ex);
 
                 throw new LogCheckException(errMsg, ex);
             }
@@ -151,5 +151,18 @@ public class LogCheckState
                 errors);
 
         return res;
+    }
+
+    @Override
+    public String toString()
+    {
+        StringBuilder res = new StringBuilder(100);
+
+        res.append("LogCheckState :\n");
+        res.append(String.format("    Set Name  : %s\n", m_setName ));
+        res.append(String.format("    Save Date : %s\n", m_saveDate ));
+        res.append(String.format("    Log File State: %s\n", m_logFile));
+
+        return res.toString();
     }
 }
