@@ -18,6 +18,7 @@
 
 package com.sludev.logs.logcheck.utils;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.Assert;
@@ -25,6 +26,7 @@ import org.junit.Assert;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Deque;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -35,6 +37,21 @@ public final class LogCheckTestFileUtils
 {
     private static final Logger LOGGER = LogManager.getLogger(LogCheckTestFileUtils.class);
 
+    public static void createRandomLogFiles01(Path parent, Deque<String> names) throws IOException
+    {
+        if( Files.exists(parent) )
+        {
+            FileUtils.deleteDirectory(parent.toFile());
+        }
+
+        Files.createDirectory(parent);
+
+        for( String path : names )
+        {
+            Files.createFile(parent.resolve(path));
+        }
+    }
+    
     public static void checkAllLinesInFile(Path file, Pattern linePattern) throws IOException
     {
         int lineI = 1;

@@ -189,7 +189,7 @@ public class LogCheckMain
         FutureTask<LogCheckResult> currRunTask = new FutureTask<>(currRun);
 
         BasicThreadFactory thFactory = new BasicThreadFactory.Builder()
-            .namingPattern("mainthread-%d")
+            .namingPattern("mainLogCheckThread-%d")
             .build();
 
         mainThreadExe = Executors.newSingleThreadExecutor(thFactory);

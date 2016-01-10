@@ -53,6 +53,14 @@ public final class LogEntryStore implements Callable<LogCheckResult>
     private final Integer deDupeMaxLogsPerFile;
     private final Integer deDupeMaxLogFiles;
 
+    // MUTABLE
+    public volatile boolean m_run = true;
+
+    public void stop()
+    {
+        m_run = false;
+    }
+
     private LogEntryStore(final ILogEntrySource mainLogEntrySource,
                           final List<ILogEntryStore> entryStores,
                           final Path deDupeLogOutputPath,
@@ -93,7 +101,7 @@ public final class LogEntryStore implements Callable<LogCheckResult>
     }
 
     @Override
-    public LogCheckResult call() throws Exception
+    public LogCheckResult call() throws LogCheckException
     {
         LogCheckResult res = LogCheckResult.from(LCResultStatus.NONE);
 
@@ -127,21 +135,29 @@ public final class LogEntryStore implements Callable<LogCheckResult>
             }
         }
 
-        try
+        do
         {
-            res = ILogEntryStore.process(mainLogEntrySource,
-                    entryStores,
-                    currDeDupePath,
-                    runUUID,
-                    deDupeMaxLogsBeforeWrite,
-                    deDupeMaxLogsPerFile,
-                    deDupeMaxLogFiles);
+            try
+            {
+                res = ILogEntryStore.process(mainLogEntrySource,
+                        entryStores,
+                        currDeDupePath,
+                        runUUID,
+                        deDupeMaxLogsBeforeWrite,
+                        deDupeMaxLogsPerFile,
+                        deDupeMaxLogFiles);
+            }
+            catch( InterruptedException ex )
+            {
+                log.debug(
+                        String.format("ILogEntryStore.process() interrupted. m_run is %b",
+                                m_run), ex);
+
+                // Thread stop procedure : First set m_run to false then interrupt.
+                res = LogCheckResult.from(LCResultStatus.INTERRUPTED);
+            }
         }
-        catch( InterruptedException ex )
-        {
-            log.debug("ILogEntryStore.process() interrupted.", ex);
-            res = LogCheckResult.from(LCResultStatus.INTERRUPTED);
-        }
+        while( m_run );
 
         return res;
     }

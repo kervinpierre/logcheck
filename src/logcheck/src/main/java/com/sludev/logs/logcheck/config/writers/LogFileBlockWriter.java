@@ -1,6 +1,7 @@
 package com.sludev.logs.logcheck.config.writers;
 
 import com.sludev.logs.logcheck.config.entities.LogFileBlock;
+import com.sludev.logs.logcheck.enums.LCFileBlockType;
 import com.sludev.logs.logcheck.enums.LCHashType;
 import com.sludev.logs.logcheck.exceptions.LogCheckException;
 import org.apache.commons.codec.binary.Hex;
@@ -14,7 +15,7 @@ import org.w3c.dom.Element;
  */
 public final class LogFileBlockWriter
 {
-    private static final Logger log = LogManager.getLogger(LogFileBlockWriter.class);
+    private static final Logger LOGGER = LogManager.getLogger(LogFileBlockWriter.class);
 
     public static Element toElement( Document doc, String elementName, LogFileBlock lfb ) throws LogCheckException
     {
@@ -63,6 +64,19 @@ public final class LogFileBlockWriter
         currElem.appendChild(
                 doc.createTextNode(Hex.encodeHexString(currHashData)));
         res.appendChild(currElem);
+
+        // type
+        LCFileBlockType currBlockType = lfb.getType();
+        if( currBlockType == null )
+        {
+            LOGGER.debug("Missing block type"); // ; throw new LogCheckException("Missing block type");
+        }
+        else
+        {
+            currElem = doc.createElement("type");
+            currElem.appendChild(doc.createTextNode(currBlockType.toString().toLowerCase()));
+            res.appendChild(currElem);
+        }
 
         return res;
     }

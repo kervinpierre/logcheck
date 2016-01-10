@@ -17,6 +17,7 @@
  */
 package com.sludev.logs.logcheck.config.entities;
 
+import com.sludev.logs.logcheck.enums.LCFileBlockType;
 import com.sludev.logs.logcheck.exceptions.LogCheckException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -25,11 +26,15 @@ import org.apache.logging.log4j.Logger;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * The state of a single log file being processed.
@@ -315,9 +320,13 @@ public final class LogFileState
         return res;
     }
 
-    public static boolean isValidFileBlocks( final LogFileState state,
-                                             final boolean ignoreMissingBlocks ) throws LogCheckException
+    public static boolean isValidFileBlocks(final LogFileState state,
+                                            final Path alternateFilePath,
+                                            final boolean ignoreMissingBlocks,
+                                            final LCFileBlockType... types) throws LogCheckException
     {
+        Path currPath = alternateFilePath;
+
         if( state == null )
         {
             throw new LogCheckException("Log File State cannot be null.");
@@ -326,27 +335,86 @@ public final class LogFileState
         LogFileBlock firstBlock = state.getFirstBlock();
         LogFileBlock lastBlock = state.getLastProcessedBlock();
 
+        if( currPath == null && state.getFile() != null )
+        {
+            currPath = state.getFile();
+        }
+
+        if( currPath == null || Files.notExists(currPath))
+        {
+            String errMsg = String.format("isValidFileBlocks() : Invalid path '%s'", currPath);
+
+            LOGGER.debug(errMsg);
+            throw new LogCheckException(errMsg);
+        }
+
         boolean firstValid = false;
         boolean lastValid = false;
 
-        if( firstBlock == null )
+        List<LCFileBlockType> typesList = new ArrayList<>(5);
+        if( types != null && types.length > 0 )
         {
-            firstValid = ignoreMissingBlocks;
-        }
-        else
-        {
-            firstValid = LogFileBlock.isValidFileBlock(state.getFile(), firstBlock);
+            typesList = Arrays.asList(types);
         }
 
-        if( lastBlock == null )
+        if( typesList.isEmpty()
+                || typesList.contains(LCFileBlockType.ALL)
+                || typesList.contains(LCFileBlockType.FIRSTBLOCK))
         {
-            lastValid = ignoreMissingBlocks;
+            if( firstBlock == null )
+            {
+                LOGGER.debug("Ignoring missing first block.");
+                firstValid = ignoreMissingBlocks;
+            }
+            else
+            {
+                firstValid = LogFileBlock.isValidFileBlock(state.getFile(), firstBlock);
+            }
         }
         else
         {
-            lastValid = LogFileBlock.isValidFileBlock(state.getFile(), lastBlock);
+            // Ignore since we weren't ask to check this block
+            firstValid = true;
+        }
+
+        if( typesList.isEmpty()
+                || typesList.contains(LCFileBlockType.ALL)
+                || typesList.contains(LCFileBlockType.LASTBLOCK))
+        {
+            if( lastBlock == null )
+            {
+                LOGGER.debug("Ignoring missing last block.");
+                lastValid = ignoreMissingBlocks;
+            }
+            else
+            {
+                lastValid = LogFileBlock.isValidFileBlock(state.getFile(), lastBlock);
+            }
+        }
+        else
+        {
+            // Ignore since we weren't ask to check this block
+            lastValid = true;
         }
 
         return firstValid && lastValid;
+    }
+
+    @Override
+    public String toString()
+    {
+        StringBuilder res = new StringBuilder(100);
+
+        res.append("LogFileState : \n");
+        res.append(String.format("    File                    : %s\n", m_file));
+        res.append(String.format("    Last Processed Position : %d\n", m_lastProcessedPosition));
+        res.append(String.format("    Last Processed Line No. : %d\n", m_lastProcessedLineNumber));
+        res.append(String.format("    Last Processed Char No. : %d\n", m_lastProcessedCharNumber));
+        res.append(String.format("    Last Processed Start Time : %s\n", m_lastProcessedTimeStart));
+        res.append(String.format("    Last Processed End Time : %s\n", m_lastProcessedTimeEnd));
+        res.append(String.format("    First Block : %s\n", m_firstBlock));
+        res.append(String.format("    Last Block : %s\n", m_lastProcessedBlock));
+
+        return res.toString();
     }
 }

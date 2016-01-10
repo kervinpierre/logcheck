@@ -66,7 +66,7 @@ import org.apache.logging.log4j.Logger;
  */
 public class LogCheckRun implements Callable<LogCheckResult>
 {
-    private static final Logger log 
+    private static final Logger LOGGER
                              = LogManager.getLogger(LogCheckRun.class);
     
     private final LogCheckConfig config;
@@ -102,7 +102,7 @@ public class LogCheckRun implements Callable<LogCheckResult>
 
         LogCheckResult res = LogCheckResult.from(LCResultStatus.SUCCESS);
         
-        if( config.isShowVersion() != null
+        if( (config.isShowVersion() != null)
                 && config.isShowVersion() )
         {
             LogCheckUtil.displayVersion();
@@ -110,12 +110,12 @@ public class LogCheckRun implements Callable<LogCheckResult>
             
             return res;
         }
-        
-        setLockFile( config.getLockFilePath() );
-        
+
+        lockFile = config.getLockFilePath();
+
         // Setup the acquiring and release of the lock file
-        acquireLockFile( getLockFile() );
-        setupLockFileShutdownHook( getLockFile() );
+        acquireLockFile(lockFile);
+        setupLockFileShutdownHook(lockFile);
 
         final ILogEntrySource logEntrySource = LogEntryQueueSource.from(currQ);
         final ILogEntrySink logEntrySink = LogEntryQueueSink.from(currQ,
@@ -124,7 +124,7 @@ public class LogCheckRun implements Callable<LogCheckResult>
                 config.getLogCutoffDuration(),
                 null);
 
-        List<ILogEntryBuilder> currLogEntryBuilders = new ArrayList<>();
+        List<ILogEntryBuilder> currLogEntryBuilders = new ArrayList<>(10);
 
         // FIXME : Support multiple builders.  But for now we don't need it so all but the last will be ignored.
         for( LCLogEntryBuilderType builder : config.getLogEntryBuilders() )
@@ -140,7 +140,7 @@ public class LogCheckRun implements Callable<LogCheckResult>
                 case MULTILINE_DELIMITED:
                 {
                     // Log tailing related objects
-                    List<String> ignoreList = new ArrayList<>();
+                    List<String> ignoreList = new ArrayList<>(10);
                     ignoreList.add(LogCheckConstants.DEFAULT_MULTILINE_IGNORE_LINE);
 
                     currLogEntryBuilders.add(MultiLineDelimitedBuilder.from(
@@ -169,7 +169,7 @@ public class LogCheckRun implements Callable<LogCheckResult>
                     String errMsg = String.format("Error creating LogEntry builder '%s'",
                             config.getLogEntryBuilders());
 
-                    log.debug(errMsg);
+                    LOGGER.debug(errMsg);
                     throw new LogCheckException(errMsg);
             }
         }
@@ -179,6 +179,7 @@ public class LogCheckRun implements Callable<LogCheckResult>
         LogCheckTail lct = LogCheckTail.from(currLogEntryBuilders,
                 config.getLogPath(),
                 config.getDeDupeDirPath(),
+                null, // startPosition
                 config.getPollIntervalSeconds(),
                 config.willContinueState(),
                 config.isTailFromEnd(),
@@ -186,7 +187,11 @@ public class LogCheckRun implements Callable<LogCheckResult>
                 config.willSaveState(),
                 config.willIgnoreStartPositionError(),
                 config.willValidateTailerStats(),
+                config.willCollectState(),
                 config.willTailerBackupReadLog(),
+                config.willStopOnEOF(),
+                config.isReadOnlyFileMode(),
+                true, // Is main thread?
                 null, // bufferSize
                 config.getReadLogFileCount(),
                 config.getReadMaxDeDupeEntries(),
@@ -239,7 +244,7 @@ public class LogCheckRun implements Callable<LogCheckResult>
                     break;
 
                 default:
-                    log.debug(String.format("Unknown Log Entry %s", config.getLogEntryStores()));
+                    LOGGER.debug(String.format("Unknown Log Entry %s", config.getLogEntryStores()));
                     break;
             }
         }
@@ -265,11 +270,11 @@ public class LogCheckRun implements Callable<LogCheckResult>
 
         // Start the relevant threads
         BasicThreadFactory logCheckTailerFactory = new BasicThreadFactory.Builder()
-            .namingPattern("logCheckTailerThread-%d")
+            .namingPattern("runTailerThread-%d")
             .build();
         
         BasicThreadFactory logStoreFactory = new BasicThreadFactory.Builder()
-            .namingPattern("logstorethread-%d")
+            .namingPattern("runLogStoreThread-%d")
             .build();
         
         ExecutorService logCheckTailerExe = Executors.newSingleThreadExecutor(logCheckTailerFactory);
@@ -286,7 +291,7 @@ public class LogCheckRun implements Callable<LogCheckResult>
         
         try
         {
-            while( fileTailRes == null || logStoreRes == null )
+            while( (fileTailRes == null) || (logStoreRes == null) )
             {
                 if( fileTailFuture.isDone() )
                 {
@@ -298,7 +303,7 @@ public class LogCheckRun implements Callable<LogCheckResult>
                     // E.g. useful for implementing the --stop-after feature
                     if( fileTailRes.getStatus() == LCResultStatus.SUCCESS )
                     {
-                        log.debug("\n==============================\n"
+                        LOGGER.debug("\n==============================\n"
                                 + "CANCELLING the Log Store thread because the Tailer thread was done first."
                                 + "\n==============================\n");
 
@@ -340,7 +345,7 @@ public class LogCheckRun implements Callable<LogCheckResult>
         }
         catch (InterruptedException ex)
         {
-            log.error("Log Check Run thread was interrupted", ex);
+            LOGGER.error("Log Check Run thread was interrupted", ex);
             
             // We don't have to do much here because the interrupt got us out
             // of the while loop.
@@ -415,12 +420,12 @@ public class LogCheckRun implements Callable<LogCheckResult>
                             String errMsg = String.format(
                                     "Error releasing the lock file '%s'", lk);
                             
-                            log.error(errMsg);
+                            LOGGER.error(errMsg);
                         }
                     }
                     else
                     {
-                        log.error(String.format(
+                        LOGGER.error(String.format(
                                     "Expected lock file '%s' to exist.", lk));
                     }
                 }

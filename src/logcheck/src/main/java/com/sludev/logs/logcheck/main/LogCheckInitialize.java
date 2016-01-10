@@ -30,6 +30,7 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -73,6 +74,8 @@ public class LogCheckInitialize
         Boolean currStartPositionIgnoreError = null;
         Boolean currValidateTailerStats = null;
         Boolean currTailerBackupReadLogs = null;
+        Boolean currStopOnEOF = null;
+        Boolean currReadOnlyFileMode = null;
         String currPollIntervalSeconds = null;
         String currEmailOnError = null;
         String currSmtpServer = null;
@@ -398,7 +401,15 @@ public class LogCheckInitialize
 
                     case "tailer-backup-log-file-name-component":
                         // These match the file name grouping the the related file name regex.
-                        currTailerBackupLogNameComps = currOpt.getValues();
+                        if( currTailerBackupLogNameComps == null )
+                        {
+                            currTailerBackupLogNameComps = currOpt.getValues();
+                        }
+                        else
+                        {
+                            currTailerBackupLogNameComps
+                                    = ArrayUtils.addAll(currTailerBackupLogNameComps, currOpt.getValues());
+                        }
                         break;
 
                     case "tailer-backup-log-file-compression":
@@ -409,6 +420,16 @@ public class LogCheckInitialize
                     case "tailer-backup-log-dir":
                         // Log backups folder
                         currTailerBackupLogDir = currOpt.getValue();
+                        break;
+
+                    case "tailer-stop-on-eof":
+                        // Stop after EOF
+                        currStopOnEOF = true;
+                        break;
+
+                    case "tailer-read-only-file":
+                        // Read Only File
+                        currReadOnlyFileMode = true;
                         break;
                 }
             }
@@ -429,10 +450,13 @@ public class LogCheckInitialize
                     currReadReOpenLogFile, // reOpenLogFile
                     currStoreReOpenLogFile, // --store-reopen-log-file
                     currSaveState,  // saveState
+                    null, // collectState
                     currContinue,
                     currStartPositionIgnoreError,
                     currValidateTailerStats,
                     currTailerBackupReadLogs,
+                    currStopOnEOF,
+                    currReadOnlyFileMode,
                     currLockFile,
                     currLogPath,
                     currStoreLogFile,
@@ -749,6 +773,14 @@ public class LogCheckInitialize
         options.addOption( Option.builder().longOpt( "tailer-backup-log-dir" )
                 .desc( "The directory were log files are backed up to" )
                 .hasArg()
+                .build() );
+
+        options.addOption( Option.builder().longOpt( "tailer-stop-on-eof" )
+                .desc( "Stop tailing the log file when EOF is reached." )
+                .build() );
+
+        options.addOption( Option.builder().longOpt( "tailer-read-only-file" )
+                .desc( "The file we're tailing will not be modified in anyway by external programs. E.g. A backup log." )
                 .build() );
 
         return options;

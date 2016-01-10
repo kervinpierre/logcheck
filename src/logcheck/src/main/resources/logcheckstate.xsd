@@ -54,6 +54,7 @@ NOTICE:  All information contained herein is, and remains
             <xs:element name="size" type="xs:integer" minOccurs="1" maxOccurs="1" />
             <xs:element name="hashType" type="HashType" minOccurs="1" maxOccurs="1" />
             <xs:element name="hashDigest" type="xs:string" minOccurs="1" maxOccurs="1" />
+            <xs:element name="type" type="FileBlockType" minOccurs="0" maxOccurs="1" />
         </xs:choice>
     </xs:complexType>
 
@@ -63,6 +64,14 @@ NOTICE:  All information contained herein is, and remains
             <xs:enumeration value="md5"/>
             <xs:enumeration value="sha1"/>
             <xs:enumeration value="sha2"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="FileBlockType">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="none"/>
+            <xs:enumeration value="firstblock"/>
+            <xs:enumeration value="lastblock"/>
         </xs:restriction>
     </xs:simpleType>
 

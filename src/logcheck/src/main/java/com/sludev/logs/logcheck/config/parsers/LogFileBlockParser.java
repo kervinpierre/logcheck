@@ -33,7 +33,7 @@ import javax.xml.xpath.XPathFactory;
  */
 public final class LogFileBlockParser
 {
-    private static final Logger log = LogManager.getLogger(LogFileBlockParser.class);
+    private static final Logger LOGGER = LogManager.getLogger(LogFileBlockParser.class);
 
 
     public static LogFileBlock readConfig(Element rootElem)
@@ -49,6 +49,7 @@ public final class LogFileBlockParser
         String sizeStr = null;
         String hashTypeStr = null;
         String hashDigestStr = null;
+        String typeStr = null;
 
         try
         {
@@ -56,7 +57,7 @@ public final class LogFileBlockParser
         }
         catch (XPathExpressionException ex)
         {
-            log.debug("Configuration parsing error. retrieving <name>");
+            LOGGER.debug("Configuration parsing error. retrieving <name />");
         }
 
         try
@@ -65,7 +66,7 @@ public final class LogFileBlockParser
         }
         catch (XPathExpressionException ex)
         {
-            log.debug("configuration parsing error. <startPosition />");
+            LOGGER.debug("configuration parsing error. <startPosition />");
         }
 
         try
@@ -74,7 +75,7 @@ public final class LogFileBlockParser
         }
         catch (XPathExpressionException ex)
         {
-            log.debug("configuration parsing error. <size />");
+            LOGGER.debug("configuration parsing error. <size />");
         }
 
         try
@@ -83,7 +84,7 @@ public final class LogFileBlockParser
         }
         catch (XPathExpressionException ex)
         {
-            log.debug("configuration parsing error.", ex);
+            LOGGER.debug("configuration parsing error. <hashType />");
         }
 
         try
@@ -92,14 +93,24 @@ public final class LogFileBlockParser
         }
         catch (XPathExpressionException ex)
         {
-            log.debug("configuration parsing error.", ex);
+            LOGGER.debug("configuration parsing error. <hashDigest />");
+        }
+
+        try
+        {
+            typeStr = currXPath.compile("./type").evaluate(currEl);
+        }
+        catch (XPathExpressionException ex)
+        {
+            LOGGER.debug("configuration parsing error. <hashDigest />");
         }
 
         res = LogFileBlock.from(nameStr,
                 startPosStr,
                 sizeStr,
                 hashTypeStr,
-                hashDigestStr);
+                hashDigestStr,
+                typeStr);
 
         return res;
     }

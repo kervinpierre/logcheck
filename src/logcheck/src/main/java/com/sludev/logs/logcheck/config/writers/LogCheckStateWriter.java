@@ -30,7 +30,7 @@ import java.util.UUID;
  */
 public final class LogCheckStateWriter
 {
-    private static final Logger log = LogManager.getLogger(LogCheckStateWriter.class);
+    private static final Logger LOGGER = LogManager.getLogger(LogCheckStateWriter.class);
 
 
     public static void write( LogCheckState js, Path stateFile, Path errFile ) throws LogCheckException
@@ -46,7 +46,7 @@ public final class LogCheckStateWriter
         {
             String errMsg = "Error creating document builder.";
 
-            log.debug(errMsg, ex);
+            LOGGER.debug(errMsg, ex);
             throw new LogCheckException(errMsg, ex);
         }
 
@@ -71,7 +71,7 @@ public final class LogCheckStateWriter
         {
             String errMsg = "Error creating transformer";
 
-            log.debug(errMsg, ex);
+            LOGGER.debug(errMsg, ex);
             throw new LogCheckException(errMsg, ex);
         }
 
@@ -86,8 +86,21 @@ public final class LogCheckStateWriter
         {
             String errMsg = "Error writing '%s'";
 
-            log.debug(errMsg, ex);
+            LOGGER.debug(errMsg, ex);
             throw new LogCheckException(errMsg, ex);
+        }
+
+        if( LOGGER.isDebugEnabled() )
+        {
+            try
+            {
+                LOGGER.debug(String.format("write() just wrote :\n%s\n",
+                                    new String(Files.readAllBytes(stateFile))));
+            }
+            catch( IOException ex )
+            {
+                LOGGER.debug("Error dumping State File", ex);
+            }
         }
 
         if( js.getErrors() != null && js.getErrors().size() > 0  )
@@ -112,7 +125,7 @@ public final class LogCheckStateWriter
         {
             String errMsg = String.format("Error creating temp file JobStateWriter");
 
-            log.debug(errMsg, ex);
+            LOGGER.debug(errMsg, ex);
             throw new LogCheckException(errMsg, ex);
         }
 

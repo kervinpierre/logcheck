@@ -21,6 +21,7 @@ package com.sludev.logs.logcheck.config.parsers;
 import com.sludev.logs.logcheck.config.entities.LogFileBlock;
 import com.sludev.logs.logcheck.config.entities.LogFileState;
 import com.sludev.logs.logcheck.exceptions.LogCheckException;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.w3c.dom.Element;
@@ -133,7 +134,13 @@ public final class LogFileStateParser
             Element currNode = (Element)currXPath.compile("./lastProcessedBlock").evaluate(
                     currEl, XPathConstants.NODE);
 
-           lastProcessedBlock = LogFileBlockParser.readConfig(currNode);
+            String currStart = currXPath.compile("./startPosition").evaluate(
+                    currNode);
+
+            if( StringUtils.isNoneBlank(currStart) )
+            {
+                lastProcessedBlock = LogFileBlockParser.readConfig(currNode);
+            }
         }
         catch (XPathExpressionException ex)
         {

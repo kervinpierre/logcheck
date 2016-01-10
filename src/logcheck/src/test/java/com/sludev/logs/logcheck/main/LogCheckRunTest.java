@@ -26,6 +26,8 @@ import com.sludev.logs.logcheck.config.parsers.LogCheckStateParser;
 import com.sludev.logs.logcheck.config.parsers.ParserUtil;
 import com.sludev.logs.logcheck.enums.LCFileFormats;
 import com.sludev.logs.logcheck.enums.LCResultStatus;
+import com.sludev.logs.logcheck.enums.LCTailerResult;
+import com.sludev.logs.logcheck.exceptions.LogCheckException;
 import com.sludev.logs.logcheck.utils.FSSArgFile;
 import com.sludev.logs.logcheck.utils.LogCheckResult;
 import com.sludev.logs.logcheck.utils.LogCheckTestFileUtils;
@@ -47,6 +49,7 @@ import org.junit.Test;
 import org.junit.rules.TestWatcher;
 import org.junit.runners.MethodSorters;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Files;
@@ -54,13 +57,14 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
@@ -106,7 +110,8 @@ public class LogCheckRunTest
      * @throws Exception
      */
     @Test
-    public void A001_testCallGeneric20s() throws Exception
+    public void A001_testCallGeneric20s() throws IOException, LogCheckException, InterruptedException,
+            ExecutionException
     {
         Path testDir = Paths.get("/tmp/A001_testCallGeneric20s");
 
@@ -163,7 +168,7 @@ public class LogCheckRunTest
         ByteBuffer bb = ByteBuffer.wrap(tempStr.getBytes());
 
         BasicThreadFactory thFactory = new BasicThreadFactory.Builder()
-                .namingPattern("lc-run-test-%d")
+                .namingPattern("testLCRunThread-%d")
                 .build();
         ExecutorService lcThreadExe = Executors.newSingleThreadExecutor(thFactory);
         Future<LogCheckResult> lcFuture = lcThreadExe.submit(currRun);
@@ -207,7 +212,8 @@ public class LogCheckRunTest
      * @throws Exception
      */
     @Test
-    public void A002_testCallGenericWithLogs60s() throws Exception
+    public void A002_testCallGenericWithLogs60s() throws IOException, LogCheckException,
+            InterruptedException, ExecutionException, NoSuchAlgorithmException
     {
         Path testDir = Paths.get("/tmp/A002_testCallGenericWithLogs60s");
 
@@ -265,13 +271,14 @@ public class LogCheckRunTest
         argsList.add("--read-reopen-log-file");
         argsList.add("--poll-interval=1");
         argsList.add("--tailer-validate-log-file");
+       // argsList.add("--random-wait-max=1");
 
         args = FSSArgFile.getArgArray(argsList);
         LogCheckConfig config = LogCheckInitialize.initialize(args);
         LogCheckRun currRun = new LogCheckRun(config);
 
         thFactory = new BasicThreadFactory.Builder()
-                .namingPattern("logcheck-run-thread-%d")
+                .namingPattern("testLCRunThread-%d")
                 .build();
         ExecutorService lcThreadExe = Executors.newSingleThreadExecutor(thFactory);
         Future<LogCheckResult> lcFuture = lcThreadExe.submit(currRun);
@@ -358,12 +365,13 @@ public class LogCheckRunTest
      * Similar to the A002 test.  Except we also rotate the logs to test how the tailer
      * handles log rotation detection.
      *
-     * @throws Exception
+     * The log generator thread is run to completion *before* the Tail Logger is started
      */
     @Test
-    public void A003_testCallGenericWithLogRotate() throws Exception
+    public void A003_testCallGenericWithLogRotateSequential() throws IOException, LogCheckException,
+            InterruptedException, ExecutionException, NoSuchAlgorithmException
     {
-        Path testDir = Paths.get("/tmp/A003_testCallGenericWithLogRotate");
+        Path testDir = Paths.get("/tmp/A003_testCallGenericWithLogRotateSequential");
 
         if( Files.exists(testDir) )
         {
@@ -383,13 +391,16 @@ public class LogCheckRunTest
         argsList.add("--delete-logs");
         argsList.add("--stop-after-count 1K");
 
+        //Output the logs to the screen as they are generated
+        // argsList.add("--output-to-screen");
+
         // The following should cause a log rotate per second
         // This should cause an issue with the tailer also having
         // a poll interval of a second.
         //
         // ...and the handling of that issue is what this test is
         // about.
-        argsList.add("--output-frequency 25ms");
+        argsList.add("--output-frequency 10ms");
         argsList.add("--rotate-after-count 40");
 
         args = FSSArgFile.getArgArray(argsList);
@@ -398,11 +409,16 @@ public class LogCheckRunTest
         LogCheckAppMainRun currAppRun = new LogCheckAppMainRun(appConfig);
 
         BasicThreadFactory thFactory = new BasicThreadFactory.Builder()
-                .namingPattern("app-run-thread-%d")
+                .namingPattern("testLCAppRunThread-%d")
                 .build();
         ExecutorService appThreadExe = Executors.newSingleThreadExecutor(thFactory);
         Future<LCSAResult> lcAppFuture = appThreadExe.submit(currAppRun);
         appThreadExe.shutdown();
+
+        // Wait for the logger to finish before parsing.
+        // This gives us a chance to test log backup processing
+        LCSAResult appRes = lcAppFuture.get();
+        Assert.assertTrue(appRes==LCSAResult.SUCCESS);
 
         argsList.clear();
 
@@ -411,7 +427,7 @@ public class LogCheckRunTest
         Path dedupeDir = testDir.resolve("dedupe");
         Files.createDirectory(dedupeDir);
 
-        argsList.add("--stop-after=3M");
+        argsList.add("--stop-after=1M");
         argsList.add(String.format("--log-file %s", logFile));
         argsList.add("--log-entry-builder-type=singleline ");
         argsList.add("--log-entry-store-type=console,simplefile");
@@ -427,13 +443,18 @@ public class LogCheckRunTest
         argsList.add("--read-reopen-log-file");
         argsList.add("--poll-interval=1");
         argsList.add("--tailer-validate-log-file");
+        argsList.add("--tailer-read-backup-log");
+        argsList.add("--tailer-backup-log-file-name-regex=(.*?)\\\\.(\\\\d+)\\\\.bak");
+        argsList.add("--tailer-backup-log-file-name-component=FILENAME_PREFIX");
+        argsList.add("--tailer-backup-log-file-name-component=INTEGER_INC");
+        argsList.add(String.format("--tailer-backup-log-dir %s", testDir));
 
         args = FSSArgFile.getArgArray(argsList);
         LogCheckConfig config = LogCheckInitialize.initialize(args);
         LogCheckRun currRun = new LogCheckRun(config);
 
         thFactory = new BasicThreadFactory.Builder()
-                .namingPattern("logcheck-run-thread-%d")
+                .namingPattern("testLCRunThread-%d")
                 .build();
         ExecutorService lcThreadExe = Executors.newSingleThreadExecutor(thFactory);
         Future<LogCheckResult> lcFuture = lcThreadExe.submit(currRun);
@@ -480,6 +501,176 @@ public class LogCheckRunTest
 
         LogCheckTestFileUtils.checkAllLinesInFile(storeLogFile,
                                     Pattern.compile("^.*?:\\s+\\[(\\d+)\\]\\s+.*$"));
+
+        ByteBuffer currByteBuffer = ByteBuffer.allocate(1000);
+        try( FileChannel logFC = FileChannel.open(logFile) )
+        {
+            // Read the first block from file
+            logFC.read(currByteBuffer);
+        }
+
+        MessageDigest md =MessageDigest.getInstance("SHA-256");
+
+        currByteBuffer.flip();
+        md.update(currByteBuffer);
+
+        byte[] currDigest = md.digest();
+        byte[] firstDigest = currState.getLogFile().getFirstBlock().getHashDigest();
+
+        Assert.assertArrayEquals(currDigest, firstDigest);
+
+        currByteBuffer.clear();
+        try( FileChannel logFC = FileChannel.open(logFile) )
+        {
+            // Read the last block from file.
+            logFC.position(logFC.size()-1000);
+            logFC.read(currByteBuffer);
+        }
+
+        currByteBuffer.flip();
+        md.update(currByteBuffer);
+
+        currDigest = md.digest();
+        byte[] lastDigest = currState.getLogFile().getLastProcessedBlock().getHashDigest();
+
+        Assert.assertArrayEquals(currDigest, lastDigest);
+    }
+
+    /**
+     * Similar to the A002 test.  Except we also rotate the logs to test how the tailer
+     * handles log rotation detection.
+     *
+     * The log generator and Log Tailer are run in parallel
+     */
+    @Test
+    public void A004_testCallGenericWithLogRotateParallel() throws IOException, LogCheckException,
+            InterruptedException, ExecutionException, NoSuchAlgorithmException
+    {
+        Path testDir = Paths.get("/tmp/A004_testCallGenericWithLogRotateParallel");
+
+        if( Files.exists(testDir) )
+        {
+            FileUtils.deleteDirectory(testDir.toFile());
+        }
+
+        Files.createDirectory(testDir);
+
+        Path stateFile = testDir.resolve("current-state.xml");
+
+        String[] args;
+        List<String> argsList = new ArrayList<>(20);
+
+        Path logFile = testDir.resolve("logcheck-sample-app-output.txt");
+
+        argsList.add(String.format("--output-file %s", logFile));
+        argsList.add("--delete-logs");
+        argsList.add("--stop-after-count 1K");
+
+        //Output the logs to the screen as they are generated
+        // argsList.add("--output-to-screen");
+
+        // The following should cause a log rotate per second
+        // This should cause an issue with the tailer also having
+        // a poll interval of a second.
+        //
+        // ...and the handling of that issue is what this test is
+        // about.
+        argsList.add("--output-frequency 25ms");
+        argsList.add("--rotate-after-count 40");
+
+        args = FSSArgFile.getArgArray(argsList);
+        LogCheckAppConfig appConfig = LogCheckAppInitialize.initialize(args);;
+
+        LogCheckAppMainRun currAppRun = new LogCheckAppMainRun(appConfig);
+
+        BasicThreadFactory thFactory = new BasicThreadFactory.Builder()
+                .namingPattern("testLCAppRunThread-%d")
+                .build();
+        ExecutorService appThreadExe = Executors.newSingleThreadExecutor(thFactory);
+        Future<LCSAResult> lcAppFuture = appThreadExe.submit(currAppRun);
+        appThreadExe.shutdown();
+
+        argsList.clear();
+
+        Path storeLogFile = testDir.resolve("store-log.txt");
+
+        Path dedupeDir = testDir.resolve("dedupe");
+        Files.createDirectory(dedupeDir);
+
+        argsList.add("--stop-after=1M");
+        argsList.add(String.format("--log-file %s", logFile));
+        argsList.add("--log-entry-builder-type=singleline ");
+        argsList.add("--log-entry-store-type=console,simplefile");
+        argsList.add(String.format("--store-log-file %s", storeLogFile ));
+        argsList.add("--save-state");
+        argsList.add(String.format("--state-file %s", stateFile));
+        argsList.add("--set-name=\"test app\"");
+        argsList.add(String.format("--dedupe-dir-path %s", dedupeDir));
+        argsList.add("--dedupe-max-before-write=5");
+        argsList.add("--dedupe-log-per-file 10");
+        argsList.add("--dedupe-max-log-files=5");
+        argsList.add("--file-from-start");
+        argsList.add("--read-reopen-log-file");
+        argsList.add("--poll-interval=1");
+        argsList.add("--tailer-validate-log-file");
+        argsList.add("--tailer-read-backup-log");
+        argsList.add("--tailer-backup-log-file-name-regex=(.*?)\\\\.(\\\\d+)\\\\.bak");
+        argsList.add("--tailer-backup-log-file-name-component=FILENAME_PREFIX");
+        argsList.add("--tailer-backup-log-file-name-component=INTEGER_INC");
+        argsList.add(String.format("--tailer-backup-log-dir %s", testDir));
+
+        args = FSSArgFile.getArgArray(argsList);
+        LogCheckConfig config = LogCheckInitialize.initialize(args);
+        LogCheckRun currRun = new LogCheckRun(config);
+
+        thFactory = new BasicThreadFactory.Builder()
+                .namingPattern("testLCRunThread-%d")
+                .build();
+        ExecutorService lcThreadExe = Executors.newSingleThreadExecutor(thFactory);
+        Future<LogCheckResult> lcFuture = lcThreadExe.submit(currRun);
+        lcThreadExe.shutdown();
+
+        LogCheckResult lcResult;
+
+        try
+        {
+            // Wait for the logging to be completed
+            lcResult = lcFuture.get();
+        }
+        finally
+        {
+            // If Tailer thread is done, then cancel/interrupt the store thread
+            // E.g. useful for implementing the --stop-after feature
+            if( lcAppFuture.isDone() == false )
+            {
+                lcAppFuture.cancel(true);
+            }
+        }
+
+        Assert.assertNotNull(lcResult);
+        Assert.assertTrue(lcResult.getStatus() == LCResultStatus.SUCCESS);
+
+        long logFileCount = Files.lines(logFile).count();
+        long storeFileCount = Files.lines(storeLogFile).count();
+
+        LOGGER.debug(String.format("\nLog File Count : %d\nStore File Count: %d\n",
+                logFileCount, storeFileCount));
+
+        Assert.assertTrue(logFileCount == 1024);
+        Assert.assertTrue(storeFileCount == 1024);
+
+        LogCheckState currState
+                = LogCheckStateParser.readConfig(
+                ParserUtil.readConfig(stateFile,
+                        LCFileFormats.LCSTATE));
+
+        long logSize = Files.size(logFile);
+        long currPos = currState.getLogFile().getLastProcessedPosition();
+
+        Assert.assertTrue(logSize==currPos);
+
+        LogCheckTestFileUtils.checkAllLinesInFile(storeLogFile,
+                Pattern.compile("^.*?:\\s+\\[(\\d+)\\]\\s+.*$"));
 
         ByteBuffer currByteBuffer = ByteBuffer.allocate(1000);
         try( FileChannel logFC = FileChannel.open(logFile) )
