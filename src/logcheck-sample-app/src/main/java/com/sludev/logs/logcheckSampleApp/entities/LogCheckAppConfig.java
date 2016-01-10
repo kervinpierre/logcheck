@@ -20,7 +20,7 @@ import java.util.concurrent.TimeUnit;
  */
 public final class LogCheckAppConfig
 {
-    private static final Logger log = LogManager.getLogger(LogCheckAppConfig.class);
+    private static final Logger LOGGER = LogManager.getLogger(LogCheckAppConfig.class);
 
     private final LCSAOutputType outputType;
     private final Path outputPath;
@@ -28,11 +28,29 @@ public final class LogCheckAppConfig
     private final Long rotateAfterCount;
     private final Long stopAfterCount;
     private final Long maxBackups;
+    private final Integer randomWaitMin;
+    private final Integer randomWaitMax;
     private final LCSAGeneratorType outputGeneratorType;
     private final Boolean truncate;
     private final Boolean append;
     private final Boolean deleteLogs;
     private final Boolean confirmDeletes;
+    private final Boolean outputToScreen;
+
+    public Integer getRandomWaitMin()
+    {
+        return randomWaitMin;
+    }
+
+    public Integer getRandomWaitMax()
+    {
+        return randomWaitMax;
+    }
+
+    public Boolean getOutputToScreen()
+    {
+        return outputToScreen;
+    }
 
     public Boolean getConfirmDeletes()
     {
@@ -96,11 +114,23 @@ public final class LogCheckAppConfig
                               final Long rotateAfterCount,
                               final Long stopAfterCount,
                               final Long maxBackups,
+                              final Integer randomWaitMax,
+                              final Integer randomWaitMin,
                               final Boolean truncate,
                               final Boolean append,
                               final Boolean deleteLogs,
-                              final Boolean confirmDeletes)
+                              final Boolean confirmDeletes,
+                              final Boolean outputToScreen)
     {
+        if( outputToScreen != null )
+        {
+            this.outputToScreen = outputToScreen;
+        }
+        else
+        {
+            this.outputToScreen= false;
+        }
+
         if( outputType != null )
         {
             this.outputType = outputType;
@@ -135,6 +165,24 @@ public final class LogCheckAppConfig
         else
         {
             this.maxBackups = null;
+        }
+
+        if( randomWaitMax != null )
+        {
+            this.randomWaitMax = randomWaitMax;
+        }
+        else
+        {
+            this.randomWaitMax = null;
+        }
+
+        if( randomWaitMin != null )
+        {
+            this.randomWaitMin = randomWaitMin;
+        }
+        else
+        {
+            this.randomWaitMin = null;
         }
 
         if( deleteLogs != null )
@@ -205,10 +253,13 @@ public final class LogCheckAppConfig
                                          final Long rotateAfterCount,
                                          final Long stopAfterCount,
                                          final Long maxBackups,
+                                         final Integer randomWaitMin,
+                                         final Integer randomWaitMax,
                                          final Boolean truncate,
                                          final Boolean append,
                                          final Boolean deleteLogs,
-                                         final Boolean confirmDeletes)
+                                         final Boolean confirmDeletes,
+                                         final Boolean outputToScreen)
     {
         LogCheckAppConfig res = new LogCheckAppConfig(outputType,
                                                         outputPath,
@@ -217,10 +268,13 @@ public final class LogCheckAppConfig
                                                         rotateAfterCount,
                                                         stopAfterCount,
                                                         maxBackups,
+                                                        randomWaitMin,
+                                                        randomWaitMax,
                                                         truncate,
                                                         append,
                                                         deleteLogs,
-                                                        confirmDeletes);
+                                                        confirmDeletes,
+                                                        outputToScreen);
 
         return res;
     }
@@ -232,10 +286,13 @@ public final class LogCheckAppConfig
                                          final String rotateAfterCount,
                                          final String stopAfterCount,
                                          final String maxBackups,
+                                         final String randomWaitMin,
+                                         final String randomWaitMax,
                                          final Boolean truncate,
                                          final Boolean append,
                                          final Boolean deleteLogs,
-                                         final Boolean confirmDeletes) throws LogCheckAppException
+                                         final Boolean confirmDeletes,
+                                         final Boolean outputToScreen) throws LogCheckAppException
     {
         LCSAOutputType ot = null;
         Path op = null;
@@ -243,6 +300,8 @@ public final class LogCheckAppConfig
         Long rac = null;
         Long sac = null;
         Long mbu = null;
+        Integer rwmin = null;
+        Integer rwmax = null;
         LCSAGeneratorType gt = null;
 
         if( StringUtils.isNoneBlank(outputType) )
@@ -275,8 +334,44 @@ public final class LogCheckAppConfig
             sac = ParseNumberWithSuffix.parseIntWithMagnitude(stopAfterCount);
         }
 
-        LogCheckAppConfig res = from(ot, op, of, gt, rac, sac, mbu,
-                                        truncate, append, deleteLogs, confirmDeletes);
+        if( StringUtils.isNoneBlank(maxBackups) )
+        {
+            try
+            {
+                mbu = Long.parseLong(maxBackups);
+            }
+            catch( NumberFormatException ex )
+            {
+                LOGGER.debug(String.format("Max Backups parse error '%s'", maxBackups));
+            }
+        }
+
+        if( StringUtils.isNoneBlank(randomWaitMin) )
+        {
+            try
+            {
+                rwmin = Integer.parseInt(randomWaitMin);
+            }
+            catch( NumberFormatException ex )
+            {
+                LOGGER.debug(String.format("Min Random Wait parse error '%s'", maxBackups));
+            }
+        }
+
+        if( StringUtils.isNoneBlank(randomWaitMax) )
+        {
+            try
+            {
+                rwmax = Integer.parseInt(randomWaitMax);
+            }
+            catch( NumberFormatException ex )
+            {
+                LOGGER.debug(String.format("Max Random Wait parse error '%s'", maxBackups));
+            }
+        }
+        LogCheckAppConfig res = from(ot, op, of, gt, rac, sac, mbu, rwmin, rwmax,
+                                        truncate, append, deleteLogs, confirmDeletes,
+                                        outputToScreen);
 
         return res;
     }

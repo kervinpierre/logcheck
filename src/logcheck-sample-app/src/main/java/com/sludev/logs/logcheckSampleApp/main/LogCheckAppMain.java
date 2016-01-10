@@ -168,14 +168,13 @@ public final class LogCheckAppMain
     {
         LCSAResult resp = null;
         LogCheckAppMainRun currRun = new LogCheckAppMainRun(config);
-        FutureTask<LCSAResult> currRunTask = new FutureTask<>(currRun);
 
         BasicThreadFactory thFactory = new BasicThreadFactory.Builder()
-                .namingPattern("main-run-thread-%d")
+                .namingPattern("lcAppMainThread-%d")
                 .build();
 
         mainThreadExe = Executors.newSingleThreadExecutor(thFactory);
-        Future exeRes = mainThreadExe.submit(currRunTask);
+        Future<LCSAResult> currRunTask = mainThreadExe.submit(currRun);
 
         mainThreadExe.shutdown();
 
