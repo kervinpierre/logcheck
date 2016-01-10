@@ -45,10 +45,14 @@ public final class LogCheckAppInitialize
         String currRotateAfter = null;
         String currStopAfter = null;
         String currMaxBackups = null;
+        String currRandomWaitMin = null;
+        String currRandomWaitMax = null;
+
         Boolean currAppend = null;
         Boolean currTruncate = null;
         Boolean currDeleteLogs = null;
         Boolean currConfirmDeletes = null;
+        Boolean currOutputToScreen = null;
 
         Options options = ConfigureOptions();
 
@@ -182,6 +186,10 @@ public final class LogCheckAppInitialize
                         currDeleteLogs = true;
                         break;
 
+                    case "output-to-screen":
+                        currOutputToScreen = true;
+                        break;
+
                     case "rotate-after-count":
                         currRotateAfter = currOpt.getValue();
                         break;
@@ -192,6 +200,14 @@ public final class LogCheckAppInitialize
 
                     case "max-backups":
                         currMaxBackups = currOpt.getValue();
+                        break;
+
+                    case "random-wait-min":
+                        currRandomWaitMin = currOpt.getValue();
+                        break;
+
+                    case "random-wait-max":
+                        currRandomWaitMax = currOpt.getValue();
                         break;
 
                     case "version":
@@ -210,10 +226,13 @@ public final class LogCheckAppInitialize
                     currRotateAfter,
                     currStopAfter,
                     currMaxBackups,
+                    currRandomWaitMin,
+                    currRandomWaitMax,
                     currAppend,
                     currTruncate,
                     currDeleteLogs,
-                    currConfirmDeletes);
+                    currConfirmDeletes,
+                    currOutputToScreen);
         }
         catch (LogCheckAppException ex)
         {
@@ -281,8 +300,22 @@ public final class LogCheckAppInitialize
                 .hasArg()
                 .build());
 
+        options.addOption(Option.builder().longOpt("output-to-screen")
+                .desc("Debug print the output as well")
+                .build());
+
         options.addOption(Option.builder().longOpt("max-backups")
                 .desc("The maximum number of backup files to keep.")
+                .hasArg()
+                .build());
+
+        options.addOption(Option.builder().longOpt("random-wait-min")
+                .desc("Wait random seconds between log writes.")
+                .hasArg()
+                .build());
+
+        options.addOption(Option.builder().longOpt("random-wait-max")
+                .desc("Wait random seconds between log writes.")
                 .hasArg()
                 .build());
 

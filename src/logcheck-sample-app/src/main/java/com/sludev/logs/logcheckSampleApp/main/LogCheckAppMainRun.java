@@ -7,17 +7,20 @@ import com.sludev.logs.logcheckSampleApp.generator.RandomLineGenerator;
 import com.sludev.logs.logcheckSampleApp.output.BufferedWriterWriteFile;
 import com.sludev.logs.logcheckSampleApp.output.IWriteFile;
 import com.sludev.logs.logcheckSampleApp.utils.LogCheckAppException;
+import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.concurrent.BasicThreadFactory;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Random;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -26,9 +29,11 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public final class LogCheckAppMainRun implements Callable<LCSAResult>
 {
-    private static final Logger log = LogManager.getLogger(LogCheckAppMainRun.class);
+    private static final Logger LOGGER = LogManager.getLogger(LogCheckAppMainRun.class);
 
     private final LogCheckAppConfig config;
+
+    private final AtomicLong runCount;
 
     private LogCheckAppConfig getConfig()
     {
@@ -38,12 +43,13 @@ public final class LogCheckAppMainRun implements Callable<LCSAResult>
     public LogCheckAppMainRun(final LogCheckAppConfig config)
     {
         this.config = config;
+        this.runCount = new AtomicLong(0L);
     }
 
     @Override
     public LCSAResult call() throws Exception
     {
-        LCSAResult res = LCSAResult.NONE;
+        LCSAResult res;
 
         if( config.getDeleteLogs() != null
                 && config.getDeleteLogs() )
@@ -73,7 +79,7 @@ public final class LogCheckAppMainRun implements Callable<LCSAResult>
 
     private IWriteFile newWriteFile(Path output)
     {
-        log.debug(String.format("newWriteFile() called on '%s'", output));
+        LOGGER.debug(String.format("newWriteFile() called on '%s'", output));
 
         IWriteFile wf;
 
@@ -118,7 +124,7 @@ public final class LogCheckAppMainRun implements Callable<LCSAResult>
         {
             String errMsg = String.format("Parent folder '%s' does not exist.", parent);
 
-            log.debug(errMsg);
+            LOGGER.debug(errMsg);
             throw new LogCheckAppException(errMsg);
         }
 
@@ -130,7 +136,7 @@ public final class LogCheckAppMainRun implements Callable<LCSAResult>
         {
             String errMsg = String.format("Error deleting '%s'", outFile);
 
-            log.debug(errMsg);
+            LOGGER.debug(errMsg);
         }
 
         Path bakPath;
@@ -151,7 +157,7 @@ public final class LogCheckAppMainRun implements Callable<LCSAResult>
             {
                 String errMsg = String.format("Error deleting '%s'", outFile);
 
-                log.debug(errMsg);
+                LOGGER.debug(errMsg);
             }
         }
 
@@ -161,9 +167,13 @@ public final class LogCheckAppMainRun implements Callable<LCSAResult>
     private LCSAResult logFile(final IWriteFile wf)
                             throws LogCheckAppException, IOException, InterruptedException
     {
-        LCSAResult res = LCSAResult.NONE;
+        LCSAResult res;
 
-        final ScheduledExecutorService schedulerExe = Executors.newScheduledThreadPool(1);
+        BasicThreadFactory scheduledFactory = new BasicThreadFactory.Builder()
+                .namingPattern("lcAppScheduleThread-%d")
+                .build();
+
+        final ScheduledExecutorService schedulerExe = Executors.newScheduledThreadPool(1, scheduledFactory);
 
         setupLockFileShutdownHook();
 
@@ -186,36 +196,93 @@ public final class LogCheckAppMainRun implements Callable<LCSAResult>
         }
 
         final AtomicReference<LCSAResult> threadRes = new AtomicReference<>();
-        final AtomicInteger callCount = new AtomicInteger(1);
+        final AtomicLong callCount = new AtomicLong(0L);
 
         final Long stopAfter = config.getStopAfterCount();
+        final Integer randomWaitMin = config.getRandomWaitMin();
+        final Integer randomWaitMax = config.getRandomWaitMax();
+        final Random rand = new Random();
 
         schedulerExe.scheduleAtFixedRate(() ->
         {
             String currStr = null;
 
+            int currRandWaitMin = 0;
+
+            if( randomWaitMin != null && randomWaitMin > 0 )
+            {
+                currRandWaitMin = randomWaitMin;
+            }
+
+            if( randomWaitMax != null && randomWaitMax > 0 )
+            {
+                int currRand = rand.nextInt() % randomWaitMax + currRandWaitMin;
+
+                LOGGER.debug(String.format("Sleeping [ %d ] seconds...", currRand));
+
+                try
+                {
+                    Thread.sleep( currRand * 1000 );
+                }
+                catch( InterruptedException ex )
+                {
+                    LOGGER.debug("Thread wait interrupted", ex);
+                }
+            }
+
             if( wf == null )
             {
-                log.debug("IWriteFile object cannot be null");
+                LOGGER.debug("IWriteFile object cannot be null");
                 return;
             }
 
             if( idg == null )
             {
-                log.debug("IDataGenerator object cannot be null");
+                LOGGER.debug("IDataGenerator object cannot be null");
                 return;
             }
 
-            currStr = idg.getLine(String.format(" [%d] Random Line", callCount.getAndIncrement()));
+            long currCallCount = callCount.incrementAndGet();
+            long currRunCount = runCount.incrementAndGet();
+
+            if( stopAfter != null
+                    && stopAfter > 0
+                    && stopAfter < currRunCount )
+            {
+                threadRes.set(LCSAResult.SUCCESS);
+                schedulerExe.shutdown();
+
+                return;
+            }
+
+            currStr = idg.getLine(String.format(" [%05d][%d] Random Line",
+                                        currRunCount, currCallCount));
 
             try
             {
                 LCSAResult resWrite = wf.writeLine(currStr);
 
-                if( resWrite != LCSAResult.SUCCESS
-                        || ( stopAfter != null
-                          && stopAfter > 0
-                          && stopAfter < callCount.get()) )
+                if( BooleanUtils.isTrue(config.getOutputToScreen()) )
+                {
+                    LOGGER.info(String.format("'%s'", currStr));
+                }
+
+                if( LOGGER.isDebugEnabled() )
+                {
+                    long tmpCnt = currRunCount;
+                    long tmpInterval = 100L;
+                    if( config.getStopAfterCount() != null && config.getStopAfterCount() > 10 )
+                    {
+                        tmpInterval = config.getStopAfterCount() / 10;
+                    }
+
+                    if( tmpCnt % tmpInterval == 0 )
+                    {
+                        LOGGER.debug(String.format("\nLog Line Count == [%d]", tmpCnt));
+                    }
+                }
+
+                if( resWrite != LCSAResult.SUCCESS )
                 {
                     threadRes.set(resWrite);
                     schedulerExe.shutdown();
@@ -223,7 +290,7 @@ public final class LogCheckAppMainRun implements Callable<LCSAResult>
             }
             catch( IOException ex )
             {
-                log.debug("Failing writing file", ex);
+                LOGGER.debug("Failing writing file", ex);
             }
         }, 1,
             config.getOutputFrequency().getLeft(),
@@ -231,10 +298,9 @@ public final class LogCheckAppMainRun implements Callable<LCSAResult>
 
         schedulerExe.awaitTermination(Long.MAX_VALUE, TimeUnit.DAYS);
 
-        if( threadRes.get() == LCSAResult.COMPLETED_ROTATE_PENDING )
-        {
-            res = LCSAResult.COMPLETED_ROTATE_PENDING;
-        }
+        res = threadRes.get();
+
+        LOGGER.debug(String.format("Returning result %s", res));
 
         return res;
     }
@@ -246,7 +312,7 @@ public final class LogCheckAppMainRun implements Callable<LCSAResult>
             @Override
             public void run()
             {
-                log.debug("Processing shutdown....\n");
+                LOGGER.debug("setupLockFileShutdownHook() : Processing shutdown....\n");
             }
         });
     }
