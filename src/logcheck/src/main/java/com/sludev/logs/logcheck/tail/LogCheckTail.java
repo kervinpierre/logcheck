@@ -21,6 +21,7 @@ import com.sludev.logs.logcheck.config.entities.LogCheckState;
 import com.sludev.logs.logcheck.config.entities.LogFileBlock;
 import com.sludev.logs.logcheck.config.entities.LogFileState;
 import com.sludev.logs.logcheck.enums.LCCompressionType;
+import com.sludev.logs.logcheck.enums.LCDebugFlag;
 import com.sludev.logs.logcheck.enums.LCFileRegexComponent;
 import com.sludev.logs.logcheck.enums.LCHashType;
 import com.sludev.logs.logcheck.enums.LCResultStatus;
@@ -100,6 +101,7 @@ public final class LogCheckTail implements Callable<LogCheckResult>
     private final List<LCFileRegexComponent> m_tailerBackupLogNameComps;
     private final LCCompressionType m_tailerBackupLogCompression;
     private final Pattern m_tailerBackupLogNameRegex;
+    private final Set<LCDebugFlag> m_debugFlags;
 
     private LogCheckTail(final List<ILogEntryBuilder> mainLogEntryBuilders,
                          final Path logFile,
@@ -130,7 +132,8 @@ public final class LogCheckTail implements Callable<LogCheckResult>
                          final Path tailerLogBackupDir,
                          final List<LCFileRegexComponent> tailerBackupLogNameComps,
                          final LCCompressionType tailerBackupLogCompression,
-                         final Pattern tailerBackupLogNameRegex)
+                         final Pattern tailerBackupLogNameRegex,
+                         final Set<LCDebugFlag> debugFlags)
     {
         this.m_mainLogEntryBuilders = mainLogEntryBuilders;
         this.m_idBlockHash = idBlockHash;
@@ -147,6 +150,7 @@ public final class LogCheckTail implements Callable<LogCheckResult>
         this.m_readOnlyFileMode = readOnlyFileMode;
         this.m_mainThread = mainThread;
         this.m_startPosition = startPosition;
+        this.m_debugFlags = debugFlags;
 
         // Don't bother with logs we missed earlier
 
@@ -315,7 +319,8 @@ public final class LogCheckTail implements Callable<LogCheckResult>
                                     final Path tailerLogBackupDir,
                                     final List<LCFileRegexComponent> tailerBackupLogNameComps,
                                     final LCCompressionType tailerBackupLogCompression,
-                                    final Pattern tailerBackupLogNameRegex)
+                                    final Pattern tailerBackupLogNameRegex,
+                                    final Set<LCDebugFlag> debugFlags)
     {
         LogCheckTail res = new LogCheckTail(mainLogEntryBuilders,
                 logFile,
@@ -346,7 +351,8 @@ public final class LogCheckTail implements Callable<LogCheckResult>
                 tailerLogBackupDir,
                 tailerBackupLogNameComps,
                 tailerBackupLogCompression,
-                tailerBackupLogNameRegex);
+                tailerBackupLogNameRegex,
+                debugFlags);
 
         return res;
     }
@@ -545,7 +551,8 @@ public final class LogCheckTail implements Callable<LogCheckResult>
                             (stats == null) ? null : stats.get(),
                             m_idBlockHash,
                             m_idBlockSize,
-                            m_setName));
+                            m_setName,
+                            m_debugFlags));
 
                     Future<FileTailerResult> tailerExeRes = tailerExe.submit(mainTailer.get());
 
@@ -802,7 +809,8 @@ public final class LogCheckTail implements Callable<LogCheckResult>
                                                 m_tailerLogBackupDir,
                                                 m_tailerBackupLogNameComps,
                                                 m_tailerBackupLogCompression,
-                                                m_tailerBackupLogNameRegex);
+                                                m_tailerBackupLogNameRegex,
+                                                m_debugFlags);
 
                                         BasicThreadFactory logCheckTailerFactory = new BasicThreadFactory.Builder()
                                                 .namingPattern("tailerCompletionThread-%d")

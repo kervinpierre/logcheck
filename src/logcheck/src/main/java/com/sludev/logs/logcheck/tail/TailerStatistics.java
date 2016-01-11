@@ -26,7 +26,7 @@ import com.sludev.logs.logcheck.config.parsers.LogCheckStateParser;
 import com.sludev.logs.logcheck.config.parsers.ParserUtil;
 import com.sludev.logs.logcheck.config.writers.LogCheckStateWriter;
 import com.sludev.logs.logcheck.dedupe.ContinueUtil;
-import com.sludev.logs.logcheck.enums.LCFileFormats;
+import com.sludev.logs.logcheck.enums.LCFileFormat;
 import com.sludev.logs.logcheck.exceptions.LogCheckException;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -316,7 +316,7 @@ public final class TailerStatistics
         // Read state file for information about the last run
         LogCheckState lcConf = LogCheckStateParser.readConfig(
                 ParserUtil.readConfig(stateFile,
-                        LCFileFormats.LCSTATE));
+                        LCFileFormat.LCSTATE));
 
 
         if( LOGGER.isDebugEnabled() )

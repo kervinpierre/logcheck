@@ -22,7 +22,7 @@ import com.sludev.logs.logcheck.config.entities.LogCheckDeDupeLog;
 import com.sludev.logs.logcheck.config.entities.LogEntryDeDupe;
 import com.sludev.logs.logcheck.config.parsers.LogCheckDeDupeLogParser;
 import com.sludev.logs.logcheck.config.parsers.ParserUtil;
-import com.sludev.logs.logcheck.enums.LCFileFormats;
+import com.sludev.logs.logcheck.enums.LCFileFormat;
 import com.sludev.logs.logcheck.exceptions.LogCheckException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -86,7 +86,7 @@ public final class ContinueUtil
         {
             LogCheckDeDupeLog currLog
                     = LogCheckDeDupeLogParser.readConfig(
-                            ParserUtil.readConfig(p, LCFileFormats.LCDDUPE));
+                            ParserUtil.readConfig(p, LCFileFormat.LCDDUPE));
 
             res.add(currLog);
         }

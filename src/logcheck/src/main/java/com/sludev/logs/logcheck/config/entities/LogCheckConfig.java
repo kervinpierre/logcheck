@@ -18,6 +18,7 @@
 package com.sludev.logs.logcheck.config.entities;
 
 import com.sludev.logs.logcheck.enums.LCCompressionType;
+import com.sludev.logs.logcheck.enums.LCDebugFlag;
 import com.sludev.logs.logcheck.enums.LCFileRegexComponent;
 import com.sludev.logs.logcheck.enums.LCHashType;
 import com.sludev.logs.logcheck.enums.LCIndexNameFormat;
@@ -37,7 +38,9 @@ import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
@@ -103,6 +106,7 @@ public final class LogCheckConfig
     private final List<LCLogEntryBuilderType> m_logEntryBuilders;
     private final List<LCLogEntryStoreType> m_logEntryStores;
     private final List<LCFileRegexComponent> m_tailerBackupLogNameComps;
+    private final Set<LCDebugFlag> m_debugFlags;
     private final LCHashType m_idBlockHashType;
     private final LCCompressionType m_tailerBackupLogCompression;
     private final Pattern m_tailerBackupLogNameRegex;
@@ -110,6 +114,11 @@ public final class LogCheckConfig
     public Boolean isReadOnlyFileMode()
     {
         return m_readOnlyFileMode;
+    }
+
+    public Set<LCDebugFlag> getDebugFlags()
+    {
+        return m_debugFlags;
     }
 
     public Boolean willStopOnEOF()
@@ -437,19 +446,33 @@ public final class LogCheckConfig
                            final List<LCFileRegexComponent> tailerBackupLogNameComps,
                            final LCHashType idBlockHashType,
                            final LCCompressionType tailerBackupLogCompression,
-                           final Pattern tailerBackupLogNameRegex) throws LogCheckException
+                           final Pattern tailerBackupLogNameRegex,
+                           final Set<LCDebugFlag> debugFlags) throws LogCheckException
     {
         if( stopOnEOF != null )
         {
             this.m_stopOnEOF = stopOnEOF;
         }
-        else if( orig != null && orig.willStopOnEOF() != null )
+        else if( (orig != null) && (orig.willStopOnEOF() != null) )
         {
             this.m_stopOnEOF = orig.willStopOnEOF();
         }
         else
         {
             this.m_stopOnEOF = null;
+        }
+
+        if( debugFlags != null )
+        {
+            this.m_debugFlags = debugFlags;
+        }
+        else if( (orig != null) && (orig.getDebugFlags() != null) )
+        {
+            this.m_debugFlags = orig.getDebugFlags();
+        }
+        else
+        {
+            this.m_debugFlags= null;
         }
 
         if( readOnlyFileMode != null )
@@ -1239,7 +1262,8 @@ public final class LogCheckConfig
                                       final List<LCFileRegexComponent> tailerBackupLogNameComps,
                                       final LCHashType idBlockHashType,
                                       final LCCompressionType tailerBackupLogCompression,
-                                      final Pattern tailerBackupLogNameRegex) throws LogCheckException
+                                      final Pattern tailerBackupLogNameRegex,
+                                      final Set<LCDebugFlag> debugFlags) throws LogCheckException
     {
         LogCheckConfig res = new LogCheckConfig(orig,
                 service,
@@ -1296,7 +1320,8 @@ public final class LogCheckConfig
                 tailerBackupLogNameComps,
                 idBlockHashType,
                 tailerBackupLogCompression,
-                tailerBackupLogNameRegex);
+                tailerBackupLogNameRegex,
+                debugFlags);
 
         return res;
     }
@@ -1361,7 +1386,8 @@ public final class LogCheckConfig
                                         final String[] tailerBackupLogNameCompStrs,
                                        final String idBlockHashTypeStr,
                                         final String tailBackupLogCompressionStr,
-                                        final String tailBackupLogNameRegexStr) throws LogCheckException
+                                        final String tailBackupLogNameRegexStr,
+                                        final String[] debugFlagStrs) throws LogCheckException
     {
         Path lockFilePath = null;
         Path logPath = null;
@@ -1392,6 +1418,7 @@ public final class LogCheckConfig
         LCHashType idBlockHash = null;
         LCCompressionType tailerBackupLogCompression = null;
         Pattern tailerBackupLogNameRegex = null;
+        Set<LCDebugFlag> debugFlags = new HashSet<>(10);
 
         if(StringUtils.isNoneBlank(tailBackupLogCompressionStr))
         {
@@ -1512,6 +1539,17 @@ public final class LogCheckConfig
                 if( StringUtils.isNoneBlank(nameComp) )
                 {
                     tailerBackupLogNameComps.add(LCFileRegexComponent.from(nameComp));
+                }
+            }
+        }
+
+        if(debugFlagStrs != null )
+        {
+            for( String debugFlagStr : debugFlagStrs )
+            {
+                if( StringUtils.isNoneBlank(debugFlagStr) )
+                {
+                    debugFlags.add(LCDebugFlag.from(debugFlagStr));
                 }
             }
         }
@@ -1714,7 +1752,8 @@ public final class LogCheckConfig
                 tailerBackupLogNameComps,
                 idBlockHash,
                 tailerBackupLogCompression,
-                tailerBackupLogNameRegex);
+                tailerBackupLogNameRegex,
+                debugFlags);
 
         return res;
     }

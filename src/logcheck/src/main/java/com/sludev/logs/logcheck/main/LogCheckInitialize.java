@@ -20,7 +20,7 @@ package com.sludev.logs.logcheck.main;
 import com.sludev.logs.logcheck.config.entities.LogCheckConfig;
 import com.sludev.logs.logcheck.config.parsers.LogCheckConfigParser;
 import com.sludev.logs.logcheck.config.parsers.ParserUtil;
-import com.sludev.logs.logcheck.enums.LCFileFormats;
+import com.sludev.logs.logcheck.enums.LCFileFormat;
 import com.sludev.logs.logcheck.utils.FSSArgFile;
 import com.sludev.logs.logcheck.exceptions.LogCheckException;
 import org.apache.commons.cli.CommandLine;
@@ -110,6 +110,7 @@ public class LogCheckInitialize
         String[] currLEBuilderType = null;
         String[] currLEStoreType = null;
         String[] currTailerBackupLogNameComps = null;
+        String[] currDebugFlags = null;
 
         try
         {
@@ -168,7 +169,7 @@ public class LogCheckInitialize
 
                 config = LogCheckConfigParser.readConfig(
                                 ParserUtil.readConfig(Paths.get(configfile),
-                                        LCFileFormats.LCCONFIG));
+                                        LCFileFormat.LCCONFIG));
             }
             
             if( line.getOptions().length < 1 )
@@ -418,6 +419,19 @@ public class LogCheckInitialize
                         }
                         break;
 
+                    case "debug-flags":
+                        // Miscellaneous debug flags
+                        if( currDebugFlags == null )
+                        {
+                            currDebugFlags = currOpt.getValues();
+                        }
+                        else
+                        {
+                            currDebugFlags
+                                    = ArrayUtils.addAll(currDebugFlags, currOpt.getValues());
+                        }
+                        break;
+
                     case "tailer-backup-log-file-compression":
                         // Decompress the already backed up log file before reading.
                         currTailerBackupLogCompression = currOpt.getValue();
@@ -495,7 +509,8 @@ public class LogCheckInitialize
                     currTailerBackupLogNameComps,
                     currIdBlockHashtype,
                     currTailerBackupLogCompression,
-                    currTailerBackupLogNameRegex);
+                    currTailerBackupLogNameRegex,
+                    currDebugFlags);
         }
         catch (LogCheckException ex)
         {
@@ -773,6 +788,12 @@ public class LogCheckInitialize
         options.addOption( Option.builder().longOpt( "tailer-backup-log-file-name-component" )
                 .desc( "These match the file name grouping the the related file name regex."
                         + "  Values include FILENAME_PREFIX, INTEGER_INC, TIMESTAMP.")
+                .hasArgs()
+                .build() );
+
+        options.addOption( Option.builder().longOpt( "debug-flags" )
+                .desc( "Allows passing in miscellaneous debug flags."
+                        + "  Values include LOG_SOURCE_LC_APP.")
                 .hasArgs()
                 .build() );
 

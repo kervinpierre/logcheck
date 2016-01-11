@@ -24,9 +24,8 @@ import com.sludev.logs.logcheck.config.entities.LogCheckConfig;
 import com.sludev.logs.logcheck.config.entities.LogCheckState;
 import com.sludev.logs.logcheck.config.parsers.LogCheckStateParser;
 import com.sludev.logs.logcheck.config.parsers.ParserUtil;
-import com.sludev.logs.logcheck.enums.LCFileFormats;
+import com.sludev.logs.logcheck.enums.LCFileFormat;
 import com.sludev.logs.logcheck.enums.LCResultStatus;
-import com.sludev.logs.logcheck.enums.LCTailerResult;
 import com.sludev.logs.logcheck.exceptions.LogCheckException;
 import com.sludev.logs.logcheck.utils.FSSArgFile;
 import com.sludev.logs.logcheck.utils.LogCheckResult;
@@ -316,7 +315,7 @@ public class LogCheckRunTest
         LogCheckState currState
                 = LogCheckStateParser.readConfig(
                         ParserUtil.readConfig(stateFile,
-                                        LCFileFormats.LCSTATE));
+                                        LCFileFormat.LCSTATE));
 
         long logSize = Files.size(logFile);
         long currPos = currState.getLogFile().getLastProcessedPosition();
@@ -448,6 +447,7 @@ public class LogCheckRunTest
         argsList.add("--tailer-backup-log-file-name-regex=(.*?)\\\\.(\\\\d+)\\\\.bak");
         argsList.add("--tailer-backup-log-file-name-component=FILENAME_PREFIX");
         argsList.add("--tailer-backup-log-file-name-component=INTEGER_INC");
+        argsList.add("--debug-flags=LOG_SOURCE_LC_APP");
         argsList.add(String.format("--tailer-backup-log-dir %s", testDir));
 
         args = FSSArgFile.getArgArray(argsList);
@@ -495,7 +495,7 @@ public class LogCheckRunTest
         LogCheckState currState
                 = LogCheckStateParser.readConfig(
                 ParserUtil.readConfig(stateFile,
-                        LCFileFormats.LCSTATE));
+                        LCFileFormat.LCSTATE));
 
         long logSize = Files.size(logFile);
         long currPos = currState.getLogFile().getLastProcessedPosition();
@@ -665,7 +665,7 @@ public class LogCheckRunTest
         LogCheckState currState
                 = LogCheckStateParser.readConfig(
                 ParserUtil.readConfig(stateFile,
-                        LCFileFormats.LCSTATE));
+                        LCFileFormat.LCSTATE));
 
         long logSize = Files.size(logFile);
         long currPos = currState.getLogFile().getLastProcessedPosition();

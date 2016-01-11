@@ -19,11 +19,12 @@ package com.sludev.logs.logcheck.tail;
 import com.sludev.logs.logcheck.config.entities.LogCheckState;
 import com.sludev.logs.logcheck.config.entities.LogFileBlock;
 import com.sludev.logs.logcheck.config.entities.LogFileState;
+import com.sludev.logs.logcheck.enums.LCDebugFlag;
 import com.sludev.logs.logcheck.enums.LCFileBlockType;
 import com.sludev.logs.logcheck.enums.LCHashType;
 import com.sludev.logs.logcheck.enums.LCTailerResult;
-import com.sludev.logs.logcheck.log.ILogEntryBuilder;
 import com.sludev.logs.logcheck.exceptions.LogCheckException;
+import com.sludev.logs.logcheck.log.ILogEntryBuilder;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.concurrent.BasicThreadFactory;
@@ -39,7 +40,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.time.Instant;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -111,6 +111,8 @@ public final class FileTailer implements Callable<FileTailerResult>
 
     // Mutable
 
+    private final Set<LCDebugFlag> m_debugFlags;
+
     /**
      * The tailer will run as long as this value is true.
      */
@@ -123,7 +125,7 @@ public final class FileTailer implements Callable<FileTailerResult>
     private LogCheckState m_lastLCState;
 
     // DEBUG PURPOSES ONLY
-    private static int debugSeq = 0;
+    private static int DEBUG_LOG_SEQUENCE = 0;
 
     /**
      * Creates a Tailer for the given m_file, with a specified buffer size.
@@ -153,7 +155,8 @@ public final class FileTailer implements Callable<FileTailerResult>
                        final TailerStatistics stats,
                        final LCHashType hashType,
                        final Integer idBlockSize,
-                       final String setName)
+                       final String setName,
+                       final Set<LCDebugFlag> debugFlags)
     {
         this.m_file = file;
         this.m_delayMillis = delayMillis;
@@ -180,6 +183,8 @@ public final class FileTailer implements Callable<FileTailerResult>
         this.lineRemainder = null;
         this.m_lastLCState = null;
 
+        this.m_debugFlags = debugFlags;
+
         this.m_saveTimerSeconds = saveTimerSeconds;
     }
 
@@ -199,7 +204,8 @@ public final class FileTailer implements Callable<FileTailerResult>
                                   final TailerStatistics stats,
                                   final LCHashType hashType,
                                   final Integer idBlockSize,
-                                  final String setName)
+                                  final String setName,
+                                  final Set<LCDebugFlag> debugFlags)
     {
         FileTailer res = new FileTailer(file,
                 startPosition,
@@ -217,7 +223,8 @@ public final class FileTailer implements Callable<FileTailerResult>
                 stats,
                 hashType,
                 idBlockSize,
-                setName);
+                setName,
+                debugFlags);
 
         return res;
     }
@@ -566,24 +573,28 @@ public final class FileTailer implements Callable<FileTailerResult>
 
                     if( LOGGER.isDebugEnabled() )
                     {
-                        ////
-                        // This matches the output logged by the LogCheckApp for testing
-                        ////
-                        Matcher m = Pattern.compile(".*?:\\s+\\[(\\d+)\\].*").matcher(ts);
-                        if( m.matches() )
+                        if( (m_debugFlags != null) && m_debugFlags.contains(LCDebugFlag.LOG_SOURCE_LC_APP) )
                         {
-                            int seq = Integer.parseInt(m.group(1));
-                            if( seq == debugSeq + 1 )
+                            // This is a debug mode.
+
+                            // This matches the output logged by the LogCheckApp for testing
+
+                            Matcher debugMatcher = Pattern.compile(".*?:\\s+\\[(\\d+)\\].*").matcher(ts);
+                            if( debugMatcher.matches() )
                             {
-                                debugSeq++;
-                            }
-                            else if( debugSeq == 0 )
-                            {
-                                debugSeq = seq;
-                            }
-                            else
-                            {
-                                LOGGER.error(String.format("Expected %d in...'%s'", debugSeq + 1, ts));
+                                int seq = Integer.parseInt(debugMatcher.group(1));
+                                if( seq == (DEBUG_LOG_SEQUENCE + 1) )
+                                {
+                                    DEBUG_LOG_SEQUENCE++;
+                                }
+                                else if( DEBUG_LOG_SEQUENCE == 0 )
+                                {
+                                    DEBUG_LOG_SEQUENCE = seq;
+                                }
+                                else
+                                {
+                                    LOGGER.debug(String.format("Expected %d in...'%s'", DEBUG_LOG_SEQUENCE + 1, ts));
+                                }
                             }
                         }
                     }
