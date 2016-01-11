@@ -427,7 +427,7 @@ public class LogCheckRunTest
         Path dedupeDir = testDir.resolve("dedupe");
         Files.createDirectory(dedupeDir);
 
-        argsList.add("--stop-after=1M");
+        argsList.add("--stop-after=30s");
         argsList.add(String.format("--log-file %s", logFile));
         argsList.add("--log-entry-builder-type=singleline ");
         argsList.add("--log-entry-store-type=console,simplefile");
@@ -487,7 +487,9 @@ public class LogCheckRunTest
         LOGGER.debug(String.format("\nLog File Count : %d\nStore File Count: %d\n",
                 logFileCount, storeFileCount));
 
-        Assert.assertTrue(logFileCount == 1024);
+        // Total lines is 1024, but across 26 files, last containing 24 lines
+        Assert.assertTrue(logFileCount == 24);
+
         Assert.assertTrue(storeFileCount == 1024);
 
         LogCheckState currState
@@ -501,7 +503,7 @@ public class LogCheckRunTest
         Assert.assertTrue(logSize==currPos);
 
         LogCheckTestFileUtils.checkAllLinesInFile(storeLogFile,
-                                    Pattern.compile("^.*?:\\s+\\[(\\d+)\\]\\s+.*$"));
+                                    Pattern.compile(".*?:\\s+\\[(\\d+)\\].*"));
 
         ByteBuffer currByteBuffer = ByteBuffer.allocate(1000);
         try( FileChannel logFC = FileChannel.open(logFile) )
