@@ -205,7 +205,8 @@ public class LogCheckRun implements Callable<LogCheckResult>
                 config.getTailerLogBackupDir(),
                 config.getTailerBackupLogNameComps(),
                 config.getTailerBackupLogCompression(),
-                config.getTailerBackupLogNameRegex());
+                config.getTailerBackupLogNameRegex(),
+                config.getDebugFlags());
 
         List<ILogEntryStore> currStores = new ArrayList<>(10);
 

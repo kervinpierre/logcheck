@@ -423,7 +423,8 @@ public class LogCheckConfigParser
                 null, // tailerBackupLogNameComp
                 idBlockHashType,
                 null, // tailerBackupLogCompression
-                null  // tailerBackupLogNameRegexStr
+                null,  // tailerBackupLogNameRegexStr
+                null // debugFlags
                  );
 
         return res;

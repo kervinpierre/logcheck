@@ -19,7 +19,7 @@
 
 package com.sludev.logs.logcheck.config.parsers;
 
-import com.sludev.logs.logcheck.enums.LCFileFormats;
+import com.sludev.logs.logcheck.enums.LCFileFormat;
 import com.sludev.logs.logcheck.utils.FSSConfigurationFile;
 import com.sludev.logs.logcheck.exceptions.LogCheckException;
 import com.sludev.logs.logcheck.utils.LogCheckLSResourceResolver;
@@ -52,7 +52,7 @@ public final class ParserUtil
      * @return
      * @throws LogCheckException
      */
-    public static Document readConfig(Path confPath, LCFileFormats type)
+    public static Document readConfig(Path confPath, LCFileFormat type)
             throws LogCheckException
     {
         FSSConfigurationFile conf = new FSSConfigurationFile();
@@ -68,7 +68,7 @@ public final class ParserUtil
         // note that if your XML already declares the XSD to which it
         // has to conform, then there's no need to from a validator from a Schema object
         Source schemaFile = new StreamSource(ParserUtil.class.getClassLoader()
-                .getResourceAsStream(LCFileFormats.getSchema(type)));
+                .getResourceAsStream(LCFileFormat.getSchema(type)));
 
         Schema schema;
         try

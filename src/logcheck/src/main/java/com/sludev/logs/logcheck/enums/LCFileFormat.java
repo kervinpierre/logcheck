@@ -25,16 +25,16 @@ import org.apache.logging.log4j.Logger;
 /**
  * Created by kervin on 2015-08-24.
  */
-public enum LCFileFormats
+public enum LCFileFormat
 {
     NONE,
     LCCONFIG,
     LCSTATE,
     LCDDUPE;
 
-    private static final Logger log = LogManager.getLogger(LCFileFormats.class);
+    private static final Logger log = LogManager.getLogger(LCFileFormat.class);
 
-    public static String getSchema( LCFileFormats format )
+    public static String getSchema( LCFileFormat format )
     {
         String res;
         switch( format )
