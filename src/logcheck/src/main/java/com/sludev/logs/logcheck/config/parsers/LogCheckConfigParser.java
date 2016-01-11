@@ -389,6 +389,7 @@ public class LogCheckConfigParser
                 null, // startPositionIgnoreError
                 null,
                 null, // tailerBackupReadLog
+                null, // tailerBackupReadPriorLog
                 null, // stopOnEOF
                 null, // readOnlyFileMode
                 lockFileStr,

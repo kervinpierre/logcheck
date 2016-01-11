@@ -189,6 +189,7 @@ public class LogCheckRun implements Callable<LogCheckResult>
                 config.willValidateTailerStats(),
                 config.willCollectState(),
                 config.willTailerBackupReadLog(),
+                config.willTailerBackupReadPriorLog(),
                 config.willStopOnEOF(),
                 config.isReadOnlyFileMode(),
                 true, // Is main thread?

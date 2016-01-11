@@ -444,6 +444,7 @@ public class LogCheckRunTest
         argsList.add("--poll-interval=1");
         argsList.add("--tailer-validate-log-file");
         argsList.add("--tailer-read-backup-log");
+        argsList.add("--tailer-read-prior-backup-log");
         argsList.add("--tailer-backup-log-file-name-regex=(.*?)\\\\.(\\\\d+)\\\\.bak");
         argsList.add("--tailer-backup-log-file-name-component=FILENAME_PREFIX");
         argsList.add("--tailer-backup-log-file-name-component=INTEGER_INC");

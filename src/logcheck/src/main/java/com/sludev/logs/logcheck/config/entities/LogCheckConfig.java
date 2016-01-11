@@ -26,7 +26,6 @@ import com.sludev.logs.logcheck.enums.LCLogEntryStoreType;
 import com.sludev.logs.logcheck.utils.LogCheckConstants;
 import com.sludev.logs.logcheck.exceptions.LogCheckException;
 import com.sludev.logs.logcheck.utils.ParseNumberWithSuffix;
-import com.sun.org.apache.xpath.internal.operations.Bool;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
@@ -83,6 +82,7 @@ public final class LogCheckConfig
     private final Boolean m_startPositionIgnoreError;
     private final Boolean m_validateTailerStats;
     private final Boolean m_tailerBackupReadLog;
+    private final Boolean m_tailerBackupReadPriorLog;
     private final Boolean m_stopOnEOF;
     private final Boolean m_readOnlyFileMode;
     private final Path m_lockFilePath;
@@ -130,6 +130,11 @@ public final class LogCheckConfig
     public Boolean willTailerBackupReadLog()
     {
         return m_tailerBackupReadLog;
+    }
+
+    public Boolean willTailerBackupReadPriorLog()
+    {
+        return m_tailerBackupReadPriorLog;
     }
 
     public List<LCFileRegexComponent> getTailerBackupLogNameComps()
@@ -398,6 +403,7 @@ public final class LogCheckConfig
                            final Boolean startPositionIgnoreError,
                            final Boolean validateTailerStats,
                            final Boolean tailerBackupReadLog,
+                           final Boolean tailerBackupReadPriorLog,
                            final Boolean stopOnEOF,
                            final Boolean readOnlyFileMode,
                            final Path lockFilePath,
@@ -470,6 +476,19 @@ public final class LogCheckConfig
         else
         {
             this.m_tailerBackupReadLog = null;
+        }
+
+        if( tailerBackupReadPriorLog != null )
+        {
+            this.m_tailerBackupReadPriorLog = tailerBackupReadPriorLog;
+        }
+        else if( (orig != null) && (orig.willTailerBackupReadPriorLog() != null) )
+        {
+            this.m_tailerBackupReadPriorLog = orig.willTailerBackupReadPriorLog();
+        }
+        else
+        {
+            this.m_tailerBackupReadPriorLog = null;
         }
 
         if( tailerLogBackupDir != null )
@@ -1129,7 +1148,7 @@ public final class LogCheckConfig
         {
             this.m_readLogFileCount = readLogFileCount;
         }
-        else if( orig != null && orig.getReadLogFileCount() != null )
+        else if( (orig != null) && (orig.getReadLogFileCount() != null) )
         {
             this.m_readLogFileCount = orig.getReadLogFileCount();
         }
@@ -1186,6 +1205,7 @@ public final class LogCheckConfig
                                       final Boolean startPositionIgnoreError,
                                       final Boolean validateTailerStats,
                                       final Boolean tailerBackupReadLog,
+                                      final Boolean tailerBackupReadPriorLog,
                                       final Boolean stopOnEOF,
                                       final Boolean readOnlyFileMode,
                                       final Path lockFilePath,
@@ -1242,6 +1262,7 @@ public final class LogCheckConfig
                 startPositionIgnoreError,
                 validateTailerStats,
                 tailerBackupReadLog,
+                tailerBackupReadPriorLog,
                 stopOnEOF,
                 readOnlyFileMode,
                 lockFilePath,
@@ -1306,6 +1327,7 @@ public final class LogCheckConfig
                                         final Boolean startPositionIgnoreError,
                                         final Boolean validateTailerStats,
                                         final Boolean tailerBackupReadLog,
+                                        final Boolean tailerBackupReadPriorLog,
                                         final Boolean stopOnEOF,
                                         final Boolean readOnlyFileMode,
                                        final String lockFilePathStr,
@@ -1658,6 +1680,7 @@ public final class LogCheckConfig
                 startPositionIgnoreError,
                 validateTailerStats,
                 tailerBackupReadLog,
+                tailerBackupReadPriorLog,
                 stopOnEOF,
                 readOnlyFileMode,
                 lockFilePath,
