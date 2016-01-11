@@ -21,17 +21,15 @@ import com.sludev.logs.logcheck.config.entities.LogCheckState;
 import com.sludev.logs.logcheck.config.entities.LogFileBlock;
 import com.sludev.logs.logcheck.config.entities.LogFileState;
 import com.sludev.logs.logcheck.enums.LCCompressionType;
-import com.sludev.logs.logcheck.enums.LCFileBlockType;
 import com.sludev.logs.logcheck.enums.LCFileRegexComponent;
 import com.sludev.logs.logcheck.enums.LCHashType;
 import com.sludev.logs.logcheck.enums.LCResultStatus;
 import com.sludev.logs.logcheck.enums.LCTailerResult;
+import com.sludev.logs.logcheck.exceptions.LogCheckException;
 import com.sludev.logs.logcheck.log.ILogEntryBuilder;
 import com.sludev.logs.logcheck.utils.LogCheckConstants;
-import com.sludev.logs.logcheck.exceptions.LogCheckException;
 import com.sludev.logs.logcheck.utils.LogCheckFileRotate;
 import com.sludev.logs.logcheck.utils.LogCheckResult;
-import com.sun.org.apache.bcel.internal.generic.LOOKUPSWITCH;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.concurrent.BasicThreadFactory;
 import org.apache.commons.lang3.tuple.Pair;
@@ -46,9 +44,8 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Deque;
-import java.util.Iterator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -86,6 +83,7 @@ public final class LogCheckTail implements Callable<LogCheckResult>
     private final Boolean m_validateTailerStatistics;
     private final Boolean m_collectTailerStatistics;
     private final Boolean m_tailerBackupReadLog;
+    private final Boolean m_tailerBackupReadPriorLog;
     private final Boolean m_stopOnEOF;
     private final Boolean m_readOnlyFileMode;
     private final Boolean m_mainThread;
@@ -116,6 +114,7 @@ public final class LogCheckTail implements Callable<LogCheckResult>
                          final Boolean validateTailerStatistics,
                          final Boolean collectTailerStatistics,
                          final Boolean tailerBackupReadLog,
+                         final Boolean tailerBackupReadPriorLog,
                          final Boolean stopOnEOF,
                          final Boolean readOnlyFileMode,
                          final Boolean mainThread,
@@ -167,6 +166,15 @@ public final class LogCheckTail implements Callable<LogCheckResult>
         else
         {
             this.m_tailerBackupReadLog = true;
+        }
+
+        if( tailerBackupReadPriorLog != null )
+        {
+            this.m_tailerBackupReadPriorLog = tailerBackupReadPriorLog;
+        }
+        else
+        {
+            this.m_tailerBackupReadPriorLog = false;
         }
 
         if( tailerBackupLogNameComps != null )
@@ -291,6 +299,7 @@ public final class LogCheckTail implements Callable<LogCheckResult>
                                     final Boolean validateTailerStatistics,
                                     final Boolean collectTailerStatistics,
                                     final Boolean tailerBackupReadLog,
+                                    final Boolean tailerBackupReadPriorLog,
                                     final Boolean stopOnEOF,
                                     final Boolean readOnlyFileMode,
                                     final Boolean mainThread,
@@ -321,6 +330,7 @@ public final class LogCheckTail implements Callable<LogCheckResult>
                 validateTailerStatistics,
                 collectTailerStatistics,
                 tailerBackupReadLog,
+                tailerBackupReadPriorLog,
                 stopOnEOF,
                 readOnlyFileMode,
                 mainThread,
@@ -457,7 +467,7 @@ public final class LogCheckTail implements Callable<LogCheckResult>
 
         ExecutorService tailerExe = Executors.newSingleThreadExecutor(tailerFactory);
 
-        FileTailerResult tailerRes;
+        FileTailerResult tailerRes = null;
 
         BigInteger passCount = BigInteger.ZERO;
         try
@@ -467,6 +477,9 @@ public final class LogCheckTail implements Callable<LogCheckResult>
             //Path newestBackupFile = null;
             Deque<Pair<Path, LogFileBlock>> sessionBackupFiles = new ArrayDeque<>(10);
 
+
+            Set<LCTailerResult> currTailerResults = null;
+
             ////////////////////////////////////
             // Main Tailer Loop
             ////////////////////////////////////
@@ -475,6 +488,14 @@ public final class LogCheckTail implements Callable<LogCheckResult>
             // Main Tailer is restarted if 'reOpen' option is set.
             do
             {
+                boolean skipMainLog = false;
+                if( (passCount.compareTo(BigInteger.ZERO) <= 0)
+                        && m_tailerBackupReadPriorLog )
+                {
+                    // Read the backups *before* starting with the main log
+                    skipMainLog = true;
+                }
+
                 if( BooleanUtils.isTrue(m_continueState) ||
                         ((passCount.compareTo(BigInteger.ZERO) > 0) && currReOpen) )
                 {
@@ -505,34 +526,57 @@ public final class LogCheckTail implements Callable<LogCheckResult>
                     }
                 }
 
-                // Create this iteration's File Tailer Object
-                mainTailer.set(FileTailer.from(m_logFile,
-                        currPosition,
-                        Charset.defaultCharset(),
-                        m_mainLogEntryBuilders,
-                        currDelay * 1000, // Convert to milliseconds
-                        currTailFromEnd,
-                        currReOpen,
-                        currStartPosIgrErr,
-                        currStatsValidate,
-                        currStatsCollect,
-                        currStopOnEOF,
-                        m_bufferSize,
-                        currStatsCollect ? 2 : 0,
-                        (stats == null) ? null : stats.get(),
-                        m_idBlockHash,
-                        m_idBlockSize,
-                        m_setName));
+                if( skipMainLog == false )
+                {
+                    // Create this iteration's File Tailer Object
+                    mainTailer.set(FileTailer.from(m_logFile,
+                            currPosition,
+                            Charset.defaultCharset(),
+                            m_mainLogEntryBuilders,
+                            currDelay * 1000, // Convert to milliseconds
+                            currTailFromEnd,
+                            currReOpen,
+                            currStartPosIgrErr,
+                            currStatsValidate,
+                            currStatsCollect,
+                            currStopOnEOF,
+                            m_bufferSize,
+                            currStatsCollect ? 2 : 0,
+                            (stats == null) ? null : stats.get(),
+                            m_idBlockHash,
+                            m_idBlockSize,
+                            m_setName));
 
-                Future<FileTailerResult> tailerExeRes = tailerExe.submit(mainTailer.get());
+                    Future<FileTailerResult> tailerExeRes = tailerExe.submit(mainTailer.get());
 
-                // Wait until Tailer thread has completed.
-                tailerRes = tailerExeRes.get();
+                    // Wait until Tailer thread has completed.
+                    tailerRes = tailerExeRes.get();
 
-                // FIXME : Set tail from end to be true or false based on Tailer result.
-                // This should help implement log-rotate support
+                    // FIXME : Set tail from end to be true or false based on Tailer result.
+                    // This should help implement log-rotate support
+                }
 
-                if( tailerRes.getResultSet().contains(LCTailerResult.VALIDATION_FAIL) )
+                if( tailerRes != null )
+                {
+                    currTailerResults = tailerRes.getResultSet();
+                }
+                else
+                {
+                    currTailerResults = new HashSet<>();
+                    if( m_reOpenLogFile )
+                    {
+                        // Main loop needs this flag to continue
+                        currTailerResults.add(LCTailerResult.REOPEN);
+                    }
+
+                    if( skipMainLog )
+                    {
+                        // Needed to process backup logs
+                        currTailerResults.add(LCTailerResult.VALIDATION_FAIL);
+                    }
+                }
+
+                if( currTailerResults.contains(LCTailerResult.VALIDATION_FAIL) )
                 {
                     // Log rotation detected?
                     LOGGER.debug("Log validation failed. We may need to check the old log file here.");
@@ -542,7 +586,7 @@ public final class LogCheckTail implements Callable<LogCheckResult>
                         Path firstPartialBackupFile = null;
                         LogFileState currFileState = null;
 
-                        if( tailerRes.getState() == null )
+                        if( (tailerRes == null) || (tailerRes.getState() == null) )
                         {
                             LOGGER.debug("File Tailer Result : Log Check State is null.");
                         }
@@ -722,7 +766,8 @@ public final class LogCheckTail implements Callable<LogCheckResult>
                                         //         for the first file.
 
                                         Long currStartPos = 0L;
-                                        if( currBackupFile.equals(firstPartialBackupFile) )
+                                        if( (currFileState != null)
+                                                && currBackupFile.equals(firstPartialBackupFile) )
                                         {
                                             currStartPos = currFileState.getLastProcessedPosition();
                                         }
@@ -741,9 +786,10 @@ public final class LogCheckTail implements Callable<LogCheckResult>
                                                 false, // startPosIgnoreError
                                                 false,  // validate states
                                                 m_tailerBackupReadLog,
+                                                false, // tailerBackupReadPriorLog
                                                 true, // stopOnEOF
                                                 true, // readOnlyFileMode
-                                                false,
+                                                false,  // mainThread
                                                 null, // bufferSize
                                                 m_readLogFileCount,
                                                 m_readMaxDeDupeEntries,
@@ -878,7 +924,7 @@ public final class LogCheckTail implements Callable<LogCheckResult>
 
                 passCount = passCount.add(BigInteger.ONE);
             }
-            while( tailerRes.getResultSet().contains(LCTailerResult.REOPEN) && (exitNow.get() == false) );
+            while( currTailerResults.contains(LCTailerResult.REOPEN) && (exitNow.get() == false) );
         }
         catch( InterruptedException ex )
         {

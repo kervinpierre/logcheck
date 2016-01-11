@@ -74,6 +74,7 @@ public class LogCheckInitialize
         Boolean currStartPositionIgnoreError = null;
         Boolean currValidateTailerStats = null;
         Boolean currTailerBackupReadLogs = null;
+        Boolean currTailerBackupReadPriorLogs = null;
         Boolean currStopOnEOF = null;
         Boolean currReadOnlyFileMode = null;
         String currPollIntervalSeconds = null;
@@ -394,6 +395,11 @@ public class LogCheckInitialize
                         currTailerBackupReadLogs = true;
                         break;
 
+                    case "tailer-read-prior-backup-log":
+                        // Read the old backup logs prior to tailing
+                        currTailerBackupReadPriorLogs = true;
+                        break;
+
                     case "tailer-backup-log-file-name-regex":
                         // The file regular expression for matching backup log files.
                         currTailerBackupLogNameRegex = currOpt.getValue();
@@ -455,6 +461,7 @@ public class LogCheckInitialize
                     currStartPositionIgnoreError,
                     currValidateTailerStats,
                     currTailerBackupReadLogs,
+                    currTailerBackupReadPriorLogs,
                     currStopOnEOF,
                     currReadOnlyFileMode,
                     currLockFile,
@@ -751,7 +758,11 @@ public class LogCheckInitialize
                 .build() );
 
         options.addOption( Option.builder().longOpt( "tailer-read-backup-log" )
-                .desc( "Find the backup log files after they've been rotated.  Read those backups before continuing." )
+                .desc( "Find the backup log files AFTER they've been rotated.  Read those backups before continuing." )
+                .build() );
+
+        options.addOption( Option.builder().longOpt( "tailer-read-prior-backup-log" )
+                .desc( "Find the prior backup log files.  Read those backup logs before starting." )
                 .build() );
 
         options.addOption( Option.builder().longOpt( "tailer-backup-log-file-name-regex" )

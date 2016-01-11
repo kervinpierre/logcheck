@@ -577,6 +577,10 @@ public final class FileTailer implements Callable<FileTailerResult>
                             {
                                 debugSeq++;
                             }
+                            else if( debugSeq == 0 )
+                            {
+                                debugSeq = seq;
+                            }
                             else
                             {
                                 LOGGER.error(String.format("Expected %d in...'%s'", debugSeq + 1, ts));
