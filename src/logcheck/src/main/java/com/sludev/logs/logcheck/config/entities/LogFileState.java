@@ -257,14 +257,14 @@ public final class LogFileState
         Long stateStartLine = state.getLastProcessedLineNumber();
         Long stateStartChar = state.getLastProcessedCharNumber();
 
-        if( stateStartPos != null && stateStartPos >= 0 )
+        if( (stateStartPos != null) && (stateStartPos >= 0) )
         {
             res = stateStartPos;
         }
         else
         {
-            if( stateStartLine != null && stateStartLine >= 0
-                    && stateStartChar != null && stateStartChar >= 0 )
+            if( (stateStartLine != null) && (stateStartLine >= 0)
+                    && (stateStartChar != null) && (stateStartChar >= 0) )
             {
                 // Use the line and char numbers to calculate the starting position
                 try
@@ -284,8 +284,8 @@ public final class LogFileState
                             final byte ch = buffer.get();
                             if( ch == '\n' )
                             {
-                                if( lineCount == stateStartLine
-                                        && charCount < stateStartChar)
+                                if( (lineCount == stateStartLine)
+                                        && (charCount < stateStartChar) )
                                 {
                                     throw new LogCheckException(
                                             String.format("Asked to start at Line %d and Char %d,"
@@ -303,7 +303,7 @@ public final class LogFileState
                                 }
                             }
 
-                            if( lineCount == stateStartLine && charCount == stateStartChar )
+                            if( (lineCount == stateStartLine) && (charCount == stateStartChar) )
                             {
                                 res = reader.position();
                             }
@@ -335,12 +335,12 @@ public final class LogFileState
         LogFileBlock firstBlock = state.getFirstBlock();
         LogFileBlock lastBlock = state.getLastProcessedBlock();
 
-        if( currPath == null && state.getFile() != null )
+        if( (currPath == null) && (state.getFile() != null) )
         {
             currPath = state.getFile();
         }
 
-        if( currPath == null || Files.notExists(currPath))
+        if( (currPath == null) || Files.notExists(currPath) )
         {
             String errMsg = String.format("isValidFileBlocks() : Invalid path '%s'", currPath);
 
@@ -352,7 +352,7 @@ public final class LogFileState
         boolean lastValid = false;
 
         List<LCFileBlockType> typesList = new ArrayList<>(5);
-        if( types != null && types.length > 0 )
+        if( (types != null) && (types.length > 0) )
         {
             typesList = Arrays.asList(types);
         }
@@ -361,7 +361,8 @@ public final class LogFileState
                 || typesList.contains(LCFileBlockType.ALL)
                 || typesList.contains(LCFileBlockType.FIRSTBLOCK))
         {
-            if( firstBlock == null )
+            if( (firstBlock == null)
+                    || (ignoreMissingBlocks && LogFileBlock.isEmptyFileBlock(firstBlock)) )
             {
                 LOGGER.debug("Ignoring missing first block.");
                 firstValid = ignoreMissingBlocks;
@@ -381,7 +382,8 @@ public final class LogFileState
                 || typesList.contains(LCFileBlockType.ALL)
                 || typesList.contains(LCFileBlockType.LASTBLOCK))
         {
-            if( lastBlock == null )
+            if( (lastBlock == null)
+                    || (ignoreMissingBlocks && LogFileBlock.isEmptyFileBlock(lastBlock)) )
             {
                 LOGGER.debug("Ignoring missing last block.");
                 lastValid = ignoreMissingBlocks;

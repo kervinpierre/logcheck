@@ -215,7 +215,7 @@ public final class LogFileBlock
                                     final byte[] block,
                                     final LCFileBlockType type) throws LogCheckException
     {
-        if( block == null || block.length < 1 )
+        if( (block == null) || (block.length < 1) )
         {
             throw new LogCheckException("Invalid block");
         }
@@ -307,7 +307,7 @@ public final class LogFileBlock
                         String.format("Empty file '%s'", file));
             }
 
-            if(pos < 0 || pos > Files.size(file)-1)
+            if( (pos < 0) || (pos > (Files.size(file) - 1)) )
             {
                 throw new LogCheckException(
                         String.format("Invalid position %d for file with size %d '%s'",
@@ -322,7 +322,7 @@ public final class LogFileBlock
             throw new LogCheckException(errMsg, ex);
         }
 
-        if( size < 0 || size > LogCheckConstants.MAX_ID_BLOCK_SIZE)
+        if( (size < 0) || (size > LogCheckConstants.MAX_ID_BLOCK_SIZE) )
         {
             throw new LogCheckException(
                     String.format("Invalid size %d for file '%s'", size, file));
@@ -382,6 +382,46 @@ public final class LogFileBlock
         return res;
     }
 
+    public static boolean isEmptyFileBlock( final LogFileBlock block ) throws LogCheckException
+    {
+        if( block == null )
+        {
+            throw new IllegalArgumentException("Log File Block cannot be null.");
+        }
+
+        if( (block.getHashDigest() != null) && (block.getHashDigest().length > 0) )
+        {
+            return false;
+        }
+
+        if( (block.getHashType() != null) && (block.getHashType() != LCHashType.NONE) )
+        {
+            return false;
+        }
+
+        if( StringUtils.isNoneBlank(block.getName()) )
+        {
+            return false;
+        }
+
+        if( (block.getSize() != null) && (block.getSize() > 0) )
+        {
+            return false;
+        }
+
+        if( (block.getStartPosition() != null) && (block.getStartPosition() > 0) )
+        {
+            return false;
+        }
+
+        if( (block.getType() != null) && (block.getType() != LCFileBlockType.NONE) )
+        {
+            return false;
+        }
+
+        return true;
+    }
+
     public static boolean isValidFileBlock( final Path file,
                                             final LogFileBlock block ) throws LogCheckException
     {
@@ -403,16 +443,20 @@ public final class LogFileBlock
         size = block.getSize();
         pos = block.getStartPosition();
 
-        if( size == null || size < 1 || size > LogCheckConstants.MAX_ID_BLOCK_SIZE )
+        if( (size == null) || (size < 1) || (size > LogCheckConstants.MAX_ID_BLOCK_SIZE) )
         {
-            throw new IllegalArgumentException(
+            LOGGER.info(
                     String.format("Invalid Log File Block Size %d.", size));
+
+            return false;
         }
 
-        if( pos == null || pos < 0  )
+        if( (pos == null) || (pos < 0) )
         {
-            throw new IllegalArgumentException(
+            LOGGER.info(
                     String.format("Invalid Log File Position %d.", pos));
+
+            return false;
         }
 
         bb = ByteBuffer.allocate(size);
@@ -475,7 +519,7 @@ public final class LogFileBlock
 
         res = Arrays.equals(currDigest, blockDigest);
 
-        if( LOGGER.isDebugEnabled() && res == false )
+        if( LOGGER.isDebugEnabled() && (res == false) )
         {
             LOGGER.debug(String.format(
                     "Log File Block is invalid.\nBlock\n======\n'%s'\n", block));
@@ -488,7 +532,8 @@ public final class LogFileBlock
     public String toString()
     {
         String res = String.format("Name  : '%s'\nPos   : %d\nSize   : %d\nHash Type : %s\nHash '%s'\n",
-                m_name, m_startPosition, m_size, m_hashType, Hex.encodeHexString(m_hashDigest));
+                m_name, m_startPosition, m_size, m_hashType,
+                (m_hashDigest == null) ? "null" : Hex.encodeHexString(m_hashDigest));
 
         return res;
     }

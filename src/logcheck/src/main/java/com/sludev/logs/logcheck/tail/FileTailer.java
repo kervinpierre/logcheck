@@ -124,8 +124,10 @@ public final class FileTailer implements Callable<FileTailerResult>
 
     private LogCheckState m_lastLCState;
 
-    // DEBUG PURPOSES ONLY
-    private static int DEBUG_LOG_SEQUENCE = 0;
+    /**
+     * Used to debug and track Logcheck Log App's log sequence.
+     */
+    private static int DEBUG_LCAPP_LOG_SEQUENCE = 0;
 
     /**
      * Creates a Tailer for the given m_file, with a specified buffer size.
@@ -251,7 +253,6 @@ public final class FileTailer implements Callable<FileTailerResult>
             LOGGER.info(String.format("Starting tailer.\n%s", toString()));
         }
 
-
         FileTailerResult res = FileTailerResult.from(null, null);
         FileChannel reader = null;
         long position = 0; // position within the m_file
@@ -282,14 +283,48 @@ public final class FileTailer implements Callable<FileTailerResult>
 
         try
         {
-            // Open the log m_file for reading
-            if( m_run )
+            if( m_file == null )
             {
-                if( m_file == null )
+                throw new LogCheckException("Log File cannot be null");
+            }
+
+            if( m_run && Files.notExists(m_file) )
+            {
+                LOGGER.info(String.format("File does not exist log file '%s'", m_file));
+                m_run = false;
+
+                if( m_end
+                        && ((m_startPosition == null) || (m_startPosition < 0)) )
                 {
-                    throw new LogCheckException("Log File cannot be null");
+                    // File does not exist AND we have an invalid start position AND "Tail-From-End"
+
+                    // Rest the position to 0 on disk
+                    if( m_statsCollect )
+                    {
+                        LOGGER.debug("call() : Saving state. File does not exist and invalid position.");
+                        m_lastLCState = getStateReset(
+                                m_file,
+                                m_idBlockSize,
+                                m_hashType,
+                                m_setName,
+                                Instant.now());
+
+                        m_statistics.save(m_lastLCState, true, false);
+                        m_statistics.clearPendingSaveState();
+                    }
                 }
 
+                // Delay here in case re-open is attempted
+                if( m_delayMillis > 0 )
+                {
+                    LOGGER.debug(String.format("Sleeping for %dms", m_delayMillis));
+                    Thread.sleep(m_delayMillis);
+                    LOGGER.debug("Delay end.");
+                }
+            }
+
+            if( m_run && Files.exists(m_file) )
+            {
                 try
                 {
                     reader = FileChannel.open(m_file, StandardOpenOption.READ);
@@ -325,7 +360,7 @@ public final class FileTailer implements Callable<FileTailerResult>
                     if( m_end )
                     {
                         LOGGER.debug(
-                                String.format("Both '--tail-from-end' and a "
+                                String.format("Both 'tail-from-end' and a "
                                         + "starting byte position of %d where provided. Start Position has precedence",
                                         m_startPosition));
                     }
@@ -363,6 +398,8 @@ public final class FileTailer implements Callable<FileTailerResult>
                     {
                         // Tail from the end of the m_file
                         position = reader.size();
+
+                        LOGGER.debug(String.format("call() : m_end is true.  Position set to %d", position));
                     }
                 }
 
@@ -381,7 +418,11 @@ public final class FileTailer implements Callable<FileTailerResult>
                         lastState = m_lastLCState;
                     }
 
-                    if( lastState != null )
+                    if( lastState == null )
+                    {
+                        LOGGER.debug("call() : Validating state but no 'LAST_STATE' value.");
+                    }
+                    else
                     {
                         LCTailerResult valRes = validateStatistics(lastState);
                         if( valRes != LCTailerResult.SUCCESS )
@@ -529,6 +570,8 @@ public final class FileTailer implements Callable<FileTailerResult>
         boolean seenCR = false;
         int bytesRead;
 
+        LOGGER.debug(String.format("readLines() : reader position is at %d", reader.position()));
+
         // Debugging variables
         long readCount = 0;
         String previousLine = null;
@@ -571,6 +614,8 @@ public final class FileTailer implements Callable<FileTailerResult>
                 {
                     String ts = new String(lineBuf.toByteArray(), m_cset);
 
+                    LOGGER.debug(String.format("readLines() : doHandle : '%s'", ts));
+
                     if( LOGGER.isDebugEnabled() )
                     {
                         if( (m_debugFlags != null) && m_debugFlags.contains(LCDebugFlag.LOG_SOURCE_LC_APP) )
@@ -583,23 +628,21 @@ public final class FileTailer implements Callable<FileTailerResult>
                             if( debugMatcher.matches() )
                             {
                                 int seq = Integer.parseInt(debugMatcher.group(1));
-                                if( seq == (DEBUG_LOG_SEQUENCE + 1) )
+                                if( seq == (DEBUG_LCAPP_LOG_SEQUENCE + 1) )
                                 {
-                                    DEBUG_LOG_SEQUENCE++;
+                                    DEBUG_LCAPP_LOG_SEQUENCE++;
                                 }
-                                else if( DEBUG_LOG_SEQUENCE == 0 )
+                                else if( DEBUG_LCAPP_LOG_SEQUENCE == 0 )
                                 {
-                                    DEBUG_LOG_SEQUENCE = seq;
+                                    DEBUG_LCAPP_LOG_SEQUENCE = seq;
                                 }
                                 else
                                 {
-                                    LOGGER.debug(String.format("Expected %d in...'%s'", DEBUG_LOG_SEQUENCE + 1, ts));
+                                    LOGGER.debug(String.format("Expected %d in...'%s'", DEBUG_LCAPP_LOG_SEQUENCE + 1, ts));
                                 }
                             }
                         }
                     }
-
-                    LOGGER.debug(String.format("readLine() doHandle : '%s'", ts));
 
                     for( ILogEntryBuilder ib : m_builders )
                     {
@@ -693,6 +736,34 @@ public final class FileTailer implements Callable<FileTailerResult>
                 idBlockSize,
                 hashType,
                 LCFileBlockType.LASTBLOCK);
+
+        return res;
+    }
+
+    public static LogCheckState getStateReset( final Path file,
+                                          final int idBlockSize,
+                                          final LCHashType hashType,
+                                          final String setName,
+                                          final Instant lastProcessedTimeStart)
+    {
+        LogCheckState res = null;
+
+        LogFileState currLogFile = null;
+
+        currLogFile = LogFileState.from(file,
+                lastProcessedTimeStart,
+                Instant.now(),
+                0L,
+                null,
+                null,
+                null,
+                null);
+
+        res = LogCheckState.from(currLogFile,
+                Instant.now(),
+                UUID.randomUUID(),
+                setName,
+                null);
 
         return res;
     }

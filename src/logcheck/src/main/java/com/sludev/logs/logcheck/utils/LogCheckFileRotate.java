@@ -98,25 +98,31 @@ public final class LogCheckFileRotate
             }
         }
 
+        if( matchPattern == null )
+        {
+            LOGGER.debug("prevName() : Match Pattern is mandatory and cannot be null.");
+
+            return null;
+        }
+
         List<Path> children = new ArrayList<>(10);
         try
         {
             Stream<Path> pathStrm = Files.list(parentDir);
-            if( matchPattern != null )
+
+            pathStrm = pathStrm.filter( p ->
             {
-                pathStrm = pathStrm.filter( p ->
+                boolean filterRes = matchPattern.matcher(p.getFileName().toString()).matches();
+
+                if( (skipNames != null) && (skipNames.size() > 0) )
                 {
-                    boolean filterRes = matchPattern.matcher(p.getFileName().toString()).matches();
+                    filterRes = filterRes
+                            && (skipNames.contains(p.getFileName()) == false);
+                }
 
-                    if( (skipNames != null) && (skipNames.size() > 0) )
-                    {
-                        filterRes = filterRes
-                                && (skipNames.contains(p.getFileName()) == false);
-                    }
+                return filterRes;
+            } );
 
-                    return filterRes;
-                } );
-            }
             children.addAll(Arrays.asList(pathStrm.toArray(Path[]::new)));
         }
         catch( IOException ex )
