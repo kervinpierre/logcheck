@@ -72,7 +72,7 @@ public final class ContinueUtil
 
         List<Path> currFiles;
 
-        if( count == null || allFiles.size() <= count )
+        if( (count == null) || (allFiles.size() <= count) )
         {
             currFiles = allFiles;
         }
@@ -103,7 +103,7 @@ public final class ContinueUtil
         {
             res.addAll(log.getLogEntryDeDupes());
 
-            if( count != null && res.size() >= count )
+            if( (count != null) && (res.size() >= count) )
             {
                 res = res.subList(0, count);
                 break;

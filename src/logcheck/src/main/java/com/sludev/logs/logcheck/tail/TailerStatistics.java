@@ -189,26 +189,26 @@ public final class TailerStatistics
         m_savedStates.putFirst(currState);
     }
 
-    public synchronized static void save( final LogCheckState state,
-                                            final Path stateFile,
-                                            final Path errorFile,
-                                            final Boolean resetPosition,
-                                            final Boolean ignoreMissingLogFile ) throws LogCheckException
+    public static synchronized void save(final LogCheckState state,
+                                         final Path stateFile,
+                                         final Path errorFile,
+                                         final Boolean resetPosition,
+                                         final Boolean ignoreMissingLogFile ) throws LogCheckException
     {
         LOGGER.debug(String.format("Saving statistics to '%s'.", stateFile));
 
         Pair<Path,Path> files;
         LogFileState currLFS = state.getLogFile();
 
-        if( currLFS == null && BooleanUtils.isNotTrue(ignoreMissingLogFile) )
+        if( (currLFS == null) && BooleanUtils.isNotTrue(ignoreMissingLogFile) )
         {
             throw new LogCheckException("LogFile cannot be null.");
         }
 
         if( BooleanUtils.isNotTrue(resetPosition) )
         {
-            if( currLFS != null
-                    && currLFS.getLastProcessedPosition() < 1 )
+            if( (currLFS != null)
+                    && (currLFS.getLastProcessedPosition() < 1) )
             {
                 // Don't save a log file that hasn't processed data
                 LOGGER.debug(String.format("TailerStatistics::save() called but no data processed since LastProcessedPosition is %d",

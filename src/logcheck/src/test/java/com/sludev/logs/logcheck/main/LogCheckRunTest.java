@@ -145,6 +145,7 @@ public class LogCheckRunTest
         argsList.add("--dedupe-max-log-files=5");
         argsList.add("--read-reopen-log-file");
         argsList.add("--tailer-validate-log-file");
+        argsList.add("--debug-flags=LOG_SOURCE_LC_APP");
 
         args = FSSArgFile.getArgArray(argsList);
 
@@ -153,16 +154,16 @@ public class LogCheckRunTest
         LogCheckRun currRun = new LogCheckRun(config);
 
         String tempStr =
-                "2015-12-03T16:30:09.562Z :  [1015] Random Line : 446a7379-5283-4483-af7d-a2f3c239caaa\n" +
-                "2015-12-03T16:30:09.586Z :  [1016] Random Line : a1d5412c-ee36-4560-89e7-792c775a9c71\n" +
-                "2015-12-03T16:30:09.612Z :  [1017] Random Line : ce097710-feeb-4643-ad1c-af86e2ac3492\n" +
-                "2015-12-03T16:30:09.637Z :  [1018] Random Line : af835242-9d83-41f7-96c1-b7ac99c328d0\n" +
-                "2015-12-03T16:30:09.662Z :  [1019] Random Line : c52cbcc7-db8c-4766-9b78-ea53d6d08d61\n" +
-                "2015-12-03T16:30:09.687Z :  [1020] Random Line : 6d392b86-483a-41db-acbd-6b5d74d90b8e\n" +
-                "2015-12-03T16:30:09.711Z :  [1021] Random Line : 8d7ff1f7-9cbd-4f02-9b73-6ac56a36afee\n" +
-                "2015-12-03T16:30:09.736Z :  [1022] Random Line : e7c03d4a-3269-463f-ade8-b4f01b8629f3\n" +
-                "2015-12-03T16:30:09.762Z :  [1023] Random Line : 520bc16b-74b6-418c-a591-d2754ed70124\n" +
-                "2015-12-03T16:30:09.787Z :  [1024] Random Line : d2c025d6-8f54-4865-b788-239968f3c0d9\n";
+                "2015-12-03T16:30:09.562Z :  [1015][15] Random Line : 446a7379-5283-4483-af7d-a2f3c239caaa\n" +
+                "2015-12-03T16:30:09.586Z :  [1016][16] Random Line : a1d5412c-ee36-4560-89e7-792c775a9c71\n" +
+                "2015-12-03T16:30:09.612Z :  [1017][17] Random Line : ce097710-feeb-4643-ad1c-af86e2ac3492\n" +
+                "2015-12-03T16:30:09.637Z :  [1018][18] Random Line : af835242-9d83-41f7-96c1-b7ac99c328d0\n" +
+                "2015-12-03T16:30:09.662Z :  [1019][19] Random Line : c52cbcc7-db8c-4766-9b78-ea53d6d08d61\n" +
+                "2015-12-03T16:30:09.687Z :  [1020][20] Random Line : 6d392b86-483a-41db-acbd-6b5d74d90b8e\n" +
+                "2015-12-03T16:30:09.711Z :  [1021][21] Random Line : 8d7ff1f7-9cbd-4f02-9b73-6ac56a36afee\n" +
+                "2015-12-03T16:30:09.736Z :  [1022][22] Random Line : e7c03d4a-3269-463f-ade8-b4f01b8629f3\n" +
+                "2015-12-03T16:30:09.762Z :  [1023][23] Random Line : 520bc16b-74b6-418c-a591-d2754ed70124\n" +
+                "2015-12-03T16:30:09.787Z :  [1024][24] Random Line : d2c025d6-8f54-4865-b788-239968f3c0d9\n";
 
         ByteBuffer bb = ByteBuffer.wrap(tempStr.getBytes());
 

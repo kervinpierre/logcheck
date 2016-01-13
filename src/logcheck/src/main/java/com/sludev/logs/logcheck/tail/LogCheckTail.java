@@ -650,13 +650,6 @@ public final class LogCheckTail implements Callable<LogCheckResult>
                                 currLastBackupFileProcessed = m_logFile;
                             }
 
-//                            if( BooleanUtils.isTrue(m_mainThread) )
-//                            {
-//                                // use the first file that matches in case of the
-//                                // main or "top" thread.
-//                                currentName = null;
-//                            }
-
                             Deque<Path> backupLogFilesQueue = new ArrayDeque<>(10);
                             Path backupLogFile = null;
 
@@ -716,11 +709,11 @@ public final class LogCheckTail implements Callable<LogCheckResult>
                             // looping in reverse since our backups count up from oldest to newest
                             // TODO : Make reversing a switch
 
-                            if( (newestBackupFile != null)
-                                    && ((backupLogFilesQueue.size() < 1)
-                                        || newestBackupFile.equals(backupLogFilesQueue.peekLast())) )
+                            if( (backupLogFilesQueue.size() < 1)
+                                    || ((newestBackupFile != null)
+                                            && newestBackupFile.equals(backupLogFilesQueue.peekLast())) )
                             {
-                                // No new backup files found since last run.
+                                // No [new] backup files found [since last run].
                                 // Stop backup log processing loop
 
                                 LOGGER.debug("Backup processing loop completed.  No new backup files found.");
@@ -823,35 +816,6 @@ public final class LogCheckTail implements Callable<LogCheckResult>
 
                                         LOGGER.debug(String.format("Backup Completion Thread returned result %s for backup file [ %s ]",
                                                 currBackupFile, fileTailRes.getStatus()));
-
-/*                                if( BooleanUtils.isTrue(m_mainThread) )
-                                {
-                                    // TODO : Continue with m_logFile processing here
-                                    //        This would give us the recursive backup log processing
-                                    //        we'd like
-                                    mainTailer.set(FileTailer.from(m_logFile,
-                                            0L, // start position
-                                            Charset.defaultCharset(),
-                                            m_mainLogEntryBuilders,
-                                            0, // Convert to milliseconds
-                                            false, // start from end
-                                            false, // reopen
-                                            false, // ignore position error
-                                            false, // stats validate
-                                            false, // stats collect
-                                            true, // stop on EOF
-                                            m_bufferSize,
-                                            0, // Stats collect interval : disabled
-                                            stats.get(),
-                                            m_idBlockHash,
-                                            m_idBlockSize,
-                                            m_setName));
-
-                                    tailerExeRes = tailerExe.submit(mainTailer.get());
-
-                                    // Wait until Tailer thread has completed.
-                                    tailerRes = tailerExeRes.get();
-                                }*/
                                     }
                                     catch( ExecutionException ex )
                                     {
@@ -870,51 +834,12 @@ public final class LogCheckTail implements Callable<LogCheckResult>
 
                         // FIXME: New backup files created between here and next FileTailer instance will be lost/skipped
 
-                        // Reset the start position on disk
-/*                    if( currSaveState )
-                    {
-                        stats.get().saveLastPending(true, true, true);
-                    }*/
-
                         // TODO : At this point VALIDATION_FAILED should now be fixed.
 
                     }
 
                     LOGGER.debug("Validation fail fix branch completed.");
                 }
-                /*else
-                {
-                    try
-                    {
-                        // At this point we should make sure that the statistics have been saved.
-                        if(    // "reopen log" is set with no continue and the position is invalid
-                                stats.get() != null
-                                        && stats.get().getSavedStates().peekLast().getLogFile().getLastProcessedPosition() < 1
-                                        && currReOpen
-                                        && BooleanUtils.isNotTrue(m_continueState) )
-                        {
-                            // Reset the start position on disk
-                            if( currSaveState )
-                            {
-                                stats.get().saveLastPending(true, true, false);
-                            }
-                        }
-                        else
-                        {
-                            if( currSaveState )
-                            {
-                                stats.get().saveLastPending(false, true, false);
-                            }
-                        }
-                    }
-                    catch( LogCheckException ex )
-                    {
-                        // Happens if the file was rotated for instance
-                        LOGGER.debug("Error saving state after Tailer", ex);
-
-                        throw ex;
-                    }
-                }*/
 
                 if( LOGGER.isDebugEnabled() )
                 {
@@ -939,7 +864,6 @@ public final class LogCheckTail implements Callable<LogCheckResult>
             LOGGER.error("Tailer Loop Thread was interrupted", ex);
 
             throw ex;
-
         }
         catch( ExecutionException ex )
         {
