@@ -362,7 +362,7 @@ public final class LogCheckTail implements Callable<LogCheckResult>
     {
         LogCheckResult res = LogCheckResult.from(LCResultStatus.SUCCESS);
 
-        long currDelay = m_delay == null ? 0 : m_delay;
+        long currDelay = (m_delay == null) ? 0 : m_delay;
         boolean currTailFromEnd = BooleanUtils.isNotFalse(m_tailFromEnd);
 
         Long currPosition = m_startPosition;
@@ -524,10 +524,15 @@ public final class LogCheckTail implements Callable<LogCheckResult>
                                 m_readMaxDeDupeEntries);
 
                         // If we haven't been given a position, get one from disk
-                        if( (currPosition == null) || (currPosition < 0) )
+                        Long storedPosition = LogFileState.positionFromLogFile(currState.getLogFile());
+                        if( (currPosition == null) || (currPosition < 1) )
                         {
-                            currPosition
-                                    = LogFileState.positionFromLogFile(currState.getLogFile());
+                            currPosition = storedPosition;
+                        }
+                        else if( (storedPosition != null) && (storedPosition > 0) )
+                        {
+                            LOGGER.debug(String.format("Current Position of %d used instead of restored"
+                                                        + " position of %d", currPosition, storedPosition));
                         }
                     }
                 }
