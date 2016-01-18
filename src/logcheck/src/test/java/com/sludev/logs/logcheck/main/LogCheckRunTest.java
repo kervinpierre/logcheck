@@ -102,17 +102,20 @@ public class LogCheckRunTest
     }
 
     /**
-     * Generic call with some of the safer parameters.
+     * Simple call with some of the safer parameters.
+     *
+     * After a brief pause, and after the tailer starts, a thread inserts a
+     * constant number of rows of logs into the log file.  Very little synchronization
+     * is thus needed
      *
      * Runs then stops after 20s.  No "--continue"
      *
-     * @throws Exception
      */
     @Test
-    public void A001_testCallGeneric20s() throws IOException, LogCheckException, InterruptedException,
-            ExecutionException
+    public void A001_constantLogsAfterPauseAndRuntime20s()
+                        throws IOException, LogCheckException, InterruptedException, ExecutionException
     {
-        Path testDir = Paths.get("/tmp/A001_testCallGeneric20s");
+        Path testDir = Paths.get("/tmp/A001_constantLogsAfterPauseAndRuntime20s");
 
         if( Files.exists(testDir) )
         {
@@ -131,7 +134,13 @@ public class LogCheckRunTest
 
         Files.createDirectory(dedupeDir);
 
+        // Stop the test after 20 seconds
         argsList.add("--stop-after=20");
+
+        // Re-open the log file after pause.
+        // Use the default poll interval
+        argsList.add("--read-reopen-log-file");
+
         argsList.add(String.format("--log-file %s", logFile));
         argsList.add("--log-entry-builder-type=singleline ");
         argsList.add("--log-entry-store-type=console,simplefile");
@@ -143,7 +152,6 @@ public class LogCheckRunTest
         argsList.add("--dedupe-max-before-write=5");
         argsList.add("--dedupe-log-per-file 10");
         argsList.add("--dedupe-max-log-files=5");
-        argsList.add("--read-reopen-log-file");
         argsList.add("--tailer-validate-log-file");
         argsList.add("--debug-flags=LOG_SOURCE_LC_APP");
 
@@ -255,7 +263,7 @@ public class LogCheckRunTest
         Path dedupeDir = testDir.resolve("dedupe");
         Files.createDirectory(dedupeDir);
 
-        argsList.add("--stop-after=1M");
+        argsList.add("--stop-after=30S");
         argsList.add(String.format("--log-file %s", logFile));
         argsList.add("--log-entry-builder-type=singleline ");
         argsList.add("--log-entry-store-type=console,simplefile");
@@ -365,7 +373,6 @@ public class LogCheckRunTest
      * Similar to the A002 test.  Except we also rotate the logs to test how the tailer
      * handles log rotation detection.
      *
-     * The log generator thread is run to completion *before* the Tail Logger is started
      */
     @Test
     public void A003_testCallGenericWithLogRotateSequential() throws IOException, LogCheckException,
