@@ -69,27 +69,27 @@ public class LogCheckRun implements Callable<LogCheckResult>
     private static final Logger LOGGER
                              = LogManager.getLogger(LogCheckRun.class);
     
-    private final LogCheckConfig config;
-    private Path lockFile;
+    private final LogCheckConfig m_config;
+    private Path m_lockFile;
 
     public LogCheckRun(LogCheckConfig config)
     {
-        this.config = config;
+        this.m_config = config;
     }
 
     public Path getLockFile()
     {
-        return lockFile;
+        return m_lockFile;
     }
 
     public void setLockFile(Path l)
     {
-        lockFile = l;
+        m_lockFile = l;
     }
     
     public LogCheckConfig getConfig()
     {
-        return config;
+        return m_config;
     }
 
     @Override
@@ -102,8 +102,8 @@ public class LogCheckRun implements Callable<LogCheckResult>
 
         LogCheckResult res = LogCheckResult.from(LCResultStatus.SUCCESS);
         
-        if( (config.isShowVersion() != null)
-                && config.isShowVersion() )
+        if( (m_config.isShowVersion() != null)
+                && m_config.isShowVersion() )
         {
             LogCheckUtil.displayVersion();
             res = LogCheckResult.from(LCResultStatus.SUCCESS);
@@ -111,23 +111,23 @@ public class LogCheckRun implements Callable<LogCheckResult>
             return res;
         }
 
-        lockFile = config.getLockFilePath();
+        m_lockFile = m_config.getLockFilePath();
 
         // Setup the acquiring and release of the lock file
-        acquireLockFile(lockFile);
-        setupLockFileShutdownHook(lockFile);
+        acquireLockFile(m_lockFile);
+        setupLockFileShutdownHook(m_lockFile);
 
         final ILogEntrySource logEntrySource = LogEntryQueueSource.from(currQ);
         final ILogEntrySink logEntrySink = LogEntryQueueSink.from(currQ,
-                config.getLogDeduplicationDuration(),
-                config.getLogCutoffDate(),
-                config.getLogCutoffDuration(),
+                m_config.getLogDeduplicationDuration(),
+                m_config.getLogCutoffDate(),
+                m_config.getLogCutoffDuration(),
                 null);
 
         List<ILogEntryBuilder> currLogEntryBuilders = new ArrayList<>(10);
 
         // FIXME : Support multiple builders.  But for now we don't need it so all but the last will be ignored.
-        for( LCLogEntryBuilderType builder : config.getLogEntryBuilders() )
+        for( LCLogEntryBuilderType builder : m_config.getLogEntryBuilders() )
         {
             if( builder == null )
             {
@@ -167,7 +167,7 @@ public class LogCheckRun implements Callable<LogCheckResult>
 
                 default:
                     String errMsg = String.format("Error creating LogEntry builder '%s'",
-                            config.getLogEntryBuilders());
+                            m_config.getLogEntryBuilders());
 
                     LOGGER.debug(errMsg);
                     throw new LogCheckException(errMsg);
@@ -177,40 +177,40 @@ public class LogCheckRun implements Callable<LogCheckResult>
         // Create the main Tailer.
         // And pass into it the previously selected Log Entry Builder.
         LogCheckTail lct = LogCheckTail.from(currLogEntryBuilders,
-                config.getLogPath(),
-                config.getDeDupeDirPath(),
+                m_config.getLogPath(),
+                m_config.getDeDupeDirPath(),
                 null, // startPosition
-                config.getPollIntervalSeconds(),
-                config.willContinueState(),
-                config.isTailFromEnd(),
-                config.willReadReOpenLogFile(),
-                config.willSaveState(),
-                config.willIgnoreStartPositionError(),
-                config.willValidateTailerStats(),
-                config.willCollectState(),
-                config.willTailerBackupReadLog(),
-                config.willTailerBackupReadPriorLog(),
-                config.willStopOnEOF(),
-                config.isReadOnlyFileMode(),
+                m_config.getPollIntervalSeconds(),
+                m_config.willContinueState(),
+                m_config.isTailFromEnd(),
+                m_config.willReadReOpenLogFile(),
+                m_config.willSaveState(),
+                m_config.willIgnoreStartPositionError(),
+                m_config.willValidateTailerStats(),
+                m_config.willCollectState(),
+                m_config.willTailerBackupReadLog(),
+                m_config.willTailerBackupReadPriorLog(),
+                m_config.willStopOnEOF(),
+                m_config.isReadOnlyFileMode(),
                 true, // Is main thread?
                 null, // bufferSize
-                config.getReadLogFileCount(),
-                config.getReadMaxDeDupeEntries(),
-                config.getStopAfter(), // stopAfter
-                config.getIdBlockHashType(),
-                config.getIdBlockSize(),
-                config.getSetName(),
-                config.getStateFilePath(),
-                config.getErrorFilePath(),
-                config.getTailerLogBackupDir(),
-                config.getTailerBackupLogNameComps(),
-                config.getTailerBackupLogCompression(),
-                config.getTailerBackupLogNameRegex(),
-                config.getDebugFlags());
+                m_config.getReadLogFileCount(),
+                m_config.getReadMaxDeDupeEntries(),
+                m_config.getStopAfter(), // stopAfter
+                m_config.getIdBlockHashType(),
+                m_config.getIdBlockSize(),
+                m_config.getSetName(),
+                m_config.getStateFilePath(),
+                m_config.getErrorFilePath(),
+                m_config.getTailerLogBackupDir(),
+                m_config.getTailerBackupLogNameComps(),
+                m_config.getTailerBackupLogCompression(),
+                m_config.getTailerBackupLogNameRegex(),
+                m_config.getDebugFlags());
 
         List<ILogEntryStore> currStores = new ArrayList<>(10);
 
-        for( LCLogEntryStoreType store : config.getLogEntryStores() )
+        for( LCLogEntryStoreType store : m_config.getLogEntryStores() )
         {
             if( store == null )
             {
@@ -223,11 +223,11 @@ public class LogCheckRun implements Callable<LogCheckResult>
                     // Elastic Search
                     LogEntryElasticSearch lees = LogEntryElasticSearch.from();
 
-                    lees.setElasticsearchURL(config.getElasticsearchURL());
-                    lees.setElasticsearchIndexPrefix(config.getElasticsearchIndexPrefix());
-                    lees.setElasticsearchIndexNameFormat(config.getElasticsearchIndexNameFormat());
-                    lees.setElasticsearchIndexName(config.getElasticsearchIndexName());
-                    lees.setElasticsearchLogType(config.getElasticsearchLogType());
+                    lees.setElasticsearchURL(m_config.getElasticsearchURL());
+                    lees.setElasticsearchIndexPrefix(m_config.getElasticsearchIndexPrefix());
+                    lees.setElasticsearchIndexNameFormat(m_config.getElasticsearchIndexNameFormat());
+                    lees.setElasticsearchIndexName(m_config.getElasticsearchIndexName());
+                    lees.setElasticsearchLogType(m_config.getElasticsearchLogType());
 
                     currStores.add(lees);
                     break;
@@ -239,14 +239,14 @@ public class LogCheckRun implements Callable<LogCheckResult>
                     break;
 
                 case SIMPLEFILE:
-                    LogEntrySimpleFile lesf = LogEntrySimpleFile.from(config.getStoreLogPath(),
-                            config.willStoreReOpenLogFile());
+                    LogEntrySimpleFile lesf = LogEntrySimpleFile.from(m_config.getStoreLogPath(),
+                            m_config.willStoreReOpenLogFile());
 
                     currStores.add(lesf);
                     break;
 
                 default:
-                    LOGGER.debug(String.format("Unknown Log Entry %s", config.getLogEntryStores()));
+                    LOGGER.debug(String.format("Unknown Log Entry %s", m_config.getLogEntryStores()));
                     break;
             }
         }
@@ -263,12 +263,12 @@ public class LogCheckRun implements Callable<LogCheckResult>
 
         LogEntryStore storeWrapper = LogEntryStore.from(logEntrySource,
                 currStores,
-                config.getDeDupeDirPath(),
-                config.getSetName(),
+                m_config.getDeDupeDirPath(),
+                m_config.getSetName(),
                 currRunUUID,
-                config.getDeDupeMaxLogsBeforeWrite(),
-                config.getDeDupeMaxLogsPerFile(),
-                config.getDeDupeMaxLogFiles());
+                m_config.getDeDupeMaxLogsBeforeWrite(),
+                m_config.getDeDupeMaxLogsPerFile(),
+                m_config.getDeDupeMaxLogFiles());
 
         // Start the relevant threads
         BasicThreadFactory logCheckTailerFactory = new BasicThreadFactory.Builder()
@@ -333,8 +333,8 @@ public class LogCheckRun implements Callable<LogCheckResult>
                 Thread.sleep(2000);
             }
 
-            if( logStoreRes.getStatus() == LCResultStatus.INTERRUPTED
-                    || fileTailRes.getStatus() == LCResultStatus.INTERRUPTED )
+            if( (logStoreRes.getStatus() == LCResultStatus.INTERRUPTED)
+                    || (fileTailRes.getStatus() == LCResultStatus.INTERRUPTED) )
             {
                 // If either of the threads were interrupted, then mark as interrupted.
                 res = LogCheckResult.from(LCResultStatus.INTERRUPTED);
@@ -359,7 +359,7 @@ public class LogCheckRun implements Callable<LogCheckResult>
             logCheckTailerExe.shutdownNow();
             logStoreExe.shutdownNow();
 
-            if( currStores != null && currStores.size() > 1 )
+            if( (currStores != null) && (currStores.size() > 1) )
             {
                 for( ILogEntryStore store : currStores )
                 {
