@@ -524,16 +524,8 @@ public final class LogCheckTail implements Callable<LogCheckResult>
                                 m_readMaxDeDupeEntries);
 
                         // If we haven't been given a position, get one from disk
-                        Long storedPosition = LogFileState.positionFromLogFile(currState.getLogFile());
-                        if( (currPosition == null) || (currPosition < 1) )
-                        {
-                            currPosition = storedPosition;
-                        }
-                        else if( (storedPosition != null) && (storedPosition > 0) )
-                        {
-                            LOGGER.debug(String.format("Current Position of %d used instead of restored"
-                                                        + " position of %d", currPosition, storedPosition));
-                        }
+                        currPosition = LogFileState.positionFromLogFile(currState.getLogFile());
+                        LOGGER.debug(String.format("Restored position %d from disk", currPosition));
                     }
                 }
 

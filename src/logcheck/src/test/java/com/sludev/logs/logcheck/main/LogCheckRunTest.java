@@ -112,10 +112,10 @@ public class LogCheckRunTest
      *
      */
     @Test
-    public void A001_constantLogsAfterPauseAndRuntime20s()
+    public void A001_constantLogsAfterPauseAndRun20s()
                         throws IOException, LogCheckException, InterruptedException, ExecutionException
     {
-        Path testDir = Paths.get("/tmp/A001_constantLogsAfterPauseAndRuntime20s");
+        Path testDir = Paths.get("/tmp/A001_constantLogsAfterPauseAndRun20s");
 
         if( Files.exists(testDir) )
         {
@@ -211,19 +211,24 @@ public class LogCheckRunTest
     }
 
     /**
-     * Generic call with some of the safer parameters.
+     * Separate Logging and Tailing threads running concurrently.
      *
-     * Runs then stops after 60s.  Relies on the log sample application to generate the logs.
+     * No log rotation.  Relies on the log sample application to generate the logs.
+     *
+     * The Tailer runs then stops after 60s.
      *
      * After running some validation is done on the stored logs and also on the serialized state.
      *
-     * @throws Exception
      */
     @Test
-    public void A002_testCallGenericWithLogs60s() throws IOException, LogCheckException,
-            InterruptedException, ExecutionException, NoSuchAlgorithmException
+    public void A002_separateThreadsRun60s()
+                        throws IOException, LogCheckException, InterruptedException,
+                                ExecutionException, NoSuchAlgorithmException
     {
-        Path testDir = Paths.get("/tmp/A002_testCallGenericWithLogs60s");
+       // Path testDir = Paths.get("/tmp/",
+       //         Thread.currentThread().getStackTrace()[1].getMethodName());
+
+        Path testDir = Paths.get("/tmp/A002_separateThreadsRun60s");
 
         if( Files.exists(testDir) )
         {
@@ -332,7 +337,7 @@ public class LogCheckRunTest
         Assert.assertTrue(logSize==currPos);
 
         LogCheckTestFileUtils.checkAllLinesInFile(storeLogFile,
-                Pattern.compile("^.*?:\\s+\\[(\\d+)\\]\\s+.*$"));
+                Pattern.compile(".*?:\\s+\\[(\\d+)\\].*"));
 
         ByteBuffer currByteBuffer = ByteBuffer.allocate(1000);
         try( FileChannel logFC = FileChannel.open(logFile) )
@@ -375,10 +380,10 @@ public class LogCheckRunTest
      *
      */
     @Test
-    public void A003_testCallGenericWithLogRotateSequential() throws IOException, LogCheckException,
+    public void A003_logRotateThenTail() throws IOException, LogCheckException,
             InterruptedException, ExecutionException, NoSuchAlgorithmException
     {
-        Path testDir = Paths.get("/tmp/A003_testCallGenericWithLogRotateSequential");
+        Path testDir = Paths.get("/tmp/A003_logRotateThenTail");
 
         if( Files.exists(testDir) )
         {
@@ -548,16 +553,14 @@ public class LogCheckRunTest
     }
 
     /**
-     * Similar to the A002 test.  Except we also rotate the logs to test how the tailer
-     * handles log rotation detection.
+     * Similar to the A003 test.  Except the log rotation is now done in parallel.
      *
-     * The log generator and Log Tailer are run in parallel
      */
     @Test
-    public void A004_testCallGenericWithLogRotateParallel() throws IOException, LogCheckException,
+    public void A004_logRotateAndTailParallel() throws IOException, LogCheckException,
             InterruptedException, ExecutionException, NoSuchAlgorithmException
     {
-        Path testDir = Paths.get("/tmp/A004_testCallGenericWithLogRotateParallel");
+        Path testDir = Paths.get("/tmp/A004_logRotateAndTailParallel");
 
         if( Files.exists(testDir) )
         {
@@ -608,7 +611,12 @@ public class LogCheckRunTest
         Path dedupeDir = testDir.resolve("dedupe");
         Files.createDirectory(dedupeDir);
 
+        // Top tailing afer 1 minute
         argsList.add("--stop-after=1M");
+
+        // Read the backup file from the
+        argsList.add("--file-from-start");
+
         argsList.add(String.format("--log-file %s", logFile));
         argsList.add("--log-entry-builder-type=singleline ");
         argsList.add("--log-entry-store-type=console,simplefile");
@@ -616,13 +624,20 @@ public class LogCheckRunTest
         argsList.add("--save-state");
         argsList.add(String.format("--state-file %s", stateFile));
         argsList.add("--set-name=\"test app\"");
+
+        // Deduplication configuration
         argsList.add(String.format("--dedupe-dir-path %s", dedupeDir));
         argsList.add("--dedupe-max-before-write=5");
         argsList.add("--dedupe-log-per-file 10");
         argsList.add("--dedupe-max-log-files=5");
-        argsList.add("--file-from-start");
+
         argsList.add("--read-reopen-log-file");
+
+        // Aggressive poll interval to increase chances of
+        // Race-conditions
         argsList.add("--poll-interval=1");
+
+        // Tailer log configuration/parameters
         argsList.add("--tailer-validate-log-file");
         argsList.add("--tailer-read-backup-log");
         argsList.add("--tailer-backup-log-file-name-regex=(.*?)\\\\.(\\\\d+)\\\\.bak");
