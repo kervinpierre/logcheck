@@ -88,11 +88,11 @@ public interface ILogEntryStore
             {
                 // Setup the deduplication directory if we need it.
                 // Rotate the log file after a certain number of log stores.
-                if( deDupeDirPath != null
-                        && (logCount == 0
-                        || (deDupeMaxLogsPerFile != null
-                        && deDupeMaxLogsPerFile > 0
-                        && logCount % deDupeMaxLogsPerFile == 0)) )
+                if( (deDupeDirPath != null)
+                        && ((logCount == 0)
+                        || ((deDupeMaxLogsPerFile != null)
+                        && (deDupeMaxLogsPerFile > 0)
+                        && ((logCount % deDupeMaxLogsPerFile) == 0))) )
                 {
                     if( shouldWrite )
                     {
