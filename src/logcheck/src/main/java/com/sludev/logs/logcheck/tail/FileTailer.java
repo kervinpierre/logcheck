@@ -40,6 +40,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.time.Instant;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -424,12 +425,12 @@ public final class FileTailer implements Callable<FileTailerResult>
                     }
                     else
                     {
-                        LCTailerResult valRes = validateStatistics(lastState);
-                        if( valRes != LCTailerResult.SUCCESS )
+                        Set<LCTailerResult> valRes = validateStatistics(lastState);
+                        if( valRes.contains( LCTailerResult.SUCCESS ) == false )
                         {
                             // Statistics validation from disk failed.
                             res = FileTailerResult.from(res.getResultSet(), lastState);
-                            res.getResultSet().add(valRes);
+                            res.getResultSet().addAll(valRes);
                             stop();
                             break;
                         }
@@ -840,9 +841,9 @@ public final class FileTailer implements Callable<FileTailerResult>
         return res;
     }
 
-    public static LCTailerResult validateStatistics(LogCheckState state) throws LogCheckException
+    public static Set<LCTailerResult> validateStatistics(LogCheckState state) throws LogCheckException
     {
-        LCTailerResult res = LCTailerResult.SUCCESS;
+        Set<LCTailerResult> res = new HashSet<>(10);
 
         if( LOGGER.isDebugEnabled() )
         {
@@ -854,21 +855,17 @@ public final class FileTailer implements Callable<FileTailerResult>
         LogFileState currFState = state.getLogFile();
         if( currFState != null )
         {
-            boolean valRes = false;
-
             try
             {
-                valRes = LogFileState.isValidFileBlocks(currFState, null, true);
+                res.addAll( LogFileState.validateFileBlocks(currFState, null, true) );
             }
             catch( LogCheckException ex )
             {
-                LOGGER.debug("Error validating file block", ex);
+                LOGGER.warn("Error validating file block", ex);
             }
 
-            if( valRes == false )
+            if( res.contains( LCTailerResult.SUCCESS ) == false)
             {
-                res = LCTailerResult.VALIDATION_FAIL;
-
                 LOGGER.debug("Log Check File Block Validation failed.");
             }
         }

@@ -18,6 +18,7 @@
 package com.sludev.logs.logcheck.config.entities;
 
 import com.sludev.logs.logcheck.enums.LCFileBlockType;
+import com.sludev.logs.logcheck.enums.LCTailerResult;
 import com.sludev.logs.logcheck.exceptions.LogCheckException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -34,7 +35,9 @@ import java.time.Instant;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * The state of a single log file being processed.
@@ -320,11 +323,13 @@ public final class LogFileState
         return res;
     }
 
-    public static boolean isValidFileBlocks(final LogFileState state,
-                                            final Path alternateFilePath,
-                                            final boolean ignoreMissingBlocks,
-                                            final LCFileBlockType... types) throws LogCheckException
+    public static Set<LCTailerResult> validateFileBlocks(final LogFileState state,
+                                             final Path alternateFilePath,
+                                             final boolean ignoreMissingBlocks,
+                                             final LCFileBlockType... types) throws LogCheckException
     {
+        Set<LCTailerResult> res = new HashSet<>(10);
+
         Path currPath = alternateFilePath;
 
         if( state == null )
@@ -342,14 +347,11 @@ public final class LogFileState
 
         if( (currPath == null) || Files.notExists(currPath) )
         {
-            String errMsg = String.format("isValidFileBlocks() : Invalid path '%s'", currPath);
+            String errMsg = String.format("validateFileBlocks() : Invalid path '%s'", currPath);
 
             LOGGER.debug(errMsg);
             throw new LogCheckException(errMsg);
         }
-
-        boolean firstValid = false;
-        boolean lastValid = false;
 
         List<LCFileBlockType> typesList = new ArrayList<>(5);
         if( (types != null) && (types.length > 0) )
@@ -365,17 +367,26 @@ public final class LogFileState
                     || (ignoreMissingBlocks && LogFileBlock.isEmptyFileBlock(firstBlock)) )
             {
                 LOGGER.debug("Ignoring missing first block.");
-                firstValid = ignoreMissingBlocks;
+                if( ignoreMissingBlocks == false )
+                {
+                    res.add( LCTailerResult.VALIDATION_FAIL );
+                }
             }
             else
             {
-                firstValid = LogFileBlock.isValidFileBlock(state.getFile(), firstBlock);
+                Set<LCTailerResult> firstRes
+                        =  LogFileBlock.validateFileBlock(state.getFile(), firstBlock);
+
+                if( (firstRes != null) && firstRes.contains(LCTailerResult.SUCCESS) )
+                {
+                    res.add( LCTailerResult.SUCCESS );
+                }
             }
         }
         else
         {
             // Ignore since we weren't ask to check this block
-            firstValid = true;
+            res.add( LCTailerResult.SUCCESS );
         }
 
         if( typesList.isEmpty()
@@ -386,20 +397,29 @@ public final class LogFileState
                     || (ignoreMissingBlocks && LogFileBlock.isEmptyFileBlock(lastBlock)) )
             {
                 LOGGER.debug("Ignoring missing last block.");
-                lastValid = ignoreMissingBlocks;
+                if( ignoreMissingBlocks == false )
+                {
+                    res.add( LCTailerResult.VALIDATION_FAIL );
+                }
             }
             else
             {
-                lastValid = LogFileBlock.isValidFileBlock(state.getFile(), lastBlock);
+                Set<LCTailerResult> lastRes
+                        =  LogFileBlock.validateFileBlock(state.getFile(), lastBlock);
+
+                if( (lastRes != null) && lastRes.contains(LCTailerResult.SUCCESS) )
+                {
+                    res.add( LCTailerResult.SUCCESS );
+                }
             }
         }
         else
         {
             // Ignore since we weren't ask to check this block
-            lastValid = true;
+            res.add( LCTailerResult.SUCCESS );
         }
 
-        return firstValid && lastValid;
+        return res;
     }
 
     @Override

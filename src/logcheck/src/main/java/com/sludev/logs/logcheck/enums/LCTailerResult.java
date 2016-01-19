@@ -29,8 +29,35 @@ public enum LCTailerResult
     NONE,
     SUCCESS,
     FAIL,
+
+    /**
+     * Validation was possible, but not successful
+     */
     VALIDATION_FAIL,
+
+    /**
+     * There was an error encountered while validating
+     */
+    VALIDATION_ERROR,
+
+    /**
+     * The file was deleted while we processed it
+     */
+    FILE_DELETED,
+
+    /**
+     * The file was truncated while we processed it
+     */
+    FILE_TRUNCATED,
+
+    /**
+     * Request re-opening the file for further processing
+     */
     REOPEN,
+
+    /**
+     * The process was interrupted.  You may retry.
+     */
     INTERRUPTED;
 
     private static final Logger log = LogManager.getLogger(LCTailerResult.class);

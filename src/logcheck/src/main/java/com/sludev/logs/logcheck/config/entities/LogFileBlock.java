@@ -19,6 +19,7 @@ package com.sludev.logs.logcheck.config.entities;
 
 import com.sludev.logs.logcheck.enums.LCFileBlockType;
 import com.sludev.logs.logcheck.enums.LCHashType;
+import com.sludev.logs.logcheck.enums.LCTailerResult;
 import com.sludev.logs.logcheck.utils.LogCheckConstants;
 import com.sludev.logs.logcheck.exceptions.LogCheckException;
 import org.apache.commons.codec.DecoderException;
@@ -36,6 +37,8 @@ import java.nio.file.StandardOpenOption;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Represents a data block in a file on disk.
@@ -422,10 +425,10 @@ public final class LogFileBlock
         return true;
     }
 
-    public static boolean isValidFileBlock( final Path file,
-                                            final LogFileBlock block ) throws LogCheckException
+    public static Set<LCTailerResult> validateFileBlock(final Path file,
+                                                        final LogFileBlock block ) throws LogCheckException
     {
-        boolean res = false;
+        Set<LCTailerResult> res = new HashSet<>(10);
         Integer size = null;
         ByteBuffer bb = null;
         Long pos = null;
@@ -448,7 +451,9 @@ public final class LogFileBlock
             LOGGER.info(
                     String.format("Invalid Log File Block Size %d.", size));
 
-            return false;
+            res.add(LCTailerResult.VALIDATION_ERROR);
+
+            return res;
         }
 
         if( (pos == null) || (pos < 0) )
@@ -456,7 +461,9 @@ public final class LogFileBlock
             LOGGER.info(
                     String.format("Invalid Log File Position %d.", pos));
 
-            return false;
+            res.add(LCTailerResult.VALIDATION_ERROR);
+
+            return res;
         }
 
         bb = ByteBuffer.allocate(size);
@@ -517,9 +524,12 @@ public final class LogFileBlock
         byte[] currDigest = md.digest();
         byte[] blockDigest = block.getHashDigest();
 
-        res = Arrays.equals(currDigest, blockDigest);
+        if( Arrays.equals(currDigest, blockDigest) )
+        {
+            res.add(LCTailerResult.SUCCESS);
+        }
 
-        if( LOGGER.isDebugEnabled() && (res == false) )
+        if( LOGGER.isDebugEnabled() && ( res.contains(LCTailerResult.SUCCESS) == false ) )
         {
             LOGGER.debug(String.format(
                     "Log File Block is invalid.\nBlock\n======\n'%s'\n", block));
