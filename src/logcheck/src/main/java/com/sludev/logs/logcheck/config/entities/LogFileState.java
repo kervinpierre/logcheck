@@ -359,6 +359,9 @@ public final class LogFileState
             typesList = Arrays.asList(types);
         }
 
+        boolean ignoredFirst = false;
+        boolean ignoredLast = false;
+
         if( typesList.isEmpty()
                 || typesList.contains(LCFileBlockType.ALL)
                 || typesList.contains(LCFileBlockType.FIRSTBLOCK))
@@ -371,15 +374,17 @@ public final class LogFileState
                 {
                     res.add( LCTailerResult.VALIDATION_FAIL );
                 }
+
+                ignoredFirst = true;
             }
             else
             {
                 Set<LCTailerResult> firstRes
                         =  LogFileBlock.validateFileBlock(state.getFile(), firstBlock);
 
-                if( (firstRes != null) && firstRes.contains(LCTailerResult.SUCCESS) )
+                if( firstRes != null )
                 {
-                    res.add( LCTailerResult.SUCCESS );
+                    res.addAll(firstRes);
                 }
             }
         }
@@ -387,6 +392,7 @@ public final class LogFileState
         {
             // Ignore since we weren't ask to check this block
             res.add( LCTailerResult.SUCCESS );
+            ignoredFirst = false;
         }
 
         if( typesList.isEmpty()
@@ -401,15 +407,17 @@ public final class LogFileState
                 {
                     res.add( LCTailerResult.VALIDATION_FAIL );
                 }
+
+                ignoredLast = true;
             }
             else
             {
                 Set<LCTailerResult> lastRes
                         =  LogFileBlock.validateFileBlock(state.getFile(), lastBlock);
 
-                if( (lastRes != null) && lastRes.contains(LCTailerResult.SUCCESS) )
+                if( lastRes != null )
                 {
-                    res.add( LCTailerResult.SUCCESS );
+                    res.addAll(lastRes);
                 }
             }
         }
@@ -417,6 +425,15 @@ public final class LogFileState
         {
             // Ignore since we weren't ask to check this block
             res.add( LCTailerResult.SUCCESS );
+
+            ignoredLast = true;
+        }
+
+        if( LOGGER.isDebugEnabled()
+                && ignoredFirst && ignoredLast )
+        {
+            LOGGER.debug("validateFileBlocks() : Both the first "
+                    + "and last blocks were ignored.");
         }
 
         return res;

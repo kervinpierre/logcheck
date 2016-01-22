@@ -580,7 +580,10 @@ public final class LogCheckTail implements Callable<LogCheckResult>
                     }
                 }
 
-                if( currTailerResults.contains(LCTailerResult.VALIDATION_FAIL) )
+                if( currTailerResults.contains(LCTailerResult.VALIDATION_FAIL)
+                        // FIXME : Below is a bit presumptuous. VALIDATION_ERROR isn't synonymous with VALIDATION_FAIL
+                        //         but we treat it as such here.
+                        || currTailerResults.contains(LCTailerResult.VALIDATION_ERROR))
                 {
                     // Log rotation detected?
                     LOGGER.debug("Log validation failed. We may need to check the old log file here.");
@@ -842,12 +845,14 @@ public final class LogCheckTail implements Callable<LogCheckResult>
                 {
                     if( m_mainThread )
                     {
-                        LOGGER.debug(String.format("Main Thread : Tailer Loop : Pass Count %d completed.",
+                        LOGGER.debug(String.format(
+                                "Main Thread : Tailer Loop : PassCount %d completed.",
                                 passCount));
                     }
                     else
                     {
-                        LOGGER.debug(String.format("Sub-call : Tailer Loop : Pass Count %d completed.",
+                        LOGGER.debug(String.format(
+                                "Sub-call : Tailer Loop : PassCount %d completed.",
                                 passCount));
                     }
                 }

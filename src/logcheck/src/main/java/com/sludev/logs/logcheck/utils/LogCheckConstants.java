@@ -32,6 +32,8 @@ public class LogCheckConstants
     public static final long   DEFAULT_POLL_INTERVAL = 5;
     public static final String   DEFAULT_ELASTICSEARCH_URL = "http://127.0.0.1:9200";
 
+    public static final int DEFAULT_LCBLOCK_SAMPLE_SIZE = 80;
+
     public static final String DEFAULT_MULTILINE_ROW_START_PATTERN
             = "^[\\s]*([A-Z]+)[\\s]+\\[([\\p{Alnum}:,\\s-]+)\\][\\s]+([\\p{Alnum}\\.]+)[\\s]+([\\w\\.-]+)[\\s]*$";
 

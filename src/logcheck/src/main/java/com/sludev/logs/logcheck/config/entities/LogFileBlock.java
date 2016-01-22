@@ -58,6 +58,12 @@ public final class LogFileBlock
     private final LCHashType m_hashType;
     private final byte[] m_hashDigest;
     private final LCFileBlockType m_type;
+    private final String m_sample;
+
+    public String getSample()
+    {
+        return m_sample;
+    }
 
     public LCFileBlockType getType()
     {
@@ -94,7 +100,8 @@ public final class LogFileBlock
                          final Integer size,
                          final LCHashType hashType,
                          final byte[] hashDigest,
-                         final LCFileBlockType type)
+                         final LCFileBlockType type,
+                         final String sample)
     {
         this.m_name = name;
         this.m_startPosition = startPosition;
@@ -102,6 +109,7 @@ public final class LogFileBlock
         this.m_hashType = hashType;
         this.m_hashDigest = hashDigest;
         this.m_type = type;
+        this.m_sample = sample;
     }
 
     public static LogFileBlock from(final String name,
@@ -109,14 +117,16 @@ public final class LogFileBlock
                                     final Integer size,
                                     final LCHashType hashType,
                                     final byte[] hashDigest,
-                                    final LCFileBlockType type)
+                                    final LCFileBlockType type,
+                                    final String sample)
     {
         LogFileBlock res = new LogFileBlock(name,
                 startPosition,
                 size,
                 hashType,
                 hashDigest,
-                type);
+                type,
+                sample);
 
         return res;
     }
@@ -126,7 +136,8 @@ public final class LogFileBlock
                                     final String sizeStr,
                                     final String hashTypeStr,
                                     final String hashDigestStr,
-                                    final String typeStr) throws LogCheckException
+                                    final String typeStr,
+                                    final String sample) throws LogCheckException
     {
         Long startPosition = null;
         Integer size = null;
@@ -204,7 +215,8 @@ public final class LogFileBlock
                 size,
                 hashType,
                 hashDigest,
-                type);
+                type,
+                sample);
 
         return res;
     }
@@ -216,7 +228,8 @@ public final class LogFileBlock
                                     final Long startPosition,
                                     final LCHashType hashType,
                                     final byte[] block,
-                                    final LCFileBlockType type) throws LogCheckException
+                                    final LCFileBlockType type,
+                                    final String sample) throws LogCheckException
     {
         if( (block == null) || (block.length < 1) )
         {
@@ -288,7 +301,8 @@ public final class LogFileBlock
                 block.length,
                 hashType,
                 value,
-                type);
+                type,
+                sample);
 
         return res;
     }
@@ -376,16 +390,30 @@ public final class LogFileBlock
         byte[] actualBytes = new byte[buffer.remaining()];
         buffer.get(actualBytes);
 
+        String sample;
+
+        if( actualBytes.length > LogCheckConstants.DEFAULT_LCBLOCK_SAMPLE_SIZE )
+        {
+            sample = new String( Arrays.copyOfRange(actualBytes, 0,
+                            LogCheckConstants.DEFAULT_LCBLOCK_SAMPLE_SIZE) );
+        }
+        else
+        {
+            sample = new String(actualBytes);
+        }
+
         LogFileBlock res = LogFileBlock.from(name,
                 pos,
                 hashType,
                 actualBytes,
-                type);
+                type,
+                sample);
 
         return res;
     }
 
-    public static boolean isEmptyFileBlock( final LogFileBlock block ) throws LogCheckException
+    public static boolean isEmptyFileBlock( final LogFileBlock block )
+                                                    throws LogCheckException
     {
         if( block == null )
         {
@@ -500,9 +528,13 @@ public final class LogFileBlock
 
         if( size != bb.limit() )
         {
-            throw new LogCheckException(
+            LOGGER.warn(
                     String.format("Log File Block Size %d is not equal to bytes read %d.\n%s\n",
                             size, bb.limit(), block));
+
+            res.add(LCTailerResult.VALIDATION_ERROR);
+
+            return res;
         }
 
         String currHashType = LCHashType.toId(block.getHashType());

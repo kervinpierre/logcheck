@@ -80,7 +80,7 @@ public interface ILogEntryStore
             LOGGER.debug("Failed getting SHA-256 Hash", ex);
         }
 
-        Set<LogEntryDeDupe> currentProcessedEntries = new HashSet<>();
+        Set<LogEntryDeDupe> currentProcessedEntries = new HashSet<>(10);
         boolean shouldWrite = false;
         do
         {
@@ -115,7 +115,7 @@ public interface ILogEntryStore
 
             if( LOGGER.isDebugEnabled() )
             {
-                LOGGER.debug(String.format("process() : '%s'",
+                LOGGER.debug(String.format("doProcess : '%s'",
                                     LogEntryVO.toJSON(currEntryVO)));
             }
 
@@ -136,7 +136,7 @@ public interface ILogEntryStore
                     String errMsg = String.format("This Log Entry has already been added in this process() call '%s'",
                             Hex.encodeHexString(currLEDD.getLogHashCode()));
 
-                    LOGGER.debug(errMsg);
+                    LOGGER.info(errMsg);
 
                     // TODO : Define duplication rules E.g. skip or quit
 
