@@ -50,6 +50,7 @@ public final class LogFileBlockParser
         String hashTypeStr = null;
         String hashDigestStr = null;
         String typeStr = null;
+        String sampleStr = null;
 
         try
         {
@@ -102,7 +103,16 @@ public final class LogFileBlockParser
         }
         catch (XPathExpressionException ex)
         {
-            LOGGER.debug("configuration parsing error. <hashDigest />");
+            LOGGER.debug("configuration parsing error. <type />");
+        }
+
+        try
+        {
+            sampleStr = currXPath.compile("./sample").evaluate(currEl);
+        }
+        catch (XPathExpressionException ex)
+        {
+            LOGGER.debug("configuration parsing error. <sample />");
         }
 
         res = LogFileBlock.from(nameStr,
@@ -110,7 +120,8 @@ public final class LogFileBlockParser
                 sizeStr,
                 hashTypeStr,
                 hashDigestStr,
-                typeStr);
+                typeStr,
+                sampleStr);
 
         return res;
     }

@@ -40,6 +40,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.time.Instant;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -251,7 +252,7 @@ public final class FileTailer implements Callable<FileTailerResult>
     {
         if( LOGGER.isInfoEnabled() )
         {
-            LOGGER.info(String.format("Starting tailer.\n%s", toString()));
+            LOGGER.info(String.format("Starting tailer : TailerStart .\n%s", toString()));
         }
 
         FileTailerResult res = FileTailerResult.from(null, null);
@@ -436,6 +437,10 @@ public final class FileTailer implements Callable<FileTailerResult>
                         }
                     }
                 }
+
+                // FIXME : If the log file is rotated between validation above
+                //         and here it is possible to lose the tail logs in that
+                //         file.
 
                 // FIXME : ID the FIRST_BLOCK on the file here, before reading.
                 //         If this ID fails we don't bother with the log builders
@@ -843,7 +848,7 @@ public final class FileTailer implements Callable<FileTailerResult>
 
     public static Set<LCTailerResult> validateStatistics(LogCheckState state) throws LogCheckException
     {
-        Set<LCTailerResult> res = new HashSet<>(10);
+        Set<LCTailerResult> res = EnumSet.noneOf(LCTailerResult.class);
 
         if( LOGGER.isDebugEnabled() )
         {
@@ -862,6 +867,8 @@ public final class FileTailer implements Callable<FileTailerResult>
             catch( LogCheckException ex )
             {
                 LOGGER.warn("Error validating file block", ex);
+
+                res.add(LCTailerResult.VALIDATION_ERROR);
             }
 
             if( res.contains( LCTailerResult.SUCCESS ) == false)
