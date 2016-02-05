@@ -133,8 +133,9 @@ public interface ILogEntryStore
 
                 if( currentProcessedEntries.contains(currLEDD) )
                 {
-                    String errMsg = String.format("This Log Entry has already been added in this process() call '%s'",
-                            Hex.encodeHexString(currLEDD.getLogHashCode()));
+                    String errMsg = String.format("This Log Entry has already been added in this process() call '%s'\n%s\n",
+                            Hex.encodeHexString(currLEDD.getLogHashCode()),
+                            LogEntryVO.toJSON(currEntryVO));
 
                     LOGGER.info(errMsg);
 

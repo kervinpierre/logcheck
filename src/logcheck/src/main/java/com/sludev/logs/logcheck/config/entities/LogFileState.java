@@ -35,6 +35,7 @@ import java.time.Instant;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -328,7 +329,7 @@ public final class LogFileState
                                              final boolean ignoreMissingBlocks,
                                              final LCFileBlockType... types) throws LogCheckException
     {
-        Set<LCTailerResult> res = new HashSet<>(10);
+        Set<LCTailerResult> res = EnumSet.noneOf(LCTailerResult.class);
 
         Path currPath = alternateFilePath;
 
@@ -380,7 +381,7 @@ public final class LogFileState
             else
             {
                 Set<LCTailerResult> firstRes
-                        =  LogFileBlock.validateFileBlock(state.getFile(), firstBlock);
+                        =  LogFileBlock.validateFileBlock(currPath, firstBlock);
 
                 if( firstRes != null )
                 {
@@ -391,7 +392,11 @@ public final class LogFileState
         else
         {
             // Ignore since we weren't ask to check this block
-            res.add( LCTailerResult.SUCCESS );
+            if( res.isEmpty() )
+            {
+                res.add(LCTailerResult.SUCCESS);
+            }
+
             ignoredFirst = false;
         }
 
@@ -413,7 +418,7 @@ public final class LogFileState
             else
             {
                 Set<LCTailerResult> lastRes
-                        =  LogFileBlock.validateFileBlock(state.getFile(), lastBlock);
+                        =  LogFileBlock.validateFileBlock(currPath, lastBlock);
 
                 if( lastRes != null )
                 {
@@ -424,7 +429,10 @@ public final class LogFileState
         else
         {
             // Ignore since we weren't ask to check this block
-            res.add( LCTailerResult.SUCCESS );
+            if( res.isEmpty() )
+            {
+                res.add(LCTailerResult.SUCCESS);
+            }
 
             ignoredLast = true;
         }
@@ -434,6 +442,9 @@ public final class LogFileState
         {
             LOGGER.debug("validateFileBlocks() : Both the first "
                     + "and last blocks were ignored.");
+
+            // Risky.  But if both blocks are ignored, we have a success
+            res.add( LCTailerResult.SUCCESS );
         }
 
         return res;

@@ -62,7 +62,11 @@ public final class LogCheckFileRotate
 
             try
             {
-                dirList = Files.list(parentDir).map(i -> i.toString()).collect(Collectors.joining("\n"));
+                // BUG : This keeps directory handles open.  'Too many open files' Exception results.
+                try( Stream<Path> dirStream =  Files.list(parentDir) )
+                {
+                    dirList = dirStream.map(Path::toString).collect(Collectors.joining("\n"));
+                }
             }
             catch( IOException ex )
             {
@@ -299,7 +303,7 @@ public final class LogCheckFileRotate
 
         if( res == null )
         {
-            LOGGER.warn(String.format("prevName() returning null for current name '%s' and parent dir '%s'",
+            LOGGER.info(String.format("prevName() returning null for current name '%s' and parent dir '%s'",
                     currentName, parentDir));
         }
         else

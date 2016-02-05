@@ -27,6 +27,7 @@ import com.sludev.logs.logcheck.config.parsers.ParserUtil;
 import com.sludev.logs.logcheck.enums.LCFileFormat;
 import com.sludev.logs.logcheck.enums.LCResultStatus;
 import com.sludev.logs.logcheck.exceptions.LogCheckException;
+import com.sludev.logs.logcheck.tail.FileTailer;
 import com.sludev.logs.logcheck.utils.FSSArgFile;
 import com.sludev.logs.logcheck.utils.LogCheckResult;
 import com.sludev.logs.logcheck.utils.LogCheckTestFileUtils;
@@ -123,6 +124,8 @@ public class LogCheckRunTest
         }
 
         Files.createDirectory(testDir);
+
+        FileTailer.DEBUG_LCAPP_LOG_SEQUENCE = 0;
 
         String[] args;
         List<String> argsList = new ArrayList<>(20);
@@ -229,7 +232,6 @@ public class LogCheckRunTest
        //         Thread.currentThread().getStackTrace()[1].getMethodName());
 
         Path testDir = Paths.get("/tmp/A002_separateThreadsRun60s");
-
         if( Files.exists(testDir) )
         {
             FileUtils.deleteDirectory(testDir.toFile());
@@ -238,6 +240,8 @@ public class LogCheckRunTest
         Files.createDirectory(testDir);
 
         Path stateFile = testDir.resolve("current-state.xml");
+
+        FileTailer.DEBUG_LCAPP_LOG_SEQUENCE = 0;
 
         String[] args;
         List<String> argsList = new ArrayList<>(20);
@@ -284,6 +288,7 @@ public class LogCheckRunTest
         argsList.add("--read-reopen-log-file");
         argsList.add("--poll-interval=1");
         argsList.add("--tailer-validate-log-file");
+        argsList.add("--debug-flags=LOG_SOURCE_LC_APP");
        // argsList.add("--random-wait-max=1");
 
         args = FSSArgFile.getArgArray(argsList);
@@ -393,6 +398,8 @@ public class LogCheckRunTest
         Files.createDirectory(testDir);
 
         Path stateFile = testDir.resolve("current-state.xml");
+
+        FileTailer.DEBUG_LCAPP_LOG_SEQUENCE = 0;
 
         String[] args;
         List<String> argsList = new ArrayList<>(20);
@@ -571,6 +578,8 @@ public class LogCheckRunTest
 
         Path stateFile = testDir.resolve("current-state.xml");
 
+        FileTailer.DEBUG_LCAPP_LOG_SEQUENCE = 0;
+
         String[] args;
         List<String> argsList = new ArrayList<>(20);
 
@@ -624,6 +633,7 @@ public class LogCheckRunTest
         argsList.add("--save-state");
         argsList.add(String.format("--state-file %s", stateFile));
         argsList.add("--set-name=\"test app\"");
+        argsList.add("--debug-flags=LOG_SOURCE_LC_APP");
 
         // Deduplication configuration
         argsList.add(String.format("--dedupe-dir-path %s", dedupeDir));
@@ -632,6 +642,7 @@ public class LogCheckRunTest
         argsList.add("--dedupe-max-log-files=5");
 
         argsList.add("--read-reopen-log-file");
+        argsList.add("--tailer-read-prior-backup-log");
 
         // Aggressive poll interval to increase chances of
         // Race-conditions
@@ -682,7 +693,7 @@ public class LogCheckRunTest
         LOGGER.debug(String.format("\nLog File Count : %d\nStore File Count: %d\n",
                 logFileCount, storeFileCount));
 
-        Assert.assertTrue(logFileCount == 1024);
+        Assert.assertTrue(logFileCount == 24);
         Assert.assertTrue(storeFileCount == 1024);
 
         LogCheckState currState
@@ -696,7 +707,7 @@ public class LogCheckRunTest
         Assert.assertTrue(logSize==currPos);
 
         LogCheckTestFileUtils.checkAllLinesInFile(storeLogFile,
-                Pattern.compile("^.*?:\\s+\\[(\\d+)\\]\\s+.*$"));
+                Pattern.compile(".*?:\\s+\\[(\\d+)\\].*"));
 
         ByteBuffer currByteBuffer = ByteBuffer.allocate(1000);
         try( FileChannel logFC = FileChannel.open(logFile) )

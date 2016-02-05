@@ -28,47 +28,47 @@ import java.io.Serializable;
  */
 public final class LogEntryVO implements Serializable
 {
-    private final String level;
-    private final String logger;
-    private final String message;
-    private final String exception;
-    private final String timeStamp;
-    private final String type;
-    private final String host;
+    private final String m_level;
+    private final String m_logger;
+    private final String m_message;
+    private final String m_exception;
+    private final String m_timeStamp;
+    private final String m_type;
+    private final String m_host;
 
     public String getLevel()
     {
-        return level;
+        return m_level;
     }
 
     public String getLogger()
     {
-        return logger;
+        return m_logger;
     }
 
     public String getMessage()
     {
-        return message;
+        return m_message;
     }
 
     public String getException()
     {
-        return exception;
+        return m_exception;
     }
 
     public String getTimeStamp()
     {
-        return timeStamp;
+        return m_timeStamp;
     }
 
     public String getType()
     {
-        return type;
+        return m_type;
     }
 
     public String getHost()
     {
-        return host;
+        return m_host;
     }
 
     private LogEntryVO(final String level,
@@ -79,13 +79,13 @@ public final class LogEntryVO implements Serializable
                        final String type,
                        final String host)
     {
-        this.level = level;
-        this.logger = logger;
-        this.message = message;
-        this.exception = exception;
-        this.timeStamp = timeStamp;
-        this.type = type;
-        this.host = host;
+        this.m_level = level;
+        this.m_logger = logger;
+        this.m_message = message;
+        this.m_exception = exception;
+        this.m_timeStamp = timeStamp;
+        this.m_type = type;
+        this.m_host = host;
     }
 
     public static LogEntryVO from(final String level,
@@ -107,25 +107,25 @@ public final class LogEntryVO implements Serializable
         return res;
     }
 
-    public static String toJSON(LogEntryVO vo)
+    public static String toJSON(LogEntryVO entryVO)
     {
         String res;
-        StringBuilder js = new StringBuilder();
+        StringBuilder js = new StringBuilder(100);
 
         js.append("{");
-        js.append( String.format("\"@timestamp\":\"%s\",", vo.timeStamp) );
-        js.append( String.format("\"level\":\"%s\",",
-                StringEscapeUtils.escapeJson(vo.level)) );
-        js.append( String.format("\"type\":\"%s\",",
-                StringEscapeUtils.escapeJson(vo.type)) );
-        js.append( String.format("\"logger\":\"%s\",",
-                StringEscapeUtils.escapeJson(vo.logger)) );
-        js.append( String.format("\"host\":\"%s\",",
-                StringEscapeUtils.escapeJson(vo.host)) );
-        js.append( String.format("\"message\":\"%s\",",
-                StringEscapeUtils.escapeJson(vo.message)) );
-        js.append( String.format("\"exception\":\"%s\"",
-                StringEscapeUtils.escapeJson(vo.exception)) );
+        js.append( String.format("\"@timestamp\":\"%s\",", entryVO.m_timeStamp) );
+        js.append( String.format("\"m_level\":\"%s\",",
+                StringEscapeUtils.escapeJson(entryVO.m_level)) );
+        js.append( String.format("\"m_type\":\"%s\",",
+                StringEscapeUtils.escapeJson(entryVO.m_type)) );
+        js.append( String.format("\"m_logger\":\"%s\",",
+                StringEscapeUtils.escapeJson(entryVO.m_logger)) );
+        js.append( String.format("\"m_host\":\"%s\",",
+                StringEscapeUtils.escapeJson(entryVO.m_host)) );
+        js.append( String.format("\"m_message\":\"%s\",",
+                StringEscapeUtils.escapeJson(entryVO.m_message)) );
+        js.append( String.format("\"m_exception\":\"%s\"",
+                StringEscapeUtils.escapeJson(entryVO.m_exception)) );
         js.append("}");
 
         res = js.toString();

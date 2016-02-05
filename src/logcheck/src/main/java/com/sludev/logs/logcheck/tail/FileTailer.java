@@ -1,18 +1,19 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ *   SLU Dev Inc. CONFIDENTIAL
+ *   DO NOT COPY
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *  Copyright (c) [2012] - [2015] SLU Dev Inc. <info@sludev.com>
+ *  All Rights Reserved.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  NOTICE:  All information contained herein is, and remains
+ *   the property of SLU Dev Inc. and its suppliers,
+ *   if any.  The intellectual and technical concepts contained
+ *   herein are proprietary to SLU Dev Inc. and its suppliers and
+ *   may be covered by U.S. and Foreign Patents, patents in process,
+ *   and are protected by trade secret or copyright law.
+ *   Dissemination of this information or reproduction of this material
+ *   is strictly forbidden unless prior written permission is obtained
+ *   from SLU Dev Inc.
  */
 package com.sludev.logs.logcheck.tail;
 
@@ -22,6 +23,7 @@ import com.sludev.logs.logcheck.config.entities.LogFileState;
 import com.sludev.logs.logcheck.enums.LCDebugFlag;
 import com.sludev.logs.logcheck.enums.LCFileBlockType;
 import com.sludev.logs.logcheck.enums.LCHashType;
+import com.sludev.logs.logcheck.enums.LCResultStatus;
 import com.sludev.logs.logcheck.enums.LCTailerResult;
 import com.sludev.logs.logcheck.exceptions.LogCheckException;
 import com.sludev.logs.logcheck.log.ILogEntryBuilder;
@@ -41,14 +43,15 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.time.Instant;
 import java.util.EnumSet;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -90,6 +93,11 @@ public final class FileTailer implements Callable<FileTailerResult>
     private final boolean m_statsCollect;
 
     /**
+     * Reset the statistics on disk before starting tailing
+     */
+    private final boolean m_statsReset;
+
+    /**
      * The listener to notify of events when tailing.
      */
     private final List<ILogEntryBuilder> m_builders;
@@ -111,6 +119,12 @@ public final class FileTailer implements Callable<FileTailerResult>
     private final Integer m_idBlockSize;
     private final String m_setName;
 
+    /**
+     * Needed since Future will not differentiate between cancelled and
+     * terminated.
+     */
+    private final CountDownLatch m_completionLatch;
+
     // Mutable
 
     private final Set<LCDebugFlag> m_debugFlags;
@@ -126,10 +140,11 @@ public final class FileTailer implements Callable<FileTailerResult>
 
     private LogCheckState m_lastLCState;
 
+    private FileTailerResult m_finalResult;
     /**
      * Used to debug and track Logcheck Log App's log sequence.
      */
-    private static int DEBUG_LCAPP_LOG_SEQUENCE = 0;
+    public static int DEBUG_LCAPP_LOG_SEQUENCE = 0;
 
     /**
      * Creates a Tailer for the given m_file, with a specified buffer size.
@@ -153,6 +168,7 @@ public final class FileTailer implements Callable<FileTailerResult>
                        final boolean startPosIgnoreErr,
                        final boolean statsValidate,
                        final boolean statsCollect,
+                       final boolean statsReset,
                        final boolean stopOnEOF,
                        final int bufSize,
                        final int saveTimerSeconds,
@@ -160,7 +176,8 @@ public final class FileTailer implements Callable<FileTailerResult>
                        final LCHashType hashType,
                        final Integer idBlockSize,
                        final String setName,
-                       final Set<LCDebugFlag> debugFlags)
+                       final Set<LCDebugFlag> debugFlags,
+                       final CountDownLatch completionLatch)
     {
         this.m_file = file;
         this.m_delayMillis = delayMillis;
@@ -173,6 +190,7 @@ public final class FileTailer implements Callable<FileTailerResult>
         this.m_reOpen = reOpen;
         this.m_statsValidate = statsValidate;
         this.m_statsCollect = statsCollect;
+        this.m_statsReset = statsReset;
         this.m_cset = cset;
         this.m_statistics = stats;
 
@@ -190,6 +208,9 @@ public final class FileTailer implements Callable<FileTailerResult>
         this.m_debugFlags = debugFlags;
 
         this.m_saveTimerSeconds = saveTimerSeconds;
+        this.m_completionLatch = completionLatch;
+
+        this.m_finalResult = null;
     }
 
     public static FileTailer from(final Path file,
@@ -202,6 +223,7 @@ public final class FileTailer implements Callable<FileTailerResult>
                                   final boolean startPosIgnoreErr,
                                   final boolean statsValidate,
                                   final boolean statsCollect,
+                                  final boolean statsReset,
                                   final boolean stopOnEOF,
                                   final int bufSize,
                                   final int saveTimerSeconds,
@@ -209,7 +231,8 @@ public final class FileTailer implements Callable<FileTailerResult>
                                   final LCHashType hashType,
                                   final Integer idBlockSize,
                                   final String setName,
-                                  final Set<LCDebugFlag> debugFlags)
+                                  final Set<LCDebugFlag> debugFlags,
+                                  final CountDownLatch completionLatch)
     {
         FileTailer res = new FileTailer(file,
                 startPosition,
@@ -221,6 +244,7 @@ public final class FileTailer implements Callable<FileTailerResult>
                 startPosIgnoreErr,
                 statsValidate,
                 statsCollect,
+                statsReset,
                 stopOnEOF,
                 bufSize,
                 saveTimerSeconds,
@@ -228,7 +252,8 @@ public final class FileTailer implements Callable<FileTailerResult>
                 hashType,
                 idBlockSize,
                 setName,
-                debugFlags);
+                debugFlags,
+                completionLatch);
 
         return res;
     }
@@ -241,6 +266,18 @@ public final class FileTailer implements Callable<FileTailerResult>
     public Path getFile()
     {
         return m_file;
+    }
+
+    /**
+     * Allows us to pass the result object out as soon as it's ready. No need
+     * to wait for call() to complete and return that value.  Which can happen
+     * if the completion latch is signalled before return.
+     *
+     * @return
+     */
+    public synchronized FileTailerResult getFinalResult()
+    {
+        return m_finalResult;
     }
 
     /**
@@ -290,7 +327,7 @@ public final class FileTailer implements Callable<FileTailerResult>
                 throw new LogCheckException("Log File cannot be null");
             }
 
-            if( m_run && Files.notExists(m_file) )
+            if( (m_run && Files.notExists(m_file)) )
             {
                 LOGGER.info(String.format("File does not exist log file '%s'", m_file));
                 m_run = false;
@@ -325,6 +362,25 @@ public final class FileTailer implements Callable<FileTailerResult>
                 }
             }
 
+            Long currStartPos = m_startPosition;
+            if( m_run && m_statsReset )
+            {
+                // Reset the statistics on disk before beginning tailing.
+                // E.g. if the are invalid
+                LOGGER.debug("call() : Resetting the statistics  before start.");
+                m_lastLCState = getStateReset(
+                        m_file,
+                        m_idBlockSize,
+                        m_hashType,
+                        m_setName,
+                        Instant.now());
+
+                m_statistics.save(m_lastLCState, true, false);
+                m_statistics.clearPendingSaveState();
+
+                currStartPos = 0L;
+            }
+
             if( m_run && Files.exists(m_file) )
             {
                 try
@@ -357,28 +413,31 @@ public final class FileTailer implements Callable<FileTailerResult>
             // Set the current position in the log m_file
             if( m_run && (reader != null) )
             {
-                if( (m_startPosition != null) && (m_startPosition >= 0) )
+                if( (currStartPos != null) && (currStartPos >= 0) )
                 {
                     if( m_end )
                     {
                         LOGGER.debug(
                                 String.format("Both 'tail-from-end' and a "
                                         + "starting byte position of %d where provided. Start Position has precedence",
-                                        m_startPosition));
+                                        currStartPos));
                     }
 
-                    if( (m_startPosition > reader.size())
+                    if( (currStartPos > reader.size())
                             && (m_startPosIgnoreErr == false) )
                     {
                         String errMsg = String.format("File start position ( %d ) can not be further than the file's"
                                         + " last position ( %d ).  Was the file truncated since last run?",
-                                m_startPosition, reader.size());
+                                currStartPos, reader.size());
 
                         LOGGER.debug(errMsg);
 
                         if( m_statsValidate )
                         {
+                            // FIXME : Shouldn't we return the state?  So that backups can be processed?
+
                             stop();
+                            res = FileTailerResult.from(res.getResultSet(), m_lastLCState);
                             res.getResultSet().add(LCTailerResult.VALIDATION_FAIL);
                         }
                         else
@@ -391,7 +450,7 @@ public final class FileTailer implements Callable<FileTailerResult>
                     // Start where instructed
                     if( m_run )
                     {
-                        position = (m_startPosition > reader.size()) ? reader.size() : m_startPosition;
+                        position = (currStartPos > reader.size()) ? reader.size() : currStartPos;
                     }
                 }
                 else
@@ -411,7 +470,7 @@ public final class FileTailer implements Callable<FileTailerResult>
             // Now loop the log m_file
             while( m_run && (reader != null) )
             {
-                if( m_statsValidate )
+                if( m_statsValidate && (m_statsReset == false) )
                 {
                     LogCheckState lastState = m_statistics.getRestoredStates().peekFirst();
                     if( m_lastLCState != null )
@@ -426,6 +485,11 @@ public final class FileTailer implements Callable<FileTailerResult>
                     }
                     else
                     {
+                        ///////////////////////////////////////////////
+                        //
+                        // Final validate before reading the log file
+                        //
+                        ///////////////////////////////////////////////
                         Set<LCTailerResult> valRes = validateStatistics(lastState);
                         if( valRes.contains( LCTailerResult.SUCCESS ) == false )
                         {
@@ -445,6 +509,17 @@ public final class FileTailer implements Callable<FileTailerResult>
                 // FIXME : ID the FIRST_BLOCK on the file here, before reading.
                 //         If this ID fails we don't bother with the log builders
 
+                // Final check for a log rotate before reading the log file
+                // This is really the last time we can try for now.
+                if( Thread.interrupted() )
+                {
+                    m_run = false;
+
+                    LOGGER.debug("call() : Interrupt detected.  Exiting.");
+
+                    res.getResultSet().add(LCTailerResult.INTERRUPTED);
+                }
+
                 // ID the file then Read from the file on disk
                 readLines(reader);
 
@@ -457,7 +532,8 @@ public final class FileTailer implements Callable<FileTailerResult>
                 // Save the last state if it hasn't been for specific
                 // result codes.  Don't save the state if there was a
                 // validation error.
-                if( res.getResultSet().contains(LCTailerResult.VALIDATION_FAIL) )
+                if( res.getResultSet().contains(LCTailerResult.VALIDATION_FAIL)
+                        || res.getResultSet().contains(LCTailerResult.INTERRUPTED))
                 {
                     LOGGER.debug("Skipping state save because result includes VALIDATION_FAIL.");
                 }
@@ -465,6 +541,8 @@ public final class FileTailer implements Callable<FileTailerResult>
                 {
                     if( m_statsCollect )
                     {
+                        // FIXME : Last processed time incorrect or missing
+
                         LOGGER.debug( "call() : Saving state.");
                         m_lastLCState = getState(reader,
                                 m_file,
@@ -498,19 +576,76 @@ public final class FileTailer implements Callable<FileTailerResult>
                 // BUG : Delay has to be inside this loop for non-reopen tailing
                 if( m_delayMillis > 0 )
                 {
-                    LOGGER.debug(String.format("Sleeping/delay for %dms\n", m_delayMillis));
-                    Thread.sleep(m_delayMillis);
+                    LOGGER.debug(String.format("Sleeping/delay for %dms\n",
+                            m_delayMillis));
+
+                    // Delay without interrupts
+                    final FileTailer objInstance = this;
+                    final AtomicBoolean delayCompleted = new AtomicBoolean(false);
+                    Thread delayThread = new Thread( () ->
+                    {
+                        try
+                        {
+                            Thread.sleep(m_delayMillis);
+                        }
+                        catch( InterruptedException ex )
+                        {
+                            LOGGER.debug("Uninterruptable sleep interrupted!"
+                                    + "  This shouldn't have except during shutdown.");
+                        }
+                        finally
+                        {
+                            synchronized( objInstance )
+                            {
+                                objInstance.notifyAll();
+                            }
+
+                            delayCompleted.set(true);
+                        }
+                    });
+                    delayThread.setDaemon(true);
+                    delayThread.start();
+
+                    while( delayCompleted.get() == false )
+                    {
+                        try
+                        {
+                            synchronized( this )
+                            {
+                                wait();
+                            }
+                        }
+                        catch( InterruptedException ex )
+                        {
+                            // Ignore interrupts
+                            res.getResultSet().add(LCTailerResult.INTERRUPTED);
+                            LOGGER.debug("Delay ignored interrupt.");
+                        }
+                    }
+
                     LOGGER.debug("End delay/sleep");
                 }
             }
         }
         catch( final InterruptedException ex )
         {
-            Thread.currentThread().interrupt();
             res.getResultSet().add(LCTailerResult.INTERRUPTED);
         }
         finally
         {
+            if( res.getState() == null )
+            {
+                LOGGER.debug("call() : result without a Log State object.  Adding last state...");
+                res = FileTailerResult.from(res.getResultSet(), m_lastLCState);
+            }
+
+            m_finalResult = res;
+
+            if( m_completionLatch != null )
+            {
+                m_completionLatch.countDown();
+            }
+
             if( reader != null )
             {
                 IOUtils.closeQuietly(reader);
@@ -543,6 +678,7 @@ public final class FileTailer implements Callable<FileTailerResult>
         res.append(String.format("    Re-open wait    : '%b'\n", m_reOpen));
         res.append(String.format("    Stats Collect   : '%b'\n", m_statsCollect));
         res.append(String.format("    Stats Validate  : '%b'\n", m_statsValidate));
+        res.append(String.format("    Stats Reset     : '%b'\n", m_statsReset));
         res.append(String.format("    Stop on EOF     : '%b'\n", m_stopOnEOF));
         res.append(String.format("    Tail from End   : '%b'\n", m_end));
         res.append(String.format("    Buffer Size     : '%d'\n", m_bufferSize));
@@ -644,7 +780,10 @@ public final class FileTailer implements Callable<FileTailerResult>
                                 }
                                 else
                                 {
-                                    LOGGER.debug(String.format("Expected %d in...'%s'", DEBUG_LCAPP_LOG_SEQUENCE + 1, ts));
+                                    String msg = String.format("Expected %d in...'%s'", DEBUG_LCAPP_LOG_SEQUENCE + 1, ts);
+
+                                    LOGGER.error(msg);
+                                    throw new RuntimeException(msg);
                                 }
                             }
                         }
@@ -784,6 +923,8 @@ public final class FileTailer implements Callable<FileTailerResult>
     {
         LogCheckState res = null;
 
+        LOGGER.debug(String.format("getState() : Called on %s", file));
+
         LogFileState currLogFile = null;
 
         // Generate the Log File tailer statistics
@@ -873,7 +1014,7 @@ public final class FileTailer implements Callable<FileTailerResult>
 
             if( res.contains( LCTailerResult.SUCCESS ) == false)
             {
-                LOGGER.debug("Log Check File Block Validation failed.");
+                LOGGER.debug("Log Check File Block VALIDATION_FAIL or VALIDATION_ERROR.");
             }
         }
 

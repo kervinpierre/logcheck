@@ -5,6 +5,7 @@ import com.sludev.logs.logcheck.enums.LCFileBlockType;
 import com.sludev.logs.logcheck.enums.LCHashType;
 import com.sludev.logs.logcheck.exceptions.LogCheckException;
 import org.apache.commons.codec.binary.Hex;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.w3c.dom.Document;
@@ -23,6 +24,15 @@ public final class LogFileBlockWriter
         Element currElem = null;
 
         res = doc.createElement(elementName);
+
+        // name
+        String currStr = lfb.getName();
+        if( StringUtils.isNoneBlank(currStr) )
+        {
+            currElem = doc.createElement("name");
+            currElem.appendChild(doc.createTextNode(currStr));
+            res.appendChild(currElem);
+        }
 
         // start position
         Long currLong = lfb.getStartPosition();
@@ -75,6 +85,15 @@ public final class LogFileBlockWriter
         {
             currElem = doc.createElement("type");
             currElem.appendChild(doc.createTextNode(currBlockType.toString().toLowerCase()));
+            res.appendChild(currElem);
+        }
+
+        // Sample
+        currStr = lfb.getSample();
+        if( StringUtils.isNoneBlank(currStr) )
+        {
+            currElem = doc.createElement("sample");
+            currElem.appendChild(doc.createTextNode(currStr));
             res.appendChild(currElem);
         }
 

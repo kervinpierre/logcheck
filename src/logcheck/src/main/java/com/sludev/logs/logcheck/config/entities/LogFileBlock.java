@@ -37,6 +37,7 @@ import java.nio.file.StandardOpenOption;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -456,7 +457,7 @@ public final class LogFileBlock
     public static Set<LCTailerResult> validateFileBlock(final Path file,
                                                         final LogFileBlock block ) throws LogCheckException
     {
-        Set<LCTailerResult> res = new HashSet<>(10);
+        Set<LCTailerResult> res = EnumSet.noneOf(LCTailerResult.class);
         Integer size = null;
         ByteBuffer bb = null;
         Long pos = null;
@@ -529,8 +530,8 @@ public final class LogFileBlock
         if( size != bb.limit() )
         {
             LOGGER.warn(
-                    String.format("Log File Block Size %d is not equal to bytes read %d.\n%s\n",
-                            size, bb.limit(), block));
+                    String.format("Log File Block Size %d is not equal to bytes read %d.\n'%s'\n%s\n",
+                            size, bb.limit(), new String(bb.array()), block));
 
             res.add(LCTailerResult.VALIDATION_ERROR);
 
@@ -560,11 +561,16 @@ public final class LogFileBlock
         {
             res.add(LCTailerResult.SUCCESS);
         }
+        else
+        {
+            res.add(LCTailerResult.VALIDATION_FAIL);
+        }
 
         if( LOGGER.isDebugEnabled() && ( res.contains(LCTailerResult.SUCCESS) == false ) )
         {
             LOGGER.debug(String.format(
-                    "Log File Block is invalid.\nBlock\n======\n'%s'\n", block));
+                    "Log File Block is invalid.\n======\n[[%s]]\n======\n"
+                    + "Block\n======\n'%s'\n", new String(bb.array()), block));
         }
 
         return res;
@@ -573,10 +579,16 @@ public final class LogFileBlock
     @Override
     public String toString()
     {
-        String res = String.format("Name  : '%s'\nPos   : %d\nSize   : %d\nHash Type : %s\nHash '%s'\n",
-                m_name, m_startPosition, m_size, m_hashType,
-                (m_hashDigest == null) ? "null" : Hex.encodeHexString(m_hashDigest));
+        StringBuilder res = new StringBuilder(100);
 
-        return res;
+        res.append( String.format("\nName  : '%s'", m_name) );
+        res.append( String.format("\nPos   : %d", m_startPosition) );
+        res.append( String.format("\nSize   : %d", m_size) );
+        res.append( String.format("\nHash Type : %s", m_hashType) );
+        res.append( String.format("\nHash '%s'",
+                (m_hashDigest == null) ? "null" : Hex.encodeHexString(m_hashDigest)));
+        res.append(String.format("\nSample : [[%s]]\n", m_sample) );
+
+        return res.toString();
     }
 }

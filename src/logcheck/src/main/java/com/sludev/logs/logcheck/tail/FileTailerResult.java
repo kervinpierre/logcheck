@@ -69,4 +69,24 @@ public final class FileTailerResult
 
         return res;
     }
+
+    public String toString()
+    {
+        StringBuilder res = new StringBuilder(100);
+
+        String msg = "";
+        if( m_result != null )
+        {
+            for( LCTailerResult lcres : m_result )
+            {
+                msg += lcres.toString() + ", ";
+            }
+        }
+
+        res.append("\nFileTailerResult\n{\n");
+        res.append(String.format("  result : '%s'\n", msg));
+        res.append("}\n");
+
+        return res.toString();
+    }
 }
