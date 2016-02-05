@@ -188,11 +188,13 @@ public class LogCheckRun implements Callable<LogCheckResult>
                 m_config.willIgnoreStartPositionError(),
                 m_config.willValidateTailerStats(),
                 m_config.willCollectState(),
+                true, // watch backup directory
                 m_config.willTailerBackupReadLog(),
                 m_config.willTailerBackupReadPriorLog(),
                 m_config.willStopOnEOF(),
                 m_config.isReadOnlyFileMode(),
                 true, // Is main thread?
+                false, // Reset statistics?
                 null, // bufferSize
                 m_config.getReadLogFileCount(),
                 m_config.getReadMaxDeDupeEntries(),
