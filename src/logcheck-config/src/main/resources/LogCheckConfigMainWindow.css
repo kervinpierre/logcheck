@@ -1,0 +1,14 @@
+.main-tab-pane
+{
+    -fx-background-color: #FF0000;
+}
+
+.main-vert-box
+{
+    -fx-background-color: #0000FF;
+}
+
+.navigation-buttons-box
+{
+    -fx-background-color: #00FF00;
+}
