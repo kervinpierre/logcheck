@@ -3,6 +3,7 @@ package com.sludev.logs.logcheckConfig.main;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.scene.control.TitledPane;
+import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -23,6 +24,12 @@ public class LogCheckConfigMain extends Application
     }
 
     @Override
+    public void init() throws Exception
+    {
+        super.init();
+    }
+
+    @Override
     public void start(Stage primaryStage) throws Exception
     {
         FXMLLoader fxmlLoader = new FXMLLoader();
@@ -32,10 +39,18 @@ public class LogCheckConfigMain extends Application
 
         fxmlLoader.setLocation(loc);
 
-        final TitledPane titlePane = fxmlLoader.load();
-        Scene scene = new Scene(titlePane, 600, 400);
+        final Pane pane = fxmlLoader.load();
+        Scene scene = new Scene(pane, 600, 400);
         primaryStage.setTitle("Log Check Configuration Application");
         primaryStage.setScene(scene);
         primaryStage.show();
+    }
+
+    @Override
+    public void stop() throws Exception
+    {
+        super.stop();
+
+        LOGGER.debug("Application is stopping...");
     }
 }
