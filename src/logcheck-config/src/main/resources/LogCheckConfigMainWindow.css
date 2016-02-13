@@ -12,3 +12,18 @@
 {
     -fx-background-color: #00FF00;
 }
+
+.general-tab-config-text-field
+{
+    -fx-background-color: #00FFFF;
+}
+
+.general-tab-grid
+{
+    -fx-background-color: #FF00FF;
+}
+
+.general-tab-anchor
+{
+    -fx-background-color: #FFFF00;
+}
