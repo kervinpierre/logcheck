@@ -19,4 +19,5 @@ public final class LCCConstants
     public static final String LCC_CONFIG_FILE_HIST03      = "logcheck.config.load.hist03";
     public static final String LCC_CONFIG_FILE_HIST04      = "logcheck.config.load.hist04";
     public static final String LCC_CONFIG_FILE_HIST05      = "logcheck.config.load.hist05";
+    public static final int LCC_CONFIG_FILE_HIST_COUNT     = 5;
 }
