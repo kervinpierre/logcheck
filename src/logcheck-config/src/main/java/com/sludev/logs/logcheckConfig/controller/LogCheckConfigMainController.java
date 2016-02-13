@@ -4,10 +4,15 @@ import com.sludev.logs.logcheckConfig.entity.LCCAppState;
 import com.sludev.logs.logcheckConfig.main.LogCheckConfigMain;
 import com.sludev.logs.logcheckConfig.util.LCCConstants;
 import com.sludev.logs.logcheckConfig.util.LCCFileChooserHelper;
+import com.sludev.logs.logcheckConfig.util.LCCPreferenceHelper;
+import javafx.application.Platform;
+import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Button;
 import javafx.scene.control.Menu;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.control.TextField;
 import javafx.scene.control.Tooltip;
 import javafx.stage.Stage;
@@ -18,6 +23,7 @@ import org.apache.logging.log4j.Logger;
 import java.net.URL;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.ResourceBundle;
 
@@ -58,6 +64,12 @@ public final class LogCheckConfigMainController implements Initializable
     Menu fileLoadMenu;
 
     @FXML
+    MenuItem fileLoadMenuItem;
+
+    @FXML
+    MenuItem fileLoadClearHistMenuItem;
+
+    @FXML
     Button generalTabConfigFileBrowseButton;
 
     @Override
@@ -77,6 +89,8 @@ public final class LogCheckConfigMainController implements Initializable
         LCCAppState appState = app.getAppState();
         generalTabConfigFileTextField.setText(
                 appState.getPreferences().get(LCCConstants.LCC_CONFIG_FILE_HIST01, ""));
+
+        refreshLoadHistoryMenu();
     }
 
     @FXML
@@ -105,7 +119,7 @@ public final class LogCheckConfigMainController implements Initializable
     @FXML
     public void onFileLoadMenuShowingAction()
     {
-        ;
+
     }
 
     @FXML
@@ -127,8 +141,78 @@ public final class LogCheckConfigMainController implements Initializable
         {
             generalTabConfigFileTextField.setText(file.toString());
 
-            appState.getPreferences().put(LCCConstants.LCC_CONFIG_FILE_HIST01, file.toString());
+            LCCPreferenceHelper.addAndRotateLoadFileHistory(appState.getPreferences(), file.toString());
+
+           // Platform.runLater(this::refreshLoadHistoryMenu);
+            refreshLoadHistoryMenu();
         }
+    }
+
+    @FXML
+    public void onFileLoadClearHistMenuItemAction()
+    {
+        LCCAppState appState = app.getAppState();
+
+        LCCPreferenceHelper.clearLoadFileHistory(appState.getPreferences());
+        refreshLoadHistoryMenu();
+    }
+
+    public void refreshLoadHistoryMenu()
+    {
+        fileLoadMenu.setDisable(true);
+
+        LCCAppState appState = app.getAppState();
+        ObservableList<MenuItem> currItems = fileLoadMenu.getItems();
+
+        Iterator<MenuItem> tempIt = currItems.iterator();
+        while( tempIt.hasNext() )
+        {
+            MenuItem mi = tempIt.next();
+            if( mi != fileLoadMenuItem && mi != fileLoadClearHistMenuItem)
+            {
+                tempIt.remove();
+            }
+        }
+
+        currItems.add(new SeparatorMenuItem());
+
+        String currPrefValue = appState.getPreferences().get(LCCConstants.LCC_CONFIG_FILE_HIST01, null);
+        if( currPrefValue != null )
+        {
+            MenuItem tempItem = new MenuItem(currPrefValue);
+            currItems.add(tempItem);
+
+            currPrefValue = appState.getPreferences().get(LCCConstants.LCC_CONFIG_FILE_HIST02, null);
+            if( currPrefValue != null )
+            {
+                tempItem = new MenuItem(currPrefValue);
+                currItems.add(tempItem);
+
+                currPrefValue = appState.getPreferences().get(LCCConstants.LCC_CONFIG_FILE_HIST03, null);
+                if( currPrefValue != null )
+                {
+                    tempItem = new MenuItem(currPrefValue);
+                    currItems.add(tempItem);
+
+                    currPrefValue = appState.getPreferences().get(LCCConstants.LCC_CONFIG_FILE_HIST04, null);
+                    if( currPrefValue != null )
+                    {
+                        tempItem = new MenuItem(currPrefValue);
+                        currItems.add(tempItem);
+
+                        currPrefValue = appState.getPreferences().get(LCCConstants.LCC_CONFIG_FILE_HIST05, null);
+                        if( currPrefValue != null )
+                        {
+                            tempItem = new MenuItem(currPrefValue);
+                            currItems.add(tempItem);
+                        }
+                    }
+                }
+            }
+        }
+
+
+        fileLoadMenu.setDisable(false);
     }
 
     @FXML

@@ -26,9 +26,10 @@
                     <menus>
                         <Menu fx:id="mainTopFileMenu" text="File">
                             <items>
-                        <Menu fx:id="fileLoadMenu" mnemonicParsing="false" onShowing="#onFileLoadMenuShowingAction" text="Load Config File">
+                        <Menu fx:id="fileLoadMenu" mnemonicParsing="false" onShown="#onFileLoadMenuShowingAction" text="Load Config File">
                           <items>
                             <MenuItem fx:id="fileLoadMenuItem" mnemonicParsing="false" onAction="#onMainTopFileLoad" text="Load Config FIle..." />
+                              <MenuItem fx:id="fileLoadClearHistMenuItem" mnemonicParsing="false" onAction="#onFileLoadClearHistMenuItemAction" text="Clear History" />
                           </items>
                         </Menu>
                                 <MenuItem fx:id="fileQuitMenuItem" onAction="#onMainTopFileQuit" text="Quit" />
