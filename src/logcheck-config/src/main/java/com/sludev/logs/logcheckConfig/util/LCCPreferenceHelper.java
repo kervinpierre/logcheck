@@ -1,5 +1,8 @@
 package com.sludev.logs.logcheckConfig.util;
 
+import com.sludev.logs.logcheckConfig.controller.LogCheckConfigMainController;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.TextField;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -108,6 +111,95 @@ public final class LCCPreferenceHelper
                             if( StringUtils.isNoneBlank(currPrefValue) )
                             {
                                 pref.put(LCCConstants.LCC_CONFIG_FILE_HIST05, currPrefValue);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    public static void rebuildMenu(final LogCheckConfigMainController controller,
+                                   final Preferences pref,
+                                   final List<MenuItem> items,
+                                   final TextField textField)
+    {
+
+        String currPrefValue = pref.get(LCCConstants.LCC_CONFIG_FILE_HIST01, null);
+        if( currPrefValue != null )
+        {
+            MenuItem tempItem;
+
+            {
+                final String tempVal = currPrefValue;
+                tempItem = new MenuItem(currPrefValue);
+                tempItem.setOnAction( event ->
+                {
+                    textField.setText(tempVal);
+                    LCCPreferenceHelper.addAndRotateLoadFileHistory(pref, tempVal);
+                    controller.refreshLoadHistoryMenu();
+                });
+                items.add(tempItem);
+            }
+
+            currPrefValue = pref.get(LCCConstants.LCC_CONFIG_FILE_HIST02, null);
+            if( currPrefValue != null )
+            {
+                {
+                    final String tempVal = currPrefValue;
+                    tempItem = new MenuItem(currPrefValue);
+                    tempItem.setOnAction( event ->
+                    {
+                        textField.setText(tempVal);
+                        LCCPreferenceHelper.addAndRotateLoadFileHistory(pref, tempVal);
+                        controller.refreshLoadHistoryMenu();
+                    });
+                    items.add(tempItem);
+                }
+
+                currPrefValue = pref.get(LCCConstants.LCC_CONFIG_FILE_HIST03, null);
+                if( currPrefValue != null )
+                {
+                    {
+                        final String tempVal = currPrefValue;
+                        tempItem = new MenuItem(currPrefValue);
+                        tempItem.setOnAction( event ->
+                        {
+                            textField.setText(tempVal);
+                            LCCPreferenceHelper.addAndRotateLoadFileHistory(pref, tempVal);
+                            controller.refreshLoadHistoryMenu();
+                        });
+                        items.add(tempItem);
+                    }
+
+                    currPrefValue = pref.get(LCCConstants.LCC_CONFIG_FILE_HIST04, null);
+                    if( currPrefValue != null )
+                    {
+                        {
+                            final String tempVal = currPrefValue;
+                            tempItem = new MenuItem(currPrefValue);
+                            tempItem.setOnAction( event ->
+                            {
+                                textField.setText(tempVal);
+                                LCCPreferenceHelper.addAndRotateLoadFileHistory(pref, tempVal);
+                                controller.refreshLoadHistoryMenu();
+                            });
+                            items.add(tempItem);
+                        }
+
+                        currPrefValue = pref.get(LCCConstants.LCC_CONFIG_FILE_HIST05, null);
+                        if( currPrefValue != null )
+                        {
+                            {
+                                final String tempVal = currPrefValue;
+                                tempItem = new MenuItem(currPrefValue);
+                                tempItem.setOnAction( event ->
+                                {
+                                    textField.setText(tempVal);
+                                    LCCPreferenceHelper.addAndRotateLoadFileHistory(pref, tempVal);
+                                    controller.refreshLoadHistoryMenu();
+                                });
+                                items.add(tempItem);
                             }
                         }
                     }
