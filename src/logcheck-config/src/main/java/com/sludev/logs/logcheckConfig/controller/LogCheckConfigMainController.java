@@ -9,10 +9,15 @@ import javafx.application.Platform;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SeparatorMenuItem;
+import javafx.scene.control.SingleSelectionModel;
+import javafx.scene.control.Tab;
+import javafx.scene.control.TabPane;
 import javafx.scene.control.TextField;
 import javafx.scene.control.Tooltip;
 import javafx.stage.Stage;
@@ -25,8 +30,8 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
 import java.util.ResourceBundle;
-import java.util.prefs.Preferences;
 
 /**
  * Created by kervin on 2016-02-11.
@@ -73,6 +78,9 @@ public final class LogCheckConfigMainController implements Initializable
     @FXML
     Button generalTabConfigFileBrowseButton;
 
+    @FXML
+    TabPane mainTabPane;
+
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle)
     {
@@ -98,6 +106,27 @@ public final class LogCheckConfigMainController implements Initializable
     public void onButtonNextAction()
     {
         LOGGER.debug("Action for Button 'Next' pressed.");
+
+        SingleSelectionModel<Tab> currModel = mainTabPane.getSelectionModel();
+        Tab lastTab = mainTabPane.getTabs().get(mainTabPane.getTabs().size()-1);
+
+        if( currModel.getSelectedItem() != lastTab )
+        {
+            mainTabPane.getSelectionModel().selectNext();
+        }
+        else
+        {
+            // Last tab
+            // FIXME : Call the save method
+            Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Sure you'd like to save?",
+                    ButtonType.APPLY);
+
+            Optional<ButtonType> result = alert.showAndWait();
+            if( result.isPresent() &&  result.get() == ButtonType.APPLY )
+            {
+                LOGGER.debug("Save config");
+            }
+        }
     }
 
     @FXML
@@ -115,12 +144,6 @@ public final class LogCheckConfigMainController implements Initializable
         LOGGER.debug("Action for 'File > Quit'");
 
         onButtonCancelAction();
-    }
-
-    @FXML
-    public void onFileLoadMenuShowingAction()
-    {
-
     }
 
     @FXML

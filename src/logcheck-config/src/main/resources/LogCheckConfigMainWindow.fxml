@@ -26,7 +26,7 @@
                     <menus>
                         <Menu fx:id="mainTopFileMenu" text="File">
                             <items>
-                        <Menu fx:id="fileLoadMenu" mnemonicParsing="false" onShown="#onFileLoadMenuShowingAction" text="Load Config File">
+                        <Menu fx:id="fileLoadMenu" mnemonicParsing="false" text="Load Config File">
                           <items>
                             <MenuItem fx:id="fileLoadMenuItem" mnemonicParsing="false" onAction="#onMainTopFileLoad" text="Load Config FIle..." />
                               <MenuItem fx:id="fileLoadClearHistMenuItem" mnemonicParsing="false" onAction="#onFileLoadClearHistMenuItemAction" text="Clear History" />
@@ -38,7 +38,7 @@
                     </menus>
                 </MenuBar>
 
-                <TabPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="-Infinity" minWidth="-Infinity" prefHeight="200.0" prefWidth="600.0" styleClass="main-tab-pane" tabClosingPolicy="UNAVAILABLE" VBox.vgrow="ALWAYS">
+                <TabPane fx:id="mainTabPane" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="-Infinity" minWidth="-Infinity" prefHeight="200.0" prefWidth="600.0" styleClass="main-tab-pane" tabClosingPolicy="UNAVAILABLE" VBox.vgrow="ALWAYS">
                     <tabs>
                         <Tab fx:id="tabWelcome" text="Welcome">
                             <content>
