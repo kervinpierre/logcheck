@@ -35,11 +35,11 @@ public final class LCCBrowseHandler
                                       final MenuItem fileLoadMenuItem,
                                       final MenuItem fileLoadClearHistMenuItem)
     {
-        LOGGER.debug("Action for 'File > Load'");
-
         List<Pair<String, String>> exts = new ArrayList<>();
         exts.add(Pair.of(LCCConstants.LCC_DEFAULT_CONFIG_EXT_DESC,
                 LCCConstants.LCC_DEFAULT_CONFIG_EXT));
+        exts.add(Pair.of(LCCConstants.LCC_DEFAULT_ALLFILES_EXT_DESC,
+                LCCConstants.LCC_DEFAULT_ALLFILES_EXT));
 
         Path file = LCCFileChooserHelper.showBrowse(textField,
                 exts, "Choose the config file for loading", null);
@@ -52,6 +52,26 @@ public final class LCCBrowseHandler
             // Platform.runLater(this::refreshLoadHistoryMenu);
             refreshLoadHistoryMenu(app, fileLoadMenu,
                     fileLoadMenuItem, fileLoadClearHistMenuItem, textField);
+        }
+    }
+
+    public static void doLockFileBrowse(final LogCheckConfigMain app,
+                                      final ActionEvent event,
+                                      final TextField textField,
+                                      final String title)
+    {
+        List<Pair<String, String>> exts = new ArrayList<>();
+        exts.add(Pair.of(LCCConstants.LCC_DEFAULT_LOCK_EXT_DESC,
+                LCCConstants.LCC_DEFAULT_LOCK_EXT));
+        exts.add(Pair.of(LCCConstants.LCC_DEFAULT_ALLFILES_EXT_DESC,
+                LCCConstants.LCC_DEFAULT_ALLFILES_EXT));
+
+        Path file = LCCFileChooserHelper.showBrowse(textField,
+                exts, title, null);
+
+        if( file != null )
+        {
+            textField.setText(file.toString());
         }
     }
 
