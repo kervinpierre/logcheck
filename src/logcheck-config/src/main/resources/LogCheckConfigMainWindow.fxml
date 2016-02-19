@@ -456,7 +456,6 @@
                                                     <RowConstraints maxHeight="50.0" minHeight="50.0" prefHeight="50.0" vgrow="SOMETIMES" />
                                                     <RowConstraints maxHeight="50.0" minHeight="50.0" prefHeight="50.0" vgrow="SOMETIMES" />
                                                     <RowConstraints maxHeight="50.0" minHeight="50.0" prefHeight="50.0" vgrow="SOMETIMES" />
-                                                    <RowConstraints maxHeight="50.0" minHeight="50.0" prefHeight="50.0" vgrow="SOMETIMES" />
                                                     <RowConstraints maxHeight="301.0" minHeight="10.0" prefHeight="47.0" vgrow="SOMETIMES" />
                                                     <RowConstraints maxHeight="301.0" minHeight="10.0" prefHeight="47.0" vgrow="SOMETIMES" />
                                                 </rowConstraints>
@@ -484,53 +483,30 @@
                                                             </HBox>
                                                         </children>
                                                     </AnchorPane>
-                                                    <AnchorPane layoutX="191.0" layoutY="5.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" styleClass="general-tab-anchor" GridPane.columnIndex="1" GridPane.rowIndex="1">
-                                                        <children>
-                                                            <HBox alignment="CENTER_LEFT" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="100.0" prefWidth="200.0" styleClass="general-tab-config-text-field" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
-                                                                <children>
-                                                                    <TextField fx:id="rotateTabStateFileTextField" maxWidth="1.7976931348623157E308" onAction="#onRotateTabStateFileAction" prefHeight="26.0" prefWidth="274.0" HBox.hgrow="ALWAYS">
-                                                                        <HBox.margin>
-                                                                            <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
-                                                                        </HBox.margin>
-                                                                    </TextField>
-                                                                    <Button fx:id="rotateTabStateFileBrowseButton" mnemonicParsing="false" onAction="#onRotateTabStateFileBrowseAction" text="Browse...">
-                                                                        <HBox.margin>
-                                                                            <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
-                                                                        </HBox.margin>
-                                                                    </Button>
-                                                                </children>
-                                                            </HBox>
-                                                        </children>
-                                                    </AnchorPane>
-                                                    <Label text="State File" GridPane.rowIndex="1">
-                                                        <GridPane.margin>
-                                                            <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
-                                                        </GridPane.margin>
-                                                    </Label>
-                                                    <Label text="Validate Log File" GridPane.rowIndex="2">
+                                                    <Label text="Validate Log File" GridPane.rowIndex="1">
                                                         <GridPane.margin>
                                                             <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                                                         </GridPane.margin></Label>
-                                                    <CheckBox fx:id="rotateTabValidateLogCheckbox" mnemonicParsing="false" GridPane.columnIndex="1" GridPane.rowIndex="2" />
-                                                    <Label text="Read Backup Logs" GridPane.rowIndex="3">
+                                                    <CheckBox fx:id="rotateTabValidateLogCheckbox" mnemonicParsing="false" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                                                    <Label text="Read Backup Logs" GridPane.rowIndex="2">
                                                         <GridPane.margin>
                                                             <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                                                         </GridPane.margin></Label>
-                                                    <CheckBox fx:id="rotateTabReadBackupLogsCheckbox" mnemonicParsing="false" GridPane.columnIndex="1" GridPane.rowIndex="3" />
-                                                    <Label text="Read Prior Backup Logs" GridPane.rowIndex="4">
+                                                    <CheckBox fx:id="rotateTabReadBackupLogsCheckbox" mnemonicParsing="false" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+                                                    <Label text="Read Prior Backup Logs" GridPane.rowIndex="3">
                                                         <GridPane.margin>
                                                             <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                                                         </GridPane.margin></Label>
-                                                    <CheckBox fx:id="rotateTabReadPriorLogsCheckbox" mnemonicParsing="false" GridPane.columnIndex="1" GridPane.rowIndex="4" />
-                                                    <Label text="Log Filename Regex" GridPane.rowIndex="5">
+                                                    <CheckBox fx:id="rotateTabReadPriorLogsCheckbox" mnemonicParsing="false" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+                                                    <Label text="Log Filename Regex" GridPane.rowIndex="4">
                                                         <GridPane.margin>
                                                             <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                                                         </GridPane.margin></Label>
-                                                    <Label text="Log Filename Component" GridPane.rowIndex="6">
+                                                    <Label text="Log Filename Component" GridPane.rowIndex="5">
                                                         <GridPane.margin>
                                                             <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                                                         </GridPane.margin></Label>
-                                                    <AnchorPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" styleClass="general-tab-anchor" GridPane.columnIndex="1" GridPane.rowIndex="5">
+                                                    <AnchorPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" styleClass="general-tab-anchor" GridPane.columnIndex="1" GridPane.rowIndex="4">
                                                         <children>
                                                             <HBox alignment="CENTER_LEFT" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="100.0" prefWidth="200.0" styleClass="general-tab-config-text-field" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                                                                 <children>
@@ -548,7 +524,7 @@
                                                             </HBox>
                                                         </children>
                                                     </AnchorPane>
-                                                    <AnchorPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" styleClass="general-tab-anchor" GridPane.columnIndex="1" GridPane.rowIndex="6">
+                                                    <AnchorPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" styleClass="general-tab-anchor" GridPane.columnIndex="1" GridPane.rowIndex="5">
                                                         <children>
                                                             <HBox alignment="CENTER_LEFT" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="100.0" prefWidth="200.0" styleClass="general-tab-config-text-field" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                                                                 <children>
@@ -780,12 +756,12 @@
                                                                                 <children>
                                                                                     <HBox alignment="CENTER_LEFT" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="100.0" prefWidth="200.0" styleClass="general-tab-config-text-field" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                                                                                         <children>
-                                                                                            <TextField fx:id="logStoreOutputFIleTextField" maxWidth="1.7976931348623157E308" onAction="#onLogStoreOutputFIleAction" prefHeight="26.0" prefWidth="274.0" HBox.hgrow="ALWAYS">
+                                                                                            <TextField fx:id="logStoreOutputFileTextField" maxWidth="1.7976931348623157E308" onAction="#onLogStoreOutputFileAction" prefHeight="26.0" prefWidth="274.0" HBox.hgrow="ALWAYS">
                                                                                                 <HBox.margin>
                                                                                                     <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                                                                                                 </HBox.margin>
                                                                                             </TextField>
-                                                                                            <Button fx:id="LogStoreOutputFIleBrowseButton" mnemonicParsing="false" onAction="#onLogStoreOutputFIleBrowseAction" text="Browse...">
+                                                                                            <Button fx:id="LogStoreOutputFileBrowseButton" mnemonicParsing="false" onAction="#onLogStoreOutputFileBrowseAction" text="Browse...">
                                                                                                 <HBox.margin>
                                                                                                     <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                                                                                                 </HBox.margin>
@@ -951,7 +927,7 @@
                           <items>
                               <Menu fx:id="fileLoadMenu" mnemonicParsing="false" text="Load Config File">
                                   <items>
-                                      <MenuItem fx:id="fileLoadMenuItem" mnemonicParsing="false" onAction="#onMainTopFileLoad" text="Load Config FIle..." />
+                                      <MenuItem fx:id="fileLoadMenuItem" mnemonicParsing="false" onAction="#onMainTopFileLoad" text="Load Config File..." />
                                       <MenuItem fx:id="fileLoadClearHistMenuItem" mnemonicParsing="false" onAction="#onFileLoadClearHistMenuItemAction" text="Clear History" />
                                   </items>
                               </Menu>

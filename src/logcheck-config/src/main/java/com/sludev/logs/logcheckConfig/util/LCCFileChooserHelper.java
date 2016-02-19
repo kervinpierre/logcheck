@@ -2,6 +2,7 @@ package com.sludev.logs.logcheckConfig.util;
 
 import javafx.scene.control.TextField;
 import javafx.scene.text.Text;
+import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import org.apache.commons.lang3.StringUtils;
@@ -23,6 +24,52 @@ public final class LCCFileChooserHelper
 {
     private static final Logger LOGGER = LogManager.getLogger(LCCFileChooserHelper.class);
 
+    public static Path showDirChooser(final Stage stage,
+                                      final String title,
+                                      final Path initialPath)
+    {
+        Path res = null;
+        DirectoryChooser dirChooser = new DirectoryChooser();
+
+        File initDir = null;
+
+        if( initialPath != null )
+        {
+            if( Files.isDirectory(initialPath) )
+            {
+                initDir = initialPath.toFile();
+            }
+            else
+            {
+                if( initialPath.isAbsolute() )
+                {
+                    Path tempDir = initialPath.getParent();
+                    initDir = tempDir.toFile();
+                }
+            }
+        }
+
+        if( initDir != null )
+        {
+            dirChooser.setInitialDirectory(initDir);
+        }
+
+        if( StringUtils.isNoneBlank(title) )
+        {
+            dirChooser.setTitle(title);
+        }
+
+        File fileRes = dirChooser.showDialog(stage);
+
+        if( fileRes != null )
+        {
+            res = fileRes.toPath();
+        }
+
+        return res;
+
+    }
+
     public static Path showFileChooser( final Stage stage,
                                         final List<Pair<String,String>> extensions,
                                         final String title,
@@ -40,7 +87,7 @@ public final class LCCFileChooserHelper
         }
 
         File initDir = null;
-        String initFileName = LCCConstants.LCC_DEFAULT_CONFIG_FILENAME;
+        String initFileName = null;
 
         if( initialPath != null )
         {
@@ -59,6 +106,9 @@ public final class LCCFileChooserHelper
                 initFileName = initialPath.getFileName().toString();
             }
         }
+
+        fileChooser.setInitialDirectory(initDir);
+        fileChooser.setInitialFileName(initFileName);
 
         if( StringUtils.isNoneBlank(title) )
         {

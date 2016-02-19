@@ -11,6 +11,7 @@ import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.control.TextField;
+import javafx.stage.Stage;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -55,14 +56,29 @@ public final class LCCBrowseHandler
         }
     }
 
-    public static void doLockFileBrowse(final LogCheckConfigMain app,
+    public static void doGenericDirBrowse(final LogCheckConfigMain app,
+                                          final ActionEvent event,
+                                          final TextField textField,
+                                          final String title)
+    {
+        Path chosePath = LCCFileChooserHelper.showDirChooser((Stage) textField.getScene().getWindow(),
+                title, null);
+
+        if( chosePath != null )
+        {
+            textField.setText(chosePath.toString());
+        }
+    }
+
+    public static void doGenericFileBrowse(final LogCheckConfigMain app,
                                       final ActionEvent event,
                                       final TextField textField,
-                                      final String title)
+                                      final String title,
+                                           final String extensionDesc,
+                                           final String extension)
     {
         List<Pair<String, String>> exts = new ArrayList<>();
-        exts.add(Pair.of(LCCConstants.LCC_DEFAULT_LOCK_EXT_DESC,
-                LCCConstants.LCC_DEFAULT_LOCK_EXT));
+        exts.add(Pair.of(extensionDesc, extension));
         exts.add(Pair.of(LCCConstants.LCC_DEFAULT_ALLFILES_EXT_DESC,
                 LCCConstants.LCC_DEFAULT_ALLFILES_EXT));
 
