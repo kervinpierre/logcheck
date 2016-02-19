@@ -70,6 +70,41 @@ public final class LogCheckConfigMainController implements Initializable
             generalTabLockFileTextField.setTooltip(new Tooltip(newValue));
         });
 
+        generalTabArgFileTextField.textProperty().addListener((observable, oldValue, newValue) ->
+        {
+            generalTabArgFileTextField.setTooltip(new Tooltip(newValue));
+        });
+
+        logFileTargetFileTextField.textProperty().addListener((observable, oldValue, newValue) ->
+        {
+            logFileTargetFileTextField.setTooltip(new Tooltip(newValue));
+        });
+
+        tailerGeneralStateFileTextField.textProperty().addListener((observable, oldValue, newValue) ->
+        {
+            tailerGeneralStateFileTextField.setTooltip(new Tooltip(newValue));
+        });
+
+        tailerGeneralErrorFileTextField.textProperty().addListener((observable, oldValue, newValue) ->
+        {
+            tailerGeneralErrorFileTextField.setTooltip(new Tooltip(newValue));
+        });
+
+        rotateTabLogBackupDirTextField.textProperty().addListener((observable, oldValue, newValue) ->
+        {
+            rotateTabLogBackupDirTextField.setTooltip(new Tooltip(newValue));
+        });
+
+        dedupTabDirTextField.textProperty().addListener((observable, oldValue, newValue) ->
+        {
+            dedupTabDirTextField.setTooltip(new Tooltip(newValue));
+        });
+
+        logStoreOutputFileTextField.textProperty().addListener((observable, oldValue, newValue) ->
+        {
+            logStoreOutputFileTextField.setTooltip(new Tooltip(newValue));
+        });
+
         debugTabFlagsListView.getSelectionModel()
                 .setSelectionMode(SelectionMode.MULTIPLE);
     }
@@ -280,10 +315,10 @@ public final class LogCheckConfigMainController implements Initializable
     private ChoiceBox<?> logStoreTabLogStore03Choicebox;
 
     @FXML
-    private TextField logStoreOutputFIleTextField;
+    private TextField logStoreOutputFileTextField;
 
     @FXML
-    private Button LogStoreOutputFIleBrowseButton;
+    private Button LogStoreOutputFileBrowseButton;
 
     @FXML
     private TextField logStoreElastisSearchTextField;
@@ -331,9 +366,12 @@ public final class LogCheckConfigMainController implements Initializable
     }
 
     @FXML
-    void onDedupTabDirBrowseAction(ActionEvent event)
+    public void onDedupTabDirBrowseAction(ActionEvent event)
     {
+        LOGGER.debug("Action for 'Deduplicate Tab > DeDupe Backup Dir Browse...'");
 
+        LCCBrowseHandler.doGenericDirBrowse(app, event, dedupTabDirTextField,
+                "Please choose the name or full path of the Log Deduplication Directory");
     }
 
     @FXML
@@ -357,13 +395,18 @@ public final class LogCheckConfigMainController implements Initializable
     }
 
     @FXML
-    void onGeneralTabArgFileBrowseAction(ActionEvent event)
+    public void onGeneralTabArgFileBrowseAction(ActionEvent event)
     {
+        LOGGER.debug("Action for 'General Tab > Arg File Browse...'");
 
+        LCCBrowseHandler.doGenericFileBrowse(app, event, generalTabArgFileTextField,
+                "Please choose the name or full path of the optional argument File",
+                LCCConstants.LCC_DEFAULT_ARG_EXT_DESC,
+                LCCConstants.LCC_DEFAULT_ARG_EXT);
     }
 
     @FXML
-    void onGeneralTabArgFileTextFieldAction(ActionEvent event)
+    public void onGeneralTabArgFileTextFieldAction(ActionEvent event)
     {
 
     }
@@ -384,12 +427,14 @@ public final class LogCheckConfigMainController implements Initializable
     }
 
     @FXML
-    void onGeneralTabLockFileBrowseAction(ActionEvent event)
+    public void onGeneralTabLockFileBrowseAction(ActionEvent event)
     {
         LOGGER.debug("Action for 'General Tab > Lock File Browse...'");
 
-        LCCBrowseHandler.doLockFileBrowse(app, event, generalTabLockFileTextField,
-                "Please choose the name or full path of the Lock File");
+        LCCBrowseHandler.doGenericFileBrowse(app, event, generalTabLockFileTextField,
+                "Please choose the name or full path of the Lock File",
+                LCCConstants.LCC_DEFAULT_LOCK_EXT_DESC,
+                LCCConstants.LCC_DEFAULT_ALLFILES_EXT);
     }
 
     @FXML
@@ -447,9 +492,14 @@ public final class LogCheckConfigMainController implements Initializable
     }
 
     @FXML
-    void onLogFileTargetFileBrowseButtonAction(ActionEvent event)
+    public void onLogFileTargetFileBrowseButtonAction(ActionEvent event)
     {
+        LOGGER.debug("Action for 'Log File Tab > Target Log File Browse...'");
 
+        LCCBrowseHandler.doGenericFileBrowse(app, event, logFileTargetFileTextField,
+                "Please choose the name or full path of the Log File target",
+                LCCConstants.LCC_DEFAULT_LOG_EXT_DESC,
+                LCCConstants.LCC_DEFAULT_LOG_EXT);
     }
 
     @FXML
@@ -471,15 +521,20 @@ public final class LogCheckConfigMainController implements Initializable
     }
 
     @FXML
-    void onLogStoreOutputFIleAction(ActionEvent event)
+    void onLogStoreOutputFileAction(ActionEvent event)
     {
 
     }
 
     @FXML
-    void onLogStoreOutputFIleBrowseAction(ActionEvent event)
+    public void onLogStoreOutputFileBrowseAction(ActionEvent event)
     {
+        LOGGER.debug("Action for 'Log Store Tab > Output File Browse...'");
 
+        LCCBrowseHandler.doGenericFileBrowse(app, event, logStoreOutputFileTextField,
+                "Please choose the name or full path of the Log Store Output File",
+                LCCConstants.LCC_DEFAULT_LOG_EXT_DESC,
+                LCCConstants.LCC_DEFAULT_LOG_EXT);
     }
 
     @FXML
@@ -504,9 +559,12 @@ public final class LogCheckConfigMainController implements Initializable
     }
 
     @FXML
-    void onRotateTabLogBackupDirBrowseAction(ActionEvent event)
+    public void onRotateTabLogBackupDirBrowseAction(ActionEvent event)
     {
+        LOGGER.debug("Action for 'Tailer Rotate Tab > Backup Dir Browse...'");
 
+        LCCBrowseHandler.doGenericDirBrowse(app, event, rotateTabLogBackupDirTextField,
+                "Please choose the name or full path of the Log Backup Directory");
     }
 
     @FXML
@@ -534,27 +592,20 @@ public final class LogCheckConfigMainController implements Initializable
     }
 
     @FXML
-    void onRotateTabStateFileAction(ActionEvent event)
-    {
-
-    }
-
-    @FXML
-    void onRotateTabStateFileBrowseAction(ActionEvent event)
-    {
-
-    }
-
-    @FXML
     void onTailerGeneralErrorFileAction(ActionEvent event)
     {
 
     }
 
     @FXML
-    void onTailerGeneralErrorFileBrowseAction(ActionEvent event)
+    public void onTailerGeneralErrorFileBrowseAction(ActionEvent event)
     {
+        LOGGER.debug("Action for 'Tailer General Tab > Error File Browse...'");
 
+        LCCBrowseHandler.doGenericFileBrowse(app, event, tailerGeneralErrorFileTextField,
+                "Please choose the name or full path of the Log Check Error File",
+                LCCConstants.LCC_DEFAULT_ERROR_EXT_DESC,
+                LCCConstants.LCC_DEFAULT_ERROR_EXT);
     }
 
     @FXML
@@ -564,8 +615,13 @@ public final class LogCheckConfigMainController implements Initializable
     }
 
     @FXML
-    void onTailerGeneralStateFileBrowseAction(ActionEvent event)
+    public void onTailerGeneralStateFileBrowseAction(ActionEvent event)
     {
+        LOGGER.debug("Action for 'Tailer General Tab > State File Browse...'");
 
+        LCCBrowseHandler.doGenericFileBrowse(app, event, tailerGeneralStateFileTextField,
+                "Please choose the name or full path of the Log Check Save State File",
+                LCCConstants.LCC_DEFAULT_STATE_EXT_DESC,
+                LCCConstants.LCC_DEFAULT_STATE_EXT);
     }
 }
