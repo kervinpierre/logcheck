@@ -65,6 +65,11 @@ public final class LogCheckConfigMainController implements Initializable
             generalTabConfigFileTextField.setTooltip(new Tooltip(newValue));
         });
 
+        generalTabLockFileTextField.textProperty().addListener((observable, oldValue, newValue) ->
+        {
+            generalTabLockFileTextField.setTooltip(new Tooltip(newValue));
+        });
+
         debugTabFlagsListView.getSelectionModel()
                 .setSelectionMode(SelectionMode.MULTIPLE);
     }
@@ -372,7 +377,7 @@ public final class LogCheckConfigMainController implements Initializable
     @FXML
     public void onGeneralTabConfigFileBrowseAction(ActionEvent event)
     {
-        LOGGER.debug("Action for 'General Tab > Browse...'");
+        LOGGER.debug("Action for 'General Tab > Config Browse...'");
 
         LCCBrowseHandler.doConfigBrowse(app, event, generalTabConfigFileTextField,
                 fileLoadMenu, fileLoadMenuItem, fileLoadClearHistMenuItem);
@@ -381,7 +386,10 @@ public final class LogCheckConfigMainController implements Initializable
     @FXML
     void onGeneralTabLockFileBrowseAction(ActionEvent event)
     {
+        LOGGER.debug("Action for 'General Tab > Lock File Browse...'");
 
+        LCCBrowseHandler.doLockFileBrowse(app, event, generalTabLockFileTextField,
+                "Please choose the name or full path of the Lock File");
     }
 
     @FXML

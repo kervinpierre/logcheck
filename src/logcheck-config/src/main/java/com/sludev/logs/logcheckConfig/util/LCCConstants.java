@@ -10,9 +10,16 @@ public final class LCCConstants
 {
     private static final Logger LOGGER = LogManager.getLogger(LCCConstants.class);
 
+    public static final String LCC_DEFAULT_ALLFILES_EXT      = "*";
+    public static final String LCC_DEFAULT_ALLFILES_EXT_DESC = "All Files";
+
     public static final String LCC_DEFAULT_CONFIG_FILENAME = "logcheck.config.xml";
     public static final String LCC_DEFAULT_CONFIG_EXT      = "*.config.xml";
     public static final String LCC_DEFAULT_CONFIG_EXT_DESC = "LogCheck Config File (*.config.xml)";
+
+    public static final String LCC_DEFAULT_LOCK_FILENAME = "logcheck.lock.xml";
+    public static final String LCC_DEFAULT_LOCK_EXT      = "*.lock.xml";
+    public static final String LCC_DEFAULT_LOCK_EXT_DESC = "LogCheck Lock File (*.lock.xml)";
 
     public static final String LCC_CONFIG_FILE_HIST01      = "logcheck.config.load.hist01";
     public static final String LCC_CONFIG_FILE_HIST02      = "logcheck.config.load.hist02";
