@@ -1,18 +1,14 @@
 package com.sludev.logs.logcheckConfig.controller;
 
 import com.sludev.logs.logcheckConfig.entity.LCCAppState;
+import com.sludev.logs.logcheckConfig.handler.LCCBrowseHandler;
+import com.sludev.logs.logcheckConfig.handler.LCCTabHandler;
 import com.sludev.logs.logcheckConfig.main.LogCheckConfigMain;
 import com.sludev.logs.logcheckConfig.util.LCCConstants;
-import com.sludev.logs.logcheckConfig.util.LCCFileChooserHelper;
-import com.sludev.logs.logcheckConfig.util.LCCPreferenceHelper;
-import javafx.application.Platform;
-import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
-import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
-import javafx.scene.control.ButtonType;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.DatePicker;
@@ -21,28 +17,18 @@ import javafx.scene.control.ListView;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
-import javafx.scene.control.SeparatorMenuItem;
-import javafx.scene.control.SingleSelectionModel;
+import javafx.scene.control.SelectionMode;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.control.TextField;
 import javafx.scene.control.Tooltip;
 import javafx.scene.layout.AnchorPane;
-import javafx.stage.Stage;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.Pair;
+import javafx.scene.layout.BorderPane;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Optional;
 import java.util.ResourceBundle;
 
 /**
@@ -67,6 +53,30 @@ public final class LogCheckConfigMainController implements Initializable
     public LogCheckConfigMainController()
     {
         app = null;
+    }
+
+    @Override
+    public void initialize(URL url, ResourceBundle resourceBundle)
+    {
+        LOGGER.debug("initialize() called.");
+
+        generalTabConfigFileTextField.textProperty().addListener((observable, oldValue, newValue) ->
+        {
+            generalTabConfigFileTextField.setTooltip(new Tooltip(newValue));
+        });
+
+        debugTabFlagsListView.getSelectionModel()
+                .setSelectionMode(SelectionMode.MULTIPLE);
+    }
+
+    public void internalInit()
+    {
+        LCCAppState appState = app.getAppState();
+        generalTabConfigFileTextField.setText(
+                appState.getPreferences().get(LCCConstants.LCC_CONFIG_FILE_HIST01, ""));
+
+        LCCBrowseHandler.refreshLoadHistoryMenu(app, fileLoadMenu,
+                fileLoadMenuItem, fileLoadClearHistMenuItem, generalTabConfigFileTextField);
     }
 
     @FXML
@@ -295,40 +305,18 @@ public final class LogCheckConfigMainController implements Initializable
     private Button buttonCancel;
 
     @FXML
+    private BorderPane mainBorderPane;
+
+    @FXML
     public void onButtonCancelAction(ActionEvent event)
     {
-        LOGGER.debug("Action for Button 'Cancel' pressed.");
-
-        Stage stage = (Stage) buttonCancel.getScene().getWindow();
-        stage.close();
+        LCCTabHandler.doButtonCancel(app, event, buttonCancel);
     }
-
 
     @FXML
     public void onButtonNextAction(ActionEvent event)
     {
-        LOGGER.debug("Action for Button 'Next' pressed.");
-
-        SingleSelectionModel<Tab> currModel = mainTabPane.getSelectionModel();
-        Tab lastTab = mainTabPane.getTabs().get(mainTabPane.getTabs().size() - 1);
-
-        if( currModel.getSelectedItem() != lastTab )
-        {
-            mainTabPane.getSelectionModel().selectNext();
-        }
-        else
-        {
-            // Last tab
-            // FIXME : Call the save method
-            Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Sure you'd like to save?",
-                    ButtonType.APPLY);
-
-            Optional<ButtonType> result = alert.showAndWait();
-            if( result.isPresent() && result.get() == ButtonType.APPLY )
-            {
-                LOGGER.debug("Save config");
-            }
-        }
+        LCCTabHandler.doButtonNext(app, event, buttonNext, mainTabPane);
     }
 
     @FXML
@@ -358,10 +346,9 @@ public final class LogCheckConfigMainController implements Initializable
     @FXML
     public void onFileLoadClearHistMenuItemAction(ActionEvent event)
     {
-        LCCAppState appState = app.getAppState();
-
-        LCCPreferenceHelper.clearLoadFileHistory(appState.getPreferences());
-        refreshLoadHistoryMenu();
+        LCCBrowseHandler.onFileLoadClearHist(app, event,
+                generalTabConfigFileTextField, fileLoadMenu, fileLoadMenuItem,
+                fileLoadClearHistMenuItem);
     }
 
     @FXML
@@ -387,7 +374,8 @@ public final class LogCheckConfigMainController implements Initializable
     {
         LOGGER.debug("Action for 'General Tab > Browse...'");
 
-        onMainTopFileLoad(event);
+        LCCBrowseHandler.doConfigBrowse(app, event, generalTabConfigFileTextField,
+                fileLoadMenu, fileLoadMenuItem, fileLoadClearHistMenuItem);
     }
 
     @FXML
@@ -489,41 +477,8 @@ public final class LogCheckConfigMainController implements Initializable
     @FXML
     public void onMainTopFileLoad(ActionEvent event)
     {
-        LOGGER.debug("Action for 'File > Load'");
-
-        Stage stage = (Stage) buttonCancel.getScene().getWindow();
-        List<Pair<String, String>> exts = new ArrayList<>();
-
-        exts.add(Pair.of(LCCConstants.LCC_DEFAULT_CONFIG_EXT_DESC,
-                LCCConstants.LCC_DEFAULT_CONFIG_EXT));
-
-        Path initDir = null;
-        String tempVal = generalTabConfigFileTextField.getText();
-        if( StringUtils.isNoneBlank(tempVal) )
-        {
-            initDir = Paths.get(tempVal);
-            if( Files.notExists(initDir) )
-            {
-                initDir = null;
-            }
-            else if( Files.isDirectory(initDir) == false )
-            {
-                initDir = initDir.getParent();
-            }
-        }
-
-        Path file = LCCFileChooserHelper.showFileChooser(stage, exts, "Choose the config file for loading", initDir);
-
-        if( file != null )
-        {
-            LCCAppState appState = app.getAppState();
-            generalTabConfigFileTextField.setText(file.toString());
-
-            LCCPreferenceHelper.addAndRotateLoadFileHistory(appState.getPreferences(), file.toString());
-
-            // Platform.runLater(this::refreshLoadHistoryMenu);
-            refreshLoadHistoryMenu();
-        }
+        LCCBrowseHandler.doConfigBrowse(app, event, generalTabConfigFileTextField,
+                fileLoadMenu, fileLoadMenuItem, fileLoadClearHistMenuItem);
     }
 
     @FXML
@@ -531,7 +486,7 @@ public final class LogCheckConfigMainController implements Initializable
     {
         LOGGER.debug("Action for 'File > Quit'");
 
-        onButtonCancelAction(event);
+        LCCTabHandler.doButtonCancel(app, event, buttonCancel);
     }
 
     @FXML
@@ -605,53 +560,4 @@ public final class LogCheckConfigMainController implements Initializable
     {
 
     }
-
-    @Override
-    public void initialize(URL url, ResourceBundle resourceBundle)
-    {
-        LOGGER.debug("initialize() called.");
-
-        generalTabConfigFileTextField.textProperty().addListener((observable, oldValue, newValue) ->
-        {
-            generalTabConfigFileTextField.setTooltip(new Tooltip(newValue));
-        });
-    }
-
-    public void internalInit()
-    {
-
-        LCCAppState appState = app.getAppState();
-        generalTabConfigFileTextField.setText(
-                appState.getPreferences().get(LCCConstants.LCC_CONFIG_FILE_HIST01, ""));
-
-        refreshLoadHistoryMenu();
-    }
-
-    public void refreshLoadHistoryMenu()
-    {
-        fileLoadMenu.setDisable(true);
-
-        final LCCAppState appState = app.getAppState();
-        ObservableList<MenuItem> currItems = fileLoadMenu.getItems();
-
-        Iterator<MenuItem> tempIt = currItems.iterator();
-        while( tempIt.hasNext() )
-        {
-            MenuItem mi = tempIt.next();
-            if( mi != fileLoadMenuItem && mi != fileLoadClearHistMenuItem )
-            {
-                tempIt.remove();
-            }
-        }
-
-        currItems.add(new SeparatorMenuItem());
-
-        LCCPreferenceHelper.rebuildMenu(this,
-                appState.getPreferences(),
-                currItems,
-                generalTabConfigFileTextField);
-
-        fileLoadMenu.setDisable(false);
-    }
-
 }
