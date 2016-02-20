@@ -3,8 +3,11 @@ package com.sludev.logs.logcheckConfig.controller;
 import com.sludev.logs.logcheckConfig.entity.LCCAppState;
 import com.sludev.logs.logcheckConfig.handler.LCCBrowseHandler;
 import com.sludev.logs.logcheckConfig.handler.LCCTabHandler;
+import com.sludev.logs.logcheckConfig.handler.LCCValidateHandler;
 import com.sludev.logs.logcheckConfig.main.LogCheckConfigMain;
 import com.sludev.logs.logcheckConfig.util.LCCConstants;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -25,6 +28,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.Tooltip;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.text.TextFlow;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -104,6 +108,14 @@ public final class LogCheckConfigMainController implements Initializable
         {
             logStoreOutputFileTextField.setTooltip(new Tooltip(newValue));
         });
+
+        generalTabSetNameTextField.focusedProperty().addListener((observable, oldValue, newValue) ->
+            {
+              if(generalTabSetNameTextField.isFocused() == false)
+              {
+                    LOGGER.debug("set name validate on lost focus");
+              }
+           });
 
         debugTabFlagsListView.getSelectionModel()
                 .setSelectionMode(SelectionMode.MULTIPLE);
@@ -318,6 +330,9 @@ public final class LogCheckConfigMainController implements Initializable
     private TextField logStoreOutputFileTextField;
 
     @FXML
+    private TextFlow mainValidationTextFlow;
+
+    @FXML
     private Button LogStoreOutputFileBrowseButton;
 
     @FXML
@@ -456,9 +471,14 @@ public final class LogCheckConfigMainController implements Initializable
     }
 
     @FXML
-    void onGeneralTabSetNameValidateAction(ActionEvent event)
+    public void onGeneralTabSetNameValidateAction(ActionEvent event)
     {
+        LOGGER.debug("Action for 'General Tab > Set Name Validate...'");
 
+        LCCValidateHandler.doValidateSetName(app, event,
+                            generalTabSetNameTextField,
+                            mainValidationTextFlow,
+                            null);
     }
 
     @FXML
