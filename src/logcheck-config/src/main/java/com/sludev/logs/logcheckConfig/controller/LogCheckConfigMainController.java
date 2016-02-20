@@ -6,8 +6,6 @@ import com.sludev.logs.logcheckConfig.handler.LCCTabHandler;
 import com.sludev.logs.logcheckConfig.handler.LCCValidateHandler;
 import com.sludev.logs.logcheckConfig.main.LogCheckConfigMain;
 import com.sludev.logs.logcheckConfig.util.LCCConstants;
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -396,9 +394,14 @@ public final class LogCheckConfigMainController implements Initializable
     }
 
     @FXML
-    void onDedupTabDurationValidateAction(ActionEvent event)
+    public void onDedupTabDurationValidateAction(ActionEvent event)
     {
+        LOGGER.debug("Action for 'Deduplication Tab > Deduplication Duration Validate...'");
 
+        LCCValidateHandler.doValidateDedupeDuration(app, event,
+                dedupTabDurationTextField,
+                mainValidationTextFlow,
+                null);
     }
 
     @FXML
@@ -449,7 +452,7 @@ public final class LogCheckConfigMainController implements Initializable
         LCCBrowseHandler.doGenericFileBrowse(app, event, generalTabLockFileTextField,
                 "Please choose the name or full path of the Lock File",
                 LCCConstants.LCC_DEFAULT_LOCK_EXT_DESC,
-                LCCConstants.LCC_DEFAULT_ALLFILES_EXT);
+                LCCConstants.LCC_DEFAULT_LOCK_EXT);
     }
 
     @FXML
@@ -494,9 +497,14 @@ public final class LogCheckConfigMainController implements Initializable
     }
 
     @FXML
-    void onLogFileCutoffDurationValidateAction(ActionEvent event)
+    public void onLogFileCutoffDurationValidateAction(ActionEvent event)
     {
+        LOGGER.debug("Action for 'Log File Tab > Cut-off Duration Validate...'");
 
+        LCCValidateHandler.doValidateCutOffDuration(app, event,
+                logFileCutoffDurationTextField,
+                mainValidationTextFlow,
+                null);
     }
 
     @FXML
@@ -529,7 +537,7 @@ public final class LogCheckConfigMainController implements Initializable
     }
 
     @FXML
-    void onLogStoreElastiSearchCheckButtonAction(ActionEvent event)
+    public void onLogStoreElastiSearchCheckButtonAction(ActionEvent event)
     {
 
     }
@@ -594,9 +602,14 @@ public final class LogCheckConfigMainController implements Initializable
     }
 
     @FXML
-    void onRotateTabLogFileCompValidateAction(ActionEvent event)
+    public void onRotateTabLogFileCompValidateAction(ActionEvent event)
     {
+        LOGGER.debug("Action for 'Log Rotate Tab > File Regex Components Validate...'");
 
+        LCCValidateHandler.doValidateLogRegexComponents(app, event,
+                rotateTabLogFileCompTextField,
+                mainValidationTextFlow,
+                null);
     }
 
     @FXML
@@ -606,9 +619,14 @@ public final class LogCheckConfigMainController implements Initializable
     }
 
     @FXML
-    void onRotateTabLogFileRegexValidateAction(ActionEvent event)
+    public void onRotateTabLogFileRegexValidateAction(ActionEvent event)
     {
+        LOGGER.debug("Action for 'Log Rotate Tab > Log File Backup Regex Validate...'");
 
+        LCCValidateHandler.doValidateLogFileBackupRegex(app, event,
+                rotateTabLogFileRegexTextField,
+                mainValidationTextFlow,
+                null);
     }
 
     @FXML

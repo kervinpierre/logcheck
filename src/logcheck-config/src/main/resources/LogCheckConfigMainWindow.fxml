@@ -110,6 +110,11 @@
                                                         </HBox>
                                                     </children>
                                                 </AnchorPane>
+                                                <Label text="Lock File" GridPane.rowIndex="1">
+                                          <GridPane.margin>
+                                             <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                                          </GridPane.margin>
+                                                </Label>
                                                 <AnchorPane layoutX="191.0" layoutY="8.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" styleClass="general-tab-anchor" GridPane.columnIndex="1" GridPane.rowIndex="1">
                                                     <children>
                                                         <HBox alignment="CENTER_LEFT" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="100.0" prefWidth="200.0" styleClass="general-tab-config-text-field" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
@@ -128,16 +133,10 @@
                                                         </HBox>
                                                     </children>
                                                 </AnchorPane>
-                                                <Label layoutX="15.0" layoutY="18.0" text="Lock File" GridPane.rowIndex="1">
-                                                    <GridPane.margin>
-                                                        <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
-                                                    </GridPane.margin>
-                                                </Label>
-                                                <Label text="Run Service" GridPane.rowIndex="3">
+                                                <Label text="Argument File" GridPane.rowIndex="2">
                                                     <GridPane.margin>
                                                         <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                                                     </GridPane.margin></Label>
-                                                <CheckBox fx:id="generalTabServiceCheck" mnemonicParsing="false" onAction="#onGeneralTabServiceCheckAction" GridPane.columnIndex="1" GridPane.rowIndex="3" />
                                                 <AnchorPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" styleClass="general-tab-anchor" GridPane.columnIndex="1" GridPane.rowIndex="2">
                                                     <children>
                                                         <HBox alignment="CENTER_LEFT" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="100.0" prefWidth="200.0" styleClass="general-tab-config-text-field" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
@@ -156,14 +155,33 @@
                                                         </HBox>
                                                     </children>
                                                 </AnchorPane>
-                                                <Label text="Argument File" GridPane.rowIndex="2">
+                                                <Label text="Run Service" GridPane.rowIndex="3">
                                                     <GridPane.margin>
                                                         <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                                                     </GridPane.margin></Label>
+                                                <CheckBox fx:id="generalTabServiceCheck" mnemonicParsing="false" onAction="#onGeneralTabServiceCheckAction" GridPane.columnIndex="1" GridPane.rowIndex="3" />
                                                 <Label text="Set Name" GridPane.rowIndex="4">
                                                     <GridPane.margin>
                                                         <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                                                     </GridPane.margin></Label>
+                                                <AnchorPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" styleClass="general-tab-anchor" GridPane.columnIndex="1" GridPane.rowIndex="4">
+                                                    <children>
+                                                        <HBox alignment="CENTER_LEFT" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="100.0" prefWidth="200.0" styleClass="general-tab-config-text-field" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                                                            <children>
+                                                                <TextField fx:id="generalTabSetNameTextField" maxWidth="1.7976931348623157E308" onAction="#onGeneralTabSetNameAction" prefHeight="26.0" prefWidth="274.0" HBox.hgrow="ALWAYS">
+                                                                    <HBox.margin>
+                                                                        <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                                                                    </HBox.margin>
+                                                                </TextField>
+                                                                <Button fx:id="generalTabSetNameValidateButton" mnemonicParsing="false" onAction="#onGeneralTabSetNameValidateAction" text="Validate">
+                                                                    <HBox.margin>
+                                                                        <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                                                                    </HBox.margin>
+                                                                </Button>
+                                                            </children>
+                                                        </HBox>
+                                                    </children>
+                                                </AnchorPane>
                                                 <Label text="Stop After" GridPane.rowIndex="5">
                                                     <GridPane.margin>
                                                         <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
@@ -193,24 +211,6 @@
                                                                         </FXCollections>
                                                                     </items>
                                                                 </ChoiceBox>
-                                                            </children>
-                                                        </HBox>
-                                                    </children>
-                                                </AnchorPane>
-                                                <AnchorPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" styleClass="general-tab-anchor" GridPane.columnIndex="1" GridPane.rowIndex="4">
-                                                    <children>
-                                                        <HBox alignment="CENTER_LEFT" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="100.0" prefWidth="200.0" styleClass="general-tab-config-text-field" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
-                                                            <children>
-                                                                <TextField fx:id="generalTabSetNameTextField" maxWidth="1.7976931348623157E308" onAction="#onGeneralTabSetNameAction" prefHeight="26.0" prefWidth="274.0" HBox.hgrow="ALWAYS">
-                                                                    <HBox.margin>
-                                                                        <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
-                                                                    </HBox.margin>
-                                                                </TextField>
-                                                                <Button fx:id="generalTabSetNameValidateButton" mnemonicParsing="false" onAction="#onGeneralTabSetNameValidateAction" text="Validate">
-                                                                    <HBox.margin>
-                                                                        <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
-                                                                    </HBox.margin>
-                                                                </Button>
                                                             </children>
                                                         </HBox>
                                                     </children>
@@ -266,6 +266,12 @@
                                                             <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                                                         </GridPane.margin></Label>
                                                     <CheckBox fx:id="logFileReadOnlyCheckbox" mnemonicParsing="false" onAction="#onLogFileReadOnlyAction" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                                                    <Label text="Validate Log File" GridPane.rowIndex="2">
+                                                        <GridPane.margin>
+                                                            <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                                                        </GridPane.margin>
+                                                    </Label>
+                                                    <CheckBox fx:id="logFileValidateCheckbox" mnemonicParsing="false" onAction="#onLogFileValidateAction" GridPane.columnIndex="1" GridPane.rowIndex="2" />
                                                     <Label text="Log Cut-off Duration" GridPane.rowIndex="3">
                                                         <GridPane.margin>
                                                             <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
@@ -291,12 +297,6 @@
                                                         </GridPane.margin>
                                                     </Label>
                                                     <DatePicker fx:id="logFileCutoffDate" onAction="#onLogFileCutoffDate" GridPane.columnIndex="1" GridPane.rowIndex="4" />
-                                                    <Label text="Validate Log File" GridPane.rowIndex="2">
-                                                        <GridPane.margin>
-                                                            <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
-                                                        </GridPane.margin>
-                                                    </Label>
-                                                    <CheckBox fx:id="logFileValidateCheckbox" mnemonicParsing="false" onAction="#onLogFileValidateAction" GridPane.columnIndex="1" GridPane.rowIndex="2" />
                                                 </children>
                                             </GridPane>
                                         </children>
@@ -325,6 +325,10 @@
                                                     <RowConstraints maxHeight="297.0" minHeight="10.0" prefHeight="61.0" vgrow="SOMETIMES" />
                                                 </rowConstraints>
                                                 <children>
+                                                    <Label text="Log Poll Interval">
+                                                        <GridPane.margin>
+                                                            <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                                                        </GridPane.margin></Label>
                                                     <AnchorPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" styleClass="general-tab-anchor" GridPane.columnIndex="1">
                                                         <children>
                                                             <HBox alignment="CENTER_LEFT" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="100.0" prefWidth="200.0" styleClass="general-tab-config-text-field" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
@@ -354,6 +358,11 @@
                                                             </HBox>
                                                         </children>
                                                     </AnchorPane>
+                                                    <Label text="State File" GridPane.rowIndex="1">
+                                                        <GridPane.margin>
+                                                            <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                                                        </GridPane.margin>
+                                                    </Label>
                                                     <AnchorPane layoutX="191.0" layoutY="5.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" styleClass="general-tab-anchor" GridPane.columnIndex="1" GridPane.rowIndex="1">
                                                         <children>
                                                             <HBox alignment="CENTER_LEFT" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="100.0" prefWidth="200.0" styleClass="general-tab-config-text-field" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
@@ -372,20 +381,17 @@
                                                             </HBox>
                                                         </children>
                                                     </AnchorPane>
-                                                    <Label text="State File" GridPane.rowIndex="1">
+                                                    <Label text="Save State" GridPane.rowIndex="2">
                                                         <GridPane.margin>
                                                             <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                                                         </GridPane.margin>
                                                     </Label>
-                                                    <Label text="Log Poll Interval">
-                                                        <GridPane.margin>
-                                                            <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
-                                                        </GridPane.margin></Label>
-                                                    <CheckBox fx:id="tailerGeneralFileFromStartCheckbox" mnemonicParsing="false" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+                                                    <CheckBox fx:id="tailerGeneralSaveStateCheckbox" mnemonicParsing="false" GridPane.columnIndex="1" GridPane.rowIndex="2" />
                                                     <Label text="File From Start" GridPane.rowIndex="3">
                                                         <GridPane.margin>
                                                             <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                                                         </GridPane.margin></Label>
+                                                    <CheckBox fx:id="tailerGeneralFileFromStartCheckbox" mnemonicParsing="false" GridPane.columnIndex="1" GridPane.rowIndex="3" />
                                                     <Label text="Continue" GridPane.rowIndex="4">
                                                         <GridPane.margin>
                                                             <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
@@ -429,12 +435,6 @@
                                                             </HBox>
                                                         </children>
                                                     </AnchorPane>
-                                                    <Label text="Save State" GridPane.rowIndex="2">
-                                                        <GridPane.margin>
-                                                            <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
-                                                        </GridPane.margin>
-                                                    </Label>
-                                                    <CheckBox fx:id="tailerGeneralSaveStateCheckbox" mnemonicParsing="false" GridPane.columnIndex="1" GridPane.rowIndex="2" />
                                                 </children>
                                             </GridPane>
                                         </children>
@@ -503,10 +503,6 @@
                                                         <GridPane.margin>
                                                             <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                                                         </GridPane.margin></Label>
-                                                    <Label text="Log Filename Component" GridPane.rowIndex="5">
-                                                        <GridPane.margin>
-                                                            <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
-                                                        </GridPane.margin></Label>
                                                     <AnchorPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" styleClass="general-tab-anchor" GridPane.columnIndex="1" GridPane.rowIndex="4">
                                                         <children>
                                                             <HBox alignment="CENTER_LEFT" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="100.0" prefWidth="200.0" styleClass="general-tab-config-text-field" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
@@ -525,6 +521,10 @@
                                                             </HBox>
                                                         </children>
                                                     </AnchorPane>
+                                                    <Label text="Log Filename Component" GridPane.rowIndex="5">
+                                                        <GridPane.margin>
+                                                            <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                                                        </GridPane.margin></Label>
                                                     <AnchorPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" styleClass="general-tab-anchor" GridPane.columnIndex="1" GridPane.rowIndex="5">
                                                         <children>
                                                             <HBox alignment="CENTER_LEFT" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="100.0" prefWidth="200.0" styleClass="general-tab-config-text-field" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
@@ -573,14 +573,14 @@
                                                             <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                                                         </GridPane.margin>
                                                     </Label>
-                                                    <HBox alignment="CENTER_LEFT" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="100.0" prefWidth="200.0" styleClass="general-tab-config-text-field" GridPane.columnIndex="1" GridPane.rowIndex="1">
+                                                    <HBox alignment="CENTER_LEFT" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="100.0" prefWidth="200.0" styleClass="general-tab-config-text-field" GridPane.columnIndex="1">
                                                         <children>
-                                                            <TextField fx:id="dedupTabDirTextField" maxWidth="1.7976931348623157E308" onAction="#onDedupTabDirAction" prefHeight="26.0" prefWidth="274.0" HBox.hgrow="ALWAYS">
+                                                            <TextField fx:id="dedupTabDurationTextField" maxWidth="1.7976931348623157E308" onAction="#onDedupTabDurationAction" prefHeight="26.0" prefWidth="274.0" HBox.hgrow="ALWAYS">
                                                                 <HBox.margin>
                                                                     <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                                                                 </HBox.margin>
                                                             </TextField>
-                                                            <Button fx:id="dedupTabDirBrowseButton" mnemonicParsing="false" onAction="#onDedupTabDirBrowseAction" text="Browse...">
+                                                            <Button fx:id="dedupTabDurationValidateButton" mnemonicParsing="false" onAction="#onDedupTabDurationValidateAction" text="Validate">
                                                                 <HBox.margin>
                                                                     <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                                                                 </HBox.margin>
@@ -592,14 +592,14 @@
                                                             <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                                                         </GridPane.margin>
                                                     </Label>
-                                                    <HBox alignment="CENTER_LEFT" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="100.0" prefWidth="200.0" styleClass="general-tab-config-text-field" GridPane.columnIndex="1">
+                                                    <HBox alignment="CENTER_LEFT" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="100.0" prefWidth="200.0" styleClass="general-tab-config-text-field" GridPane.columnIndex="1" GridPane.rowIndex="1">
                                                         <children>
-                                                            <TextField fx:id="dedupTabDurationTextField" maxWidth="1.7976931348623157E308" onAction="#onDedupTabDurationAction" prefHeight="26.0" prefWidth="274.0" HBox.hgrow="ALWAYS">
+                                                            <TextField fx:id="dedupTabDirTextField" maxWidth="1.7976931348623157E308" onAction="#onDedupTabDirAction" prefHeight="26.0" prefWidth="274.0" HBox.hgrow="ALWAYS">
                                                                 <HBox.margin>
                                                                     <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                                                                 </HBox.margin>
                                                             </TextField>
-                                                            <Button fx:id="dedupTabDurationValidateButton" mnemonicParsing="false" onAction="#onDedupTabDurationValidateAction" text="Validate">
+                                                            <Button fx:id="dedupTabDirBrowseButton" mnemonicParsing="false" onAction="#onDedupTabDirBrowseAction" text="Browse...">
                                                                 <HBox.margin>
                                                                     <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                                                                 </HBox.margin>
@@ -685,6 +685,11 @@
                                                                     </ChoiceBox>
                                                                 </children>
                                                             </AnchorPane>
+                                                            <Label text="Second Log Store" GridPane.rowIndex="1">
+                                                                <GridPane.margin>
+                                                                    <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                                                                </GridPane.margin>
+                                                            </Label>
                                                             <AnchorPane layoutX="191.0" layoutY="5.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" styleClass="general-tab-anchor" GridPane.columnIndex="1" GridPane.rowIndex="1">
                                                                 <children>
                                                                     <HBox alignment="CENTER_LEFT" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="100.0" prefWidth="200.0" styleClass="general-tab-config-text-field" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
@@ -706,7 +711,7 @@
                                                                     </HBox>
                                                                 </children>
                                                             </AnchorPane>
-                                                            <Label text="Second Log Store" GridPane.rowIndex="1">
+                                                            <Label layoutX="15.0" layoutY="34.0" text="Third Log Store" GridPane.rowIndex="2">
                                                                 <GridPane.margin>
                                                                     <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                                                                 </GridPane.margin>
@@ -732,11 +737,6 @@
                                                                     </HBox>
                                                                 </children>
                                                             </AnchorPane>
-                                                            <Label layoutX="15.0" layoutY="34.0" text="Third Log Store" GridPane.rowIndex="2">
-                                                                <GridPane.margin>
-                                                                    <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
-                                                                </GridPane.margin>
-                                                            </Label>
                                                         </children>
                                                     </GridPane>
                                                     <TitledPane animated="false" minHeight="100.0" prefWidth="600.0" text="Simple File Properties">
