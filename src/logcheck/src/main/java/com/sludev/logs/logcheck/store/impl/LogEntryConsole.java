@@ -43,6 +43,12 @@ public final class LogEntryConsole implements ILogEntryStore
     }
 
     @Override
+    public LCResultStatus testConnection() throws LogCheckException
+    {
+        return null;
+    }
+
+    @Override
     public LogCheckResult put(LogEntryVO le) throws InterruptedException, LogCheckException
     {
         LogCheckResult res

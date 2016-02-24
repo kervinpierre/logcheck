@@ -572,12 +572,6 @@ public class LogCheckInitialize
                 .argName("ARGFILE")
                 .build() );
         
-        options.addOption( Option.builder().longOpt( "holding-folder" )
-                .desc( "Local folder for keeping downloaded data." )
-                .hasArg()
-                .argName("LOGFILE")
-                .build() );
-        
         options.addOption( Option.builder().longOpt( "poll-interval" )
                 .desc( "Seconds between polling the log file." )
                 .hasArg()

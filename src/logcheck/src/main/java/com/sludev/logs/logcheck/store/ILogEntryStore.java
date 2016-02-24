@@ -49,6 +49,7 @@ public interface ILogEntryStore
 
     public void init() throws LogCheckException;
     public void destroy() throws LogCheckException;
+    public LCResultStatus testConnection() throws LogCheckException;
 
     public LogCheckResult put(LogEntryVO le) throws InterruptedException, LogCheckException;
 
