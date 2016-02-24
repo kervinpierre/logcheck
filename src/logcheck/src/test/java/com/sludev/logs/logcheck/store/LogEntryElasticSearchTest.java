@@ -19,26 +19,35 @@ package com.sludev.logs.logcheck.store;
 
 import com.sludev.logs.logcheck.LogCheckProperties;
 import com.sludev.logs.logcheck.LogCheckTestWatcher;
+import com.sludev.logs.logcheck.config.entities.LogEntryVO;
 import com.sludev.logs.logcheck.enums.LCLogLevel;
+import com.sludev.logs.logcheck.enums.LCResultStatus;
 import com.sludev.logs.logcheck.log.LogEntry;
 
 import java.time.LocalDateTime;
 import java.util.Properties;
+
+import com.sludev.logs.logcheck.store.impl.LogEntryElasticSearch;
+import com.sludev.logs.logcheck.utils.LogCheckResult;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.After;
 import org.junit.AfterClass;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.FixMethodOrder;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.Rule;
 import org.junit.rules.TestWatcher;
+import org.junit.runners.MethodSorters;
 
 /**
  *
  * @author kervin
  */
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class LogEntryElasticSearchTest
 {
     private static final Logger log 
@@ -81,10 +90,15 @@ public class LogEntryElasticSearchTest
 
     /**
      * Test of put method, of class LogEntryElasticSearch.
+     *
+     * To clean/delete all indices use...
+     *
+     * curl -XDELETE 'http://localhost:9200/_all'
+     * http://stackoverflow.com/questions/22924300/removing-data-from-elasticsearch
+     *
      */
     @Test
-    @Ignore
-    public void testPut() throws Exception
+    public void A001_testPut() throws Exception
     {
         log.debug("testing put()");
         
@@ -98,11 +112,35 @@ public class LogEntryElasticSearchTest
         le.setException(String.format("Exception Exception\nException Exception Exception\nException Exception"));
         le.setLogger("com.example.test");
         
-        //LogEntryElasticSearch instance = LogEntryElasticSearch.from();
-        //instance.setElasticsearchURL(elasticsearchURL);
-        //instance.init();
+        LogEntryElasticSearch instance = LogEntryElasticSearch.from(elasticsearchURL, null);
+        instance.init();
         
-       // LogCheckResult result = instance.put(le);
+        LogCheckResult result = instance.put(LogEntry.toValueObject(le));
+        Assert.assertNotNull(result);
+        Assert.assertTrue(result.getStatus()== LCResultStatus.SUCCESS);
     }
-    
+
+    @Test
+    public void A002_testConnection() throws Exception
+    {
+        String elasticsearchURL = testProperties.getProperty("logcheck.test0001.elasticsearchurl");
+
+        LogEntryElasticSearch instance = LogEntryElasticSearch.from(elasticsearchURL, null);
+        instance.init();
+
+        LCResultStatus result = instance.testConnection();
+        Assert.assertNotNull(result);
+        Assert.assertTrue(result==LCResultStatus.SUCCESS);
+
+        /**
+         * IP reserved for documentation http://tools.ietf.org/html/rfc5737
+         */
+        instance = LogEntryElasticSearch.from("http://203.0.113.1", null);
+        instance.init();
+
+        result = instance.testConnection();
+        Assert.assertNotNull(result);
+        Assert.assertTrue(result==LCResultStatus.FAIL);
+
+    }
 }

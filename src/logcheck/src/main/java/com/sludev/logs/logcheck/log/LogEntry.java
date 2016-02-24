@@ -34,72 +34,72 @@ import org.apache.logging.log4j.Logger;
  */
 public final class LogEntry
 {
-    private static final Logger log 
+    private static final Logger LOGGER
                              = LogManager.getLogger(LogEntry.class);
     
-    private LCLogLevel level;
-    private String logger;
-    private String message;
-    private String exception;
-    private LocalDateTime timeStamp;
-    private final String type;
-    private String host;
+    private LCLogLevel m_level;
+    private String m_logger;
+    private String m_message;
+    private String m_exception;
+    private LocalDateTime m_timeStamp;
+    private final String m_type;
+    private String m_host;
 
     public LCLogLevel getLevel()
     {
-        return level;
+        return m_level;
     }
 
     public void setLevel(LCLogLevel l)
     {
-        this.level = l;
+        this.m_level = l;
     }
 
     public void setLevel(String s)
     {
         LCLogLevel l = LCLogLevel.valueOf(s);
         
-        this.level = l;
+        this.m_level = l;
     }
     
     public String getLogger()
     {
-        return logger;
+        return m_logger;
     }
 
     public void setLogger(String logger)
     {
-        this.logger = logger;
+        this.m_logger = logger;
     }
 
     public String getMessage()
     {
-        return message;
+        return m_message;
     }
 
     public void setMessage(String message)
     {
-        this.message = message;
+        this.m_message = message;
     }
 
     public String getException()
     {
-        return exception;
+        return m_exception;
     }
 
     public void setException(String exception)
     {
-        this.exception = exception;
+        this.m_exception = exception;
     }
 
     public LocalDateTime getTimeStamp()
     {
-        return timeStamp;
+        return m_timeStamp;
     }
 
     public void setTimeStamp(LocalDateTime t)
     {
-        this.timeStamp = t;
+        this.m_timeStamp = t;
     }
 
     public void setTimeStamp(String s)
@@ -107,33 +107,33 @@ public final class LogEntry
         DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss','SSS");
         LocalDateTime t = LocalDateTime.parse(s,dtf);
         
-        this.timeStamp = t;
+        this.m_timeStamp = t;
     }
 
     public String getType()
     {
-        return type;
+        return m_type;
     }
 
     public String getHost()
     {
-        return host;
+        return m_host;
     }
 
     public void setHost(String host)
     {
-        this.host = host;
+        this.m_host = host;
     }
 
     private LogEntry(final String type)
     {
         if( type != null )
         {
-            this.type = type;
+            this.m_type = type;
         }
         else
         {
-            this.type = LogCheckConstants.DEFAULT_LOG_TYPE;
+            this.m_type = LogCheckConstants.DEFAULT_LOG_TYPE;
         }
     }
 

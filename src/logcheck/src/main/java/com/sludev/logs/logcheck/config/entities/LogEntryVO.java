@@ -114,17 +114,17 @@ public final class LogEntryVO implements Serializable
 
         js.append("{");
         js.append( String.format("\"@timestamp\":\"%s\",", entryVO.m_timeStamp) );
-        js.append( String.format("\"m_level\":\"%s\",",
+        js.append( String.format("\"level\":\"%s\",",
                 StringEscapeUtils.escapeJson(entryVO.m_level)) );
-        js.append( String.format("\"m_type\":\"%s\",",
+        js.append( String.format("\"type\":\"%s\",",
                 StringEscapeUtils.escapeJson(entryVO.m_type)) );
-        js.append( String.format("\"m_logger\":\"%s\",",
+        js.append( String.format("\"logger\":\"%s\",",
                 StringEscapeUtils.escapeJson(entryVO.m_logger)) );
-        js.append( String.format("\"m_host\":\"%s\",",
+        js.append( String.format("\"host\":\"%s\",",
                 StringEscapeUtils.escapeJson(entryVO.m_host)) );
-        js.append( String.format("\"m_message\":\"%s\",",
+        js.append( String.format("\"message\":\"%s\",",
                 StringEscapeUtils.escapeJson(entryVO.m_message)) );
-        js.append( String.format("\"m_exception\":\"%s\"",
+        js.append( String.format("\"exception\":\"%s\"",
                 StringEscapeUtils.escapeJson(entryVO.m_exception)) );
         js.append("}");
 

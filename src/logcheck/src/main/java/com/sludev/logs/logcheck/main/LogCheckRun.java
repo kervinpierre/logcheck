@@ -223,13 +223,13 @@ public class LogCheckRun implements Callable<LogCheckResult>
             {
                 case ELASTICSEARCH:
                     // Elastic Search
-                    LogEntryElasticSearch lees = LogEntryElasticSearch.from();
+                    LogEntryElasticSearch lees = LogEntryElasticSearch.from(m_config.getElasticsearchURL(),
+                            null,
+                            m_config.getElasticsearchLogType());
 
-                    lees.setElasticsearchURL(m_config.getElasticsearchURL());
                     lees.setElasticsearchIndexPrefix(m_config.getElasticsearchIndexPrefix());
                     lees.setElasticsearchIndexNameFormat(m_config.getElasticsearchIndexNameFormat());
                     lees.setElasticsearchIndexName(m_config.getElasticsearchIndexName());
-                    lees.setElasticsearchLogType(m_config.getElasticsearchLogType());
 
                     currStores.add(lees);
                     break;

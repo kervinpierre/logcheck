@@ -29,119 +29,149 @@ import io.searchbox.client.JestClientFactory;
 import io.searchbox.client.JestResult;
 import io.searchbox.client.config.HttpClientConfig;
 import io.searchbox.core.Index;
+
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+
+import io.searchbox.indices.aliases.GetAliases;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 /**
- * Store log entries in a Elastic Search server.
+ * Store LOGGER entries in a Elastic Search server.
  *
  * @author kervin
+ *
  */
 public final class LogEntryElasticSearch implements ILogEntryStore
 {
-    private static final Logger log 
+    private static final Logger LOGGER
                              = LogManager.getLogger(LogEntryElasticSearch.class);
 
-    private JestClient esClient;
-    private URL elasticsearchURL;
-    private String elasticsearchIndexName;
-    private String elasticsearchIndexPrefix;
-    private String elasticsearchLogType;
-    private LCIndexNameFormat elasticsearchIndexNameFormat;
-
+    private final JestClient m_esClient;
+    private final URL m_elasticsearchURL;
+    private final String m_elasticsearchLogType;
+    private String m_elasticsearchIndexName;
+    private String m_elasticsearchIndexPrefix;
+    private LCIndexNameFormat m_elasticsearchIndexNameFormat;
 
     public String getElasticsearchLogType()
     {
-        return elasticsearchLogType;
-    }
-
-    public void setElasticsearchLogType(String e)
-    {
-        this.elasticsearchLogType = e;
+        return m_elasticsearchLogType;
     }
 
     public LCIndexNameFormat getElasticsearchIndexNameFormat()
     {
-        return elasticsearchIndexNameFormat;
+        return m_elasticsearchIndexNameFormat;
     }
 
     public void setElasticsearchIndexNameFormat(LCIndexNameFormat e)
     {
-        this.elasticsearchIndexNameFormat = e;
+        this.m_elasticsearchIndexNameFormat = e;
     }
 
     public void setElasticsearchIndexNameFormat(String e)
     {
         LCIndexNameFormat lcinf = LCIndexNameFormat.valueOf(e);
-        this.elasticsearchIndexNameFormat = lcinf;
+        this.m_elasticsearchIndexNameFormat = lcinf;
     }
     
     public String getElasticsearchIndexName()
     {
-        return elasticsearchIndexName;
+        return m_elasticsearchIndexName;
     }
 
     public void setElasticsearchIndexName(String e)
     {
-        this.elasticsearchIndexName = e;
+        this.m_elasticsearchIndexName = e;
     }
 
     public String getElasticsearchIndexPrefix()
     {
-        return elasticsearchIndexPrefix;
+        return m_elasticsearchIndexPrefix;
     }
 
     public void setElasticsearchIndexPrefix(String e)
     {
-        this.elasticsearchIndexPrefix = e;
+        this.m_elasticsearchIndexPrefix = e;
     }
 
     public URL getElasticsearchURL()
     {
-        return elasticsearchURL;
-    }
-
-    public final void setElasticsearchURL(URL u)
-    {
-        this.elasticsearchURL = u;
+        return m_elasticsearchURL;
     }
     
-    public final void setElasticsearchURL(String e)
+    private LogEntryElasticSearch(final URL elasticsearchURL,
+                                  final JestClient esClient,
+                                  final String elasticsearchLogType)
     {
-        URL u = null;
-        
+        m_elasticsearchIndexNameFormat
+                = LogCheckConstants.DEFAULT_ELASTICSEARCH_INDEX_NAME_FORMAT;
+        m_elasticsearchIndexPrefix
+                = LogCheckConstants.DEFAULT_ELASTICSEARCH_INDEX_PREFIX;
+
+        this.m_elasticsearchURL = elasticsearchURL;
+
+        if( StringUtils.isNoneBlank(elasticsearchLogType) )
+        {
+            m_elasticsearchLogType = elasticsearchLogType;
+        }
+        else
+        {
+            m_elasticsearchLogType
+                    = LogCheckConstants.DEFAULT_LOG_TYPE;
+        }
+
+        if( esClient == null )
+        {
+            JestClientFactory factory = new JestClientFactory();
+
+            factory.setHttpClientConfig(new HttpClientConfig
+                    .Builder(m_elasticsearchURL.toString())
+                    .multiThreaded(true)
+                    .build());
+
+            m_esClient = factory.getObject();
+        }
+        else
+        {
+            m_esClient = esClient;
+        }
+
+    }
+
+    public static LogEntryElasticSearch from(final URL url,
+                                             final JestClient esClient,
+                                             final String elasticsearchLogType)
+    {
+        LogEntryElasticSearch res = null;
+
+        res = new LogEntryElasticSearch(url, esClient, elasticsearchLogType);
+
+        return res;
+    }
+
+    public static LogEntryElasticSearch from(final String urlStr,
+                                             final String elasticsearchLogType)
+    {
+        LogEntryElasticSearch res = null;
+
+        URL url = null;
+
         try
         {
-            u = new URL(e);
+            url = new URL(urlStr);
         }
         catch (MalformedURLException ex)
         {
-            log.error( String.format("Invalid URL : '%s'", e), ex );
+            LOGGER.error( String.format("Invalid URL : '%s'", urlStr), ex );
         }
-        
-        this.elasticsearchURL = u;
-    }
-    
-    private LogEntryElasticSearch()
-    {
-        esClient = null;
-        elasticsearchIndexNameFormat 
-                = LogCheckConstants.DEFAULT_ELASTICSEARCH_INDEX_NAME_FORMAT;
-        elasticsearchLogType 
-                = LogCheckConstants.DEFAULT_LOG_TYPE;
-        elasticsearchIndexPrefix
-                = LogCheckConstants.DEFAULT_ELASTICSEARCH_INDEX_PREFIX;
-        
-        setElasticsearchURL(LogCheckConstants.DEFAULT_ELASTICSEARCH_URL);
-    }
 
-    public static LogEntryElasticSearch from()
-    {
-        LogEntryElasticSearch res = new LogEntryElasticSearch();
+        res = from(url, null, elasticsearchLogType);
 
         return res;
     }
@@ -151,10 +181,10 @@ public final class LogEntryElasticSearch implements ILogEntryStore
         String indx = null;
         String nowStr = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy.MM.dd"));
         
-        switch(elasticsearchIndexNameFormat)
+        switch( m_elasticsearchIndexNameFormat )
         {
             case PREFIX_DATE:
-                indx = String.format("%s%s", elasticsearchIndexPrefix, nowStr);
+                indx = String.format("%s%s", m_elasticsearchIndexPrefix, nowStr);
                 break;
                 
             default:
@@ -167,16 +197,8 @@ public final class LogEntryElasticSearch implements ILogEntryStore
     @Override
     public void init()
     {
-        JestClientFactory factory = new JestClientFactory();
-        
-        factory.setHttpClientConfig(new HttpClientConfig
-                        .Builder(elasticsearchURL.toString())
-                        .multiThreaded(true)
-                        .build());
- 
-        esClient = factory.getObject();
-    }
 
+    }
 
     @Override
     public void destroy()
@@ -184,10 +206,41 @@ public final class LogEntryElasticSearch implements ILogEntryStore
 
     }
 
+    @Override
+    public LCResultStatus testConnection() throws LogCheckException
+    {
+        LCResultStatus res = LCResultStatus.SUCCESS;
+
+        GetAliases aliases = new GetAliases.
+                Builder().
+                build();
+
+        JestResult clientRes;
+        try
+        {
+            clientRes = m_esClient.execute(aliases);
+        }
+        catch( IOException ex )
+        {
+            LOGGER.debug("testConnection failed", ex);
+
+            return LCResultStatus.FAIL;
+        }
+
+        if( clientRes.isSucceeded() == false )
+        {
+            LOGGER.debug(String.format("execute() : %s", clientRes.getErrorMessage()));
+
+            return LCResultStatus.FAIL;
+        }
+
+        return res;
+    }
+
     /**
-     * Put a log entry into the backend store, which is Elastic Search in this case.
+     * Put a LOGGER entry into the backend store, which is Elastic Search in this case.
      *
-     * @param le The log entry that needs to be stored.
+     * @param le The LOGGER entry that needs to be stored.
      * @return
      * @throws InterruptedException
      * @throws LogCheckException
@@ -195,7 +248,7 @@ public final class LogEntryElasticSearch implements ILogEntryStore
     @Override
     public LogCheckResult put(LogEntryVO le) throws InterruptedException, LogCheckException
     {
-        log.debug( String.format("put() for logEntry '%s'\n", le.getTimeStamp()));
+        LOGGER.debug( String.format("put() for logEntry '%s'\n", le.getTimeStamp()));
         
         LogCheckResult res = LogCheckResult.from(LCResultStatus.SUCCESS);
 
@@ -207,17 +260,13 @@ public final class LogEntryElasticSearch implements ILogEntryStore
 
         try
         {
-            JestResult exRes = esClient.execute(index);
-        }
-        catch( InterruptedException ex)
-        {
-            throw ex;
+            JestResult exRes = m_esClient.execute(index);
         }
         catch (Exception ex)
         {
             String errMsg = String.format("Error sending log entry to Elasticsearch '%s'", le.getLogger());
             
-            log.info( errMsg, ex);
+            LOGGER.info( errMsg, ex);
             
             throw new LogCheckException(errMsg, ex);
         }
