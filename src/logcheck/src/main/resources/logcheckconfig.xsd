@@ -51,6 +51,18 @@ NOTICE:  All information contained herein is, and remains
                     </xs:annotation>
                 </xs:element>
 
+                <xs:element name="tailerBackupLogNameComps" type="TailerBackupLogNameCompsListType" minOccurs="0" maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>These match the file name grouping the the related file name regex.  Values include FILENAME_PREFIX, INTEGER_INC, TIMESTAMP.</xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+
+                <xs:element name="debugFlags" type="DebugFlagsListType" minOccurs="0" maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>Allows passing in miscellaneous debug flags.  Values include LOG_SOURCE_LC_APP.</xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+
                 <xs:element name="pollInterval" type="xs:string" minOccurs="0"  maxOccurs="1">
                     <xs:annotation>
                         <xs:documentation>Seconds between polling the log file.</xs:documentation>
@@ -117,6 +129,12 @@ NOTICE:  All information contained herein is, and remains
                     </xs:annotation>
                 </xs:element>
 
+                <xs:element name="tailFromEnd" type="xs:boolean" minOccurs="0"  maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>tail from end.</xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+
                 <xs:element name="lockFilePath" type="xs:string" minOccurs="0" maxOccurs="1">
                     <xs:annotation>
                         <xs:documentation>Prevent multiple instances of the service from running.</xs:documentation>
@@ -135,9 +153,21 @@ NOTICE:  All information contained herein is, and remains
                     </xs:annotation>
                 </xs:element>
 
+                <xs:element name="setName" type="xs:string" minOccurs="0" maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>The name of the running 'Set'</xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+
                 <xs:element name="stateFilePath" type="xs:string" minOccurs="0" maxOccurs="1">
                     <xs:annotation>
                         <xs:documentation>State data file for complated jobs</xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+
+                <xs:element name="storeLogPath" type="xs:string" minOccurs="0" maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>The path to the Log Entry log file on disk.</xs:documentation>
                     </xs:annotation>
                 </xs:element>
 
@@ -172,6 +202,18 @@ NOTICE:  All information contained herein is, and remains
                     </xs:annotation>
                 </xs:element>
 
+                <xs:element name="tailerLogBackupDir" type="xs:string" minOccurs="0" maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>The directory were log files are backed up.</xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+
+                <xs:element name="tailerBackupLogNameRegex" type="xs:string" minOccurs="0" maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>The file regular expression for matching backup log files. E.g. (.*?).(\d).bak.</xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+
                 <xs:element name="stopAfter" type="xs:integer" minOccurs="0" maxOccurs="1">
                     <xs:annotation>
                         <xs:documentation>The number of seconds to run before stopping.</xs:documentation>
@@ -196,6 +238,24 @@ NOTICE:  All information contained herein is, and remains
                     </xs:annotation>
                 </xs:element>
 
+                <xs:element name="tailerBackupReadPriorLog" type="xs:boolean" minOccurs="0" maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>Find the prior backup log files.  Read those backup logs before starting.</xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+
+                <xs:element name="validateTailerStats" type="xs:boolean" minOccurs="0" maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>Validate Tailer Log File on disk using Statistics periodically to make sure the logs have not been rotated.</xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+
+                <xs:element name="tailerBackupReadLog" type="xs:boolean" minOccurs="0" maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>Find the backup log files AFTER they've been rotated.  Read those backups before continuing.</xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+
                 <xs:element name="continue" type="xs:boolean" minOccurs="0" maxOccurs="1">
                     <xs:annotation>
                         <xs:documentation>Continue with the state files from from a previous run</xs:documentation>
@@ -205,6 +265,34 @@ NOTICE:  All information contained herein is, and remains
             </xs:choice>
         </xs:complexType>
     </xs:element>
+
+    <xs:complexType name="DebugFlagsListType">
+        <xs:choice minOccurs="0" maxOccurs="unbounded">
+            <xs:element name="flag" type="DebugFlagsType" minOccurs="0" maxOccurs="unbounded" />
+        </xs:choice>
+    </xs:complexType>
+
+    <xs:simpleType name="DebugFlagsType">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="none"/>
+            <xs:enumeration value="log-source-lc-app"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:complexType name="TailerBackupLogNameCompsListType">
+        <xs:choice minOccurs="0" maxOccurs="unbounded">
+            <xs:element name="nameComponent" type="TailerBackupLogNameCompsType" minOccurs="0" maxOccurs="unbounded" />
+        </xs:choice>
+    </xs:complexType>
+
+    <xs:simpleType name="TailerBackupLogNameCompsType">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="none"/>
+            <xs:enumeration value="filename-prefix"/>
+            <xs:enumeration value="integer-inc"/>
+            <xs:enumeration value="timestamp"/>
+        </xs:restriction>
+    </xs:simpleType>
 
     <xs:complexType name="LogEntryBuilderListType">
         <xs:choice minOccurs="0" maxOccurs="unbounded">
