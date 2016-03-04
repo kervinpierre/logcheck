@@ -19,6 +19,7 @@ package com.sludev.logs.logcheck.config.parsers;
 
 import com.sludev.logs.logcheck.config.entities.LogCheckConfig;
 import com.sludev.logs.logcheck.exceptions.LogCheckException;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.w3c.dom.Document;
@@ -38,7 +39,7 @@ import java.util.List;
  */
 public class LogCheckConfigParser
 {
-    private static final Logger log 
+    private static final Logger LOGGER
                           = LogManager.getLogger(LogCheckConfigParser.class);
     
     public static LogCheckConfig readConfig(Document doc) throws LogCheckException
@@ -61,16 +62,23 @@ public class LogCheckConfigParser
         Boolean dryRun = null;
         Boolean currSaveState = null;
         Boolean continueState = null;
+        Boolean tailFromEnd = null;
         Boolean reOpenLogFile = null;
+        Boolean tailerBackupReadPriorLog = null;
+        Boolean validateTailerStats = null;
+        Boolean tailerBackupReadLog = null;
         String lockFileStr = null;
         String elasticsearchURLStr = null;
         String logFileStr = null;
+        String storeLogPathStr = null;
         String statusFileStr = null;
         String stateFileStr = null;
         String errorFileStr = null;
         String idBlockSize = null;
         String idBlockHashType = null;
         String setName = null;
+        String tailerLogBackupDir = null;
+        String tailerBackupLogNameRegexStr = null;
         String deDupeDir = null;
         String deDupeMaxLogsPerFile = null;
         String deDupeMaxLogsBeforeWrite = null;
@@ -80,14 +88,20 @@ public class LogCheckConfigParser
         String readMaxDeDupeEntriesStr = null;
         String[] leBuilderType = null;
         String[] leStoreType = null;
+        String[] tailerBackupLogNameComp = null;
+        String[] debugFlags = null;
 
         try
         {
-            holdingDirStr = currXPath.compile("./holdingFolder").evaluate(currEl);
+            String tempStr = currXPath.compile("./holdingFolder").evaluate(currEl);
+            if( StringUtils.isNoneBlank(tempStr) )
+            {
+                holdingDirStr = tempStr;
+            }
         }
         catch (XPathExpressionException ex)
         {
-            log.debug("configuration parsing error.", ex);
+            LOGGER.debug("configuration parsing error.", ex);
         }
 
         try
@@ -95,19 +109,30 @@ public class LogCheckConfigParser
             NodeList currElList = (NodeList)currXPath.compile("./logEntryBuilders/builder").evaluate(
                     currEl, XPathConstants.NODESET);
 
-            if( currElList != null && currElList.getLength() > 0)
+            if( (currElList != null) && (currElList.getLength() > 0) )
             {
                 List<String> tempList = new ArrayList<>();
                 for(int i=0; i<currElList.getLength(); i++)
                 {
                     Element tempEl = (Element)currElList.item(i);
-                    tempList.add( tempEl.getTextContent() );
+                    String tempStr = tempEl.getTextContent();
+
+                    if( StringUtils.isNoneBlank(tempStr) )
+                    {
+                        tempList.add(tempStr);
+                    }
+                }
+
+                if( tempList.size() > 0 )
+                {
+                    leBuilderType = new String[tempList.size()];
+                    leBuilderType = tempList.toArray(leBuilderType);
                 }
             }
         }
         catch (XPathExpressionException ex)
         {
-            log.debug("configuration parsing error <logEntryBuilders>.", ex);
+            LOGGER.debug("configuration parsing error <logEntryBuilders>.", ex);
         }
 
         try
@@ -115,257 +140,524 @@ public class LogCheckConfigParser
             NodeList currElList = (NodeList)currXPath.compile("./logEntryStores/store").evaluate(
                     currEl, XPathConstants.NODESET);
 
-            if( currElList != null && currElList.getLength() > 0)
+            if( (currElList != null) && (currElList.getLength() > 0) )
             {
                 List<String> tempList = new ArrayList<>();
                 for(int i=0; i<currElList.getLength(); i++)
                 {
                     Element tempEl = (Element)currElList.item(i);
-                    tempList.add( tempEl.getTextContent() );
+                    String tempStr = tempEl.getTextContent();
+
+                    if( StringUtils.isNoneBlank(tempStr) )
+                    {
+                        tempList.add(tempStr);
+                    }
+                }
+
+                if( tempList.size() > 0 )
+                {
+                    leStoreType = new String[tempList.size()];
+                    leStoreType = tempList.toArray(leStoreType);
                 }
             }
         }
         catch (XPathExpressionException ex)
         {
-            log.debug("configuration parsing error <logEntryStores>.", ex);
+            LOGGER.debug("configuration parsing error <logEntryStores>.", ex);
         }
 
         try
         {
-            pollIntervalStr = currXPath.compile("./pollInterval").evaluate(currEl);
+            NodeList currElList = (NodeList)currXPath.compile("./tailerBackupLogNameComps/nameComponent").evaluate(
+                    currEl, XPathConstants.NODESET);
+
+            if( (currElList != null) && (currElList.getLength() > 0) )
+            {
+                List<String> tempList = new ArrayList<>();
+                for(int i=0; i<currElList.getLength(); i++)
+                {
+                    Element tempEl = (Element)currElList.item(i);
+                    String tempStr = tempEl.getTextContent();
+
+                    if( StringUtils.isNoneBlank(tempStr) )
+                    {
+                        tempList.add(tempStr);
+                    }
+                }
+
+                if( tempList.size() > 0 )
+                {
+                    tailerBackupLogNameComp = new String[tempList.size()];
+                    tailerBackupLogNameComp = tempList.toArray(tailerBackupLogNameComp);
+                }
+            }
         }
         catch (XPathExpressionException ex)
         {
-            log.debug("configuration parsing error.", ex);
+            LOGGER.debug("configuration parsing error <tailerBackupLogNameComps>.", ex);
+        }
+
+        try
+        {
+            NodeList currElList = (NodeList)currXPath.compile("./debugFlags/flag").evaluate(
+                    currEl, XPathConstants.NODESET);
+
+            if( (currElList != null) && (currElList.getLength() > 0) )
+            {
+                List<String> tempList = new ArrayList<>();
+                for(int i=0; i<currElList.getLength(); i++)
+                {
+                    Element tempEl = (Element)currElList.item(i);
+                    String tempStr = tempEl.getTextContent();
+
+                    if( StringUtils.isNoneBlank(tempStr) )
+                    {
+                        tempList.add(tempStr);
+                    }
+                }
+
+                if( tempList.size() > 0 )
+                {
+                    debugFlags = new String[tempList.size()];
+                    debugFlags = tempList.toArray(debugFlags);
+                }
+            }
+        }
+        catch (XPathExpressionException ex)
+        {
+            LOGGER.debug("configuration parsing error <tailerBackupLogNameComps>.", ex);
+        }
+
+        try
+        {
+            String tempStr = currXPath.compile("./pollInterval").evaluate(currEl);
+
+            if( StringUtils.isNoneBlank(tempStr) )
+            {
+                pollIntervalStr = tempStr;
+            }
+        }
+        catch (XPathExpressionException ex)
+        {
+            LOGGER.debug("configuration parsing error.", ex);
         }
         
         try
         {
-            smtpServerStr = currXPath.compile("./smtpServer").evaluate(currEl);
+            String tempStr = currXPath.compile("./smtpServer").evaluate(currEl);
+            if( StringUtils.isNoneBlank(tempStr) )
+            {
+                smtpServerStr = tempStr;
+            }
         }
         catch (XPathExpressionException ex)
         {
-            log.debug("configuration parsing error.", ex);
+            LOGGER.debug("configuration parsing error.", ex);
         }
         
         try
         {
-            smtpUserStr = currXPath.compile("./smtpUser").evaluate(currEl);
+            String tempStr = currXPath.compile("./smtpUser").evaluate(currEl);
+
+            if( StringUtils.isNoneBlank(tempStr) )
+            {
+                smtpUserStr = tempStr;
+            }
         }
         catch (XPathExpressionException ex)
         {
-            log.debug("configuration parsing error.", ex);
+            LOGGER.debug("configuration parsing error.", ex);
         }
         
         try
         {
-            smtpPassStr = currXPath.compile("./smtpPass").evaluate(currEl);
+            String tempStr = currXPath.compile("./smtpPass").evaluate(currEl);
+
+            if( StringUtils.isNoneBlank(tempStr) )
+            {
+                smtpPassStr = tempStr;
+            }
         }
         catch (XPathExpressionException ex)
         {
-            log.debug("configuration parsing error.", ex);
+            LOGGER.debug("configuration parsing error.", ex);
         }
         
         try
         {
-            smtpPortStr = currXPath.compile("./smtpPort").evaluate(currEl);
+            String tempStr = currXPath.compile("./smtpPort").evaluate(currEl);
+
+            if( StringUtils.isNoneBlank(tempStr) )
+            {
+                smtpPortStr = tempStr;
+            }
         }
         catch (XPathExpressionException ex)
         {
-            log.debug("configuration parsing error.", ex);
+            LOGGER.debug("configuration parsing error.", ex);
         }
         
         try
         {
-            smtpProtocolStr = currXPath.compile("./smtpProtocol").evaluate(currEl);
+            String tempStr = currXPath.compile("./smtpProtocol").evaluate(currEl);
+            if( StringUtils.isNoneBlank(tempStr) )
+            {
+                smtpProtocolStr = tempStr;
+            }
         }
         catch (XPathExpressionException ex)
         {
-            log.debug("configuration parsing error.", ex);
+            LOGGER.debug("configuration parsing error.", ex);
         }
         
         try
         {
             String tempStr = currXPath.compile("./dryRun").evaluate(currEl);
-            dryRun = Boolean.parseBoolean(tempStr);
+            if( StringUtils.isNoneBlank(tempStr) )
+            {
+                dryRun = Boolean.parseBoolean(tempStr);
+            }
         }
         catch(Exception ex)
         {
-            log.debug("configuration parsing error 'dryRun'.", ex);
+            LOGGER.debug("configuration parsing error 'dryRun'.", ex);
         }
 
         try
         {
             String tempStr = currXPath.compile("./saveState").evaluate(currEl);
-            currSaveState = Boolean.parseBoolean(tempStr);
+            if( StringUtils.isNoneBlank(tempStr) )
+            {
+                currSaveState = Boolean.parseBoolean(tempStr);
+            }
         }
         catch(Exception ex)
         {
-            log.debug("configuration parsing error 'saveState'.", ex);
+            LOGGER.debug("configuration parsing error 'saveState'.", ex);
         }
 
         try
         {
-            lockFileStr = currXPath.compile("./lockFilePath").evaluate(currEl);
+            String tempStr = currXPath.compile("./lockFilePath").evaluate(currEl);
+            if( StringUtils.isNoneBlank(tempStr) )
+            {
+                lockFileStr = tempStr;
+            }
         }
         catch (XPathExpressionException ex)
         {
-            log.debug("configuration parsing error.", ex);
+            LOGGER.debug("configuration parsing error.", ex);
         }
         
         try
         {
-            logFileStr = currXPath.compile("./logFilePath").evaluate(currEl);
+            String tempStr = currXPath.compile("./logFilePath").evaluate(currEl);
+            if( StringUtils.isNoneBlank(tempStr) )
+            {
+                logFileStr = tempStr;
+            }
         }
         catch (XPathExpressionException ex)
         {
-            log.debug("configuration parsing error.", ex);
+            LOGGER.debug("configuration parsing error.", ex);
         }
         
         try
         {
-            elasticsearchURLStr = currXPath.compile("./elasticsearchURL").evaluate(currEl);
+            String tempStr = currXPath.compile("./elasticsearchURL").evaluate(currEl);
+            if( StringUtils.isNoneBlank(tempStr) )
+            {
+                elasticsearchURLStr = tempStr;
+            }
         }
         catch (XPathExpressionException ex)
         {
-            log.debug("configuration parsing error.", ex);
+            LOGGER.debug("configuration parsing error.", ex);
         }
 
         try
         {
-            statusFileStr = currXPath.compile("./statusFilePath").evaluate(currEl);
+            String tempStr = currXPath.compile("./statusFilePath").evaluate(currEl);
+            if( StringUtils.isNoneBlank(tempStr) )
+            {
+                statusFileStr = tempStr;
+            }
         }
         catch (XPathExpressionException ex)
         {
-            log.debug("configuration parsing error.", ex);
+            LOGGER.debug("configuration parsing error.", ex);
         }
 
         try
         {
-            stateFileStr = currXPath.compile("./stateFilePath").evaluate(currEl);
+            String tempStr  = currXPath.compile("./stateFilePath").evaluate(currEl);
+            if( StringUtils.isNoneBlank(tempStr) )
+            {
+                stateFileStr = tempStr;
+            }
         }
         catch (XPathExpressionException ex)
         {
-            log.debug("configuration parsing error.", ex);
+            LOGGER.debug("configuration parsing error.", ex);
         }
 
         try
         {
-            errorFileStr = currXPath.compile("./errorFilePath").evaluate(currEl);
+            String tempStr  = currXPath.compile("./storeLogPath").evaluate(currEl);
+            if( StringUtils.isNoneBlank(tempStr) )
+            {
+                storeLogPathStr = tempStr;
+            }
         }
         catch (XPathExpressionException ex)
         {
-            log.debug("configuration parsing error.", ex);
+            LOGGER.debug("configuration parsing error.", ex);
         }
 
         try
         {
-            idBlockHashType = currXPath.compile("./idBlockHashType").evaluate(currEl);
+            String tempStr = currXPath.compile("./errorFilePath").evaluate(currEl);
+            if( StringUtils.isNoneBlank(tempStr) )
+            {
+                errorFileStr = tempStr;
+            }
         }
         catch (XPathExpressionException ex)
         {
-            log.debug("configuration parsing error.", ex);
+            LOGGER.debug("configuration parsing error.", ex);
         }
 
         try
         {
-            idBlockSize = currXPath.compile("./idBlockSize").evaluate(currEl);
+            String tempStr = currXPath.compile("./idBlockHashType").evaluate(currEl);
+            if( StringUtils.isNoneBlank(tempStr) )
+            {
+                idBlockHashType = tempStr;
+            }
         }
         catch (XPathExpressionException ex)
         {
-            log.debug("configuration parsing error.", ex);
+            LOGGER.debug("configuration parsing error.", ex);
         }
 
         try
         {
-            setName = currXPath.compile("./setName").evaluate(currEl);
+            String tempStr = currXPath.compile("./idBlockSize").evaluate(currEl);
+            if( StringUtils.isNoneBlank(tempStr) )
+            {
+                idBlockSize = tempStr;
+            }
         }
         catch (XPathExpressionException ex)
         {
-            log.debug("configuration parsing error.", ex);
+            LOGGER.debug("configuration parsing error.", ex);
         }
 
         try
         {
-            deDupeDir = currXPath.compile("./deDuplicationLogDir").evaluate(currEl);
+            String tempStr = currXPath.compile("./setName").evaluate(currEl);
+            if( StringUtils.isNoneBlank(tempStr) )
+            {
+                setName = tempStr;
+            }
         }
         catch (XPathExpressionException ex)
         {
-            log.debug("configuration parsing error.", ex);
+            LOGGER.debug("configuration parsing error.", ex);
         }
 
         try
         {
-            deDupeMaxLogsPerFile = currXPath.compile("./deDuplicationMaxLogsPerFile").evaluate(currEl);
+            String tempStr = currXPath.compile("./tailerLogBackupDir").evaluate(currEl);
+            if( StringUtils.isNoneBlank(tempStr) )
+            {
+                tailerLogBackupDir = tempStr;
+            }
         }
         catch (XPathExpressionException ex)
         {
-            log.debug("configuration parsing error.", ex);
+            LOGGER.debug("configuration parsing error.", ex);
         }
 
         try
         {
-            deDupeMaxLogsBeforeWrite = currXPath.compile("./deDuplicationMaxLogsBeforeWrite").evaluate(currEl);
+            String tempStr = currXPath.compile("./tailerBackupLogNameRegex").evaluate(currEl);
+            if( StringUtils.isNoneBlank(tempStr) )
+            {
+                tailerBackupLogNameRegexStr = tempStr;
+            }
         }
         catch (XPathExpressionException ex)
         {
-            log.debug("configuration parsing error.", ex);
+            LOGGER.debug("configuration parsing error.", ex);
         }
 
         try
         {
-            deDupeMaxLogFiles = currXPath.compile("./deDuplicationMaxLogFiles").evaluate(currEl);
+            String tempStr = currXPath.compile("./deDuplicationLogDir").evaluate(currEl);
+            if( StringUtils.isNoneBlank(tempStr) )
+            {
+                deDupeDir = tempStr;
+            }
         }
         catch (XPathExpressionException ex)
         {
-            log.debug("configuration parsing error.", ex);
+            LOGGER.debug("configuration parsing error.", ex);
+        }
+        try
+        {
+            String tempStr = currXPath.compile("./deDuplicationMaxLogsPerFile").evaluate(currEl);
+            if( StringUtils.isNoneBlank(tempStr) )
+            {
+                deDupeMaxLogsPerFile = tempStr;
+            }
+        }
+        catch (XPathExpressionException ex)
+        {
+            LOGGER.debug("configuration parsing error.", ex);
         }
 
         try
         {
-            stopAfterStr = currXPath.compile("./stopAfter").evaluate(currEl);
+            String tempStr = currXPath.compile("./deDuplicationMaxLogsBeforeWrite").evaluate(currEl);
+            if( StringUtils.isNoneBlank(tempStr) )
+            {
+                deDupeMaxLogsBeforeWrite = tempStr;
+            }
         }
         catch (XPathExpressionException ex)
         {
-            log.debug("configuration parsing error.", ex);
+            LOGGER.debug("configuration parsing error.", ex);
         }
 
         try
         {
-            readLogFileCountStr = currXPath.compile("./readLogFileCount").evaluate(currEl);
+            String tempStr = currXPath.compile("./deDuplicationMaxLogFiles").evaluate(currEl);
+            if( StringUtils.isNoneBlank(tempStr) )
+            {
+                deDupeMaxLogFiles = tempStr;
+            }
         }
         catch (XPathExpressionException ex)
         {
-            log.debug("configuration parsing error.", ex);
+            LOGGER.debug("configuration parsing error.", ex);
         }
 
         try
         {
-            readMaxDeDupeEntriesStr = currXPath.compile("./readMaxDeDupeEntries").evaluate(currEl);
+            String tempStr = currXPath.compile("./stopAfter").evaluate(currEl);
+            if( StringUtils.isNoneBlank(tempStr) )
+            {
+                stopAfterStr = tempStr;
+            }
         }
         catch (XPathExpressionException ex)
         {
-            log.debug("configuration parsing error.", ex);
+            LOGGER.debug("configuration parsing error.", ex);
+        }
+
+        try
+        {
+            String tempStr = currXPath.compile("./readLogFileCount").evaluate(currEl);
+            if( StringUtils.isNoneBlank(tempStr) )
+            {
+                readLogFileCountStr = tempStr;
+            }
+        }
+        catch (XPathExpressionException ex)
+        {
+            LOGGER.debug("configuration parsing error.", ex);
+        }
+
+        try
+        {
+            String tempStr = currXPath.compile("./readMaxDeDupeEntries").evaluate(currEl);
+            if( StringUtils.isNoneBlank(tempStr) )
+            {
+                readMaxDeDupeEntriesStr = tempStr;
+            }
+        }
+        catch (XPathExpressionException ex)
+        {
+            LOGGER.debug("configuration parsing error.", ex);
         }
 
         try
         {
             String tempStr = currXPath.compile("./continue").evaluate(currEl);
-            continueState = Boolean.parseBoolean(tempStr);
+            if( StringUtils.isNoneBlank(tempStr) )
+            {
+                continueState = Boolean.parseBoolean(tempStr);
+            }
         }
         catch (XPathExpressionException ex)
         {
-            log.debug("configuration parsing error.", ex);
+            LOGGER.debug("configuration parsing error.", ex);
+        }
+
+        try
+        {
+            String tempStr = currXPath.compile("./tailFromEnd").evaluate(currEl);
+            if( StringUtils.isNoneBlank(tempStr) )
+            {
+                tailFromEnd = Boolean.parseBoolean(tempStr);
+            }
+        }
+        catch (XPathExpressionException ex)
+        {
+            LOGGER.debug("configuration parsing error.", ex);
         }
 
         try
         {
             String tempStr = currXPath.compile("./reOpenLogFile").evaluate(currEl);
-            reOpenLogFile = Boolean.parseBoolean(tempStr);
+            if( StringUtils.isNoneBlank(tempStr) )
+            {
+                reOpenLogFile = Boolean.parseBoolean(tempStr);
+            }
         }
         catch (XPathExpressionException ex)
         {
-            log.debug("configuration parsing error.", ex);
+            LOGGER.debug("configuration parsing error.", ex);
+        }
+
+        try
+        {
+            String tempStr = currXPath.compile("./tailerBackupReadPriorLog").evaluate(currEl);
+            if( StringUtils.isNoneBlank(tempStr) )
+            {
+                tailerBackupReadPriorLog = Boolean.parseBoolean(tempStr);
+            }
+        }
+        catch (XPathExpressionException ex)
+        {
+            LOGGER.debug("configuration parsing error.", ex);
+        }
+
+        try
+        {
+            String tempStr = currXPath.compile("./validateTailerStats").evaluate(currEl);
+            if( StringUtils.isNoneBlank(tempStr) )
+            {
+                validateTailerStats = Boolean.parseBoolean(tempStr);
+            }
+        }
+        catch (XPathExpressionException ex)
+        {
+            LOGGER.debug("configuration parsing error.", ex);
+        }
+
+        try
+        {
+            String tempStr = currXPath.compile("./tailerBackupReadLog").evaluate(currEl);
+            if( StringUtils.isNoneBlank(tempStr) )
+            {
+                tailerBackupReadLog = Boolean.parseBoolean(tempStr);
+            }
+        }
+        catch (XPathExpressionException ex)
+        {
+            LOGGER.debug("configuration parsing error.", ex);
         }
 
         res = LogCheckConfig.from(null,
@@ -380,28 +672,28 @@ public class LogCheckConfigParser
                 dryRun,
                 null, // showVersion,
                 null, // printLog,
-                null, // tailFromEnd,
+                tailFromEnd, // tailFromEnd,
                 reOpenLogFile, // reOpenLogFile
                 null, // storeReOpenLogFile
                 currSaveState, // saveState
                 null, // collectState
                 continueState, // continueState
                 null, // startPositionIgnoreError
-                null,
-                null, // tailerBackupReadLog
-                null, // tailerBackupReadPriorLog
+                validateTailerStats,
+                tailerBackupReadLog,
+                tailerBackupReadPriorLog,
                 null, // stopOnEOF
                 null, // readOnlyFileMode
                 lockFileStr,
                 logFileStr,
-                null, // storeLogFile
+                storeLogPathStr,
                 statusFileStr,
                 stateFileStr,
                 errorFileStr,
                 null, // configFilePath,
                 holdingDirStr,
                 deDupeDir,
-                null, // tailerLogBackupDir
+                tailerLogBackupDir,
                 elasticsearchURLStr,
                 null, // elasticsearchIndexName,
                 null, // elasticsearchIndexPrefix,
@@ -420,11 +712,11 @@ public class LogCheckConfigParser
                 deDupeMaxLogFiles,
                 leBuilderType,
                 leStoreType,
-                null, // tailerBackupLogNameComp
+                tailerBackupLogNameComp,
                 idBlockHashType,
                 null, // tailerBackupLogCompression
-                null,  // tailerBackupLogNameRegexStr
-                null // debugFlags
+                tailerBackupLogNameRegexStr,
+                debugFlags
                  );
 
         return res;

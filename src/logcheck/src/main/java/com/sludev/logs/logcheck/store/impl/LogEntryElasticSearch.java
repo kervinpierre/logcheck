@@ -156,7 +156,7 @@ public final class LogEntryElasticSearch implements ILogEntryStore
     }
 
     public static LogEntryElasticSearch from(final String urlStr,
-                                             final String elasticsearchLogType)
+                                             final String elasticsearchLogType) throws LogCheckException
     {
         LogEntryElasticSearch res = null;
 
@@ -168,7 +168,11 @@ public final class LogEntryElasticSearch implements ILogEntryStore
         }
         catch (MalformedURLException ex)
         {
-            LOGGER.error( String.format("Invalid URL : '%s'", urlStr), ex );
+            String errMsg = String.format("Invalid URL : '%s'", urlStr);
+
+            LOGGER.debug( errMsg, ex );
+
+            throw new LogCheckException(errMsg, ex);
         }
 
         res = from(url, null, elasticsearchLogType);

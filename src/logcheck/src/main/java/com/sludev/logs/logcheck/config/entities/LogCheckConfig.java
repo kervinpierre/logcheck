@@ -28,6 +28,11 @@ import com.sludev.logs.logcheck.utils.LogCheckConstants;
 import com.sludev.logs.logcheck.exceptions.LogCheckException;
 import com.sludev.logs.logcheck.utils.ParseNumberWithSuffix;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
+import org.apache.commons.lang3.builder.RecursiveToStringStyle;
+import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 
@@ -479,7 +484,7 @@ public final class LogCheckConfig
         {
             this.m_readOnlyFileMode = readOnlyFileMode;
         }
-        else if( orig != null && orig.isReadOnlyFileMode() != null )
+        else if( (orig != null) && (orig.isReadOnlyFileMode() != null) )
         {
             this.m_readOnlyFileMode = orig.isReadOnlyFileMode();
         }
@@ -492,7 +497,7 @@ public final class LogCheckConfig
         {
             this.m_tailerBackupReadLog = tailerBackupReadLog;
         }
-        else if( orig != null && orig.willTailerBackupReadLog() != null )
+        else if( (orig != null) && (orig.willTailerBackupReadLog() != null) )
         {
             this.m_tailerBackupReadLog = orig.willTailerBackupReadLog();
         }
@@ -518,7 +523,7 @@ public final class LogCheckConfig
         {
             this.m_tailerLogBackupDir = tailerLogBackupDir;
         }
-        else if( orig != null && orig.getTailerLogBackupDir() != null )
+        else if( (orig != null) && (orig.getTailerLogBackupDir() != null) )
         {
             this.m_tailerLogBackupDir = orig.getTailerLogBackupDir();
         }
@@ -531,7 +536,7 @@ public final class LogCheckConfig
         {
             this.m_tailerBackupLogNameComps = tailerBackupLogNameComps;
         }
-        else if( orig != null && orig.getLogEntryStores() != null )
+        else if( (orig != null) && (orig.getLogEntryStores() != null) )
         {
             this.m_tailerBackupLogNameComps = orig.getTailerBackupLogNameComps();
         }
@@ -544,7 +549,7 @@ public final class LogCheckConfig
         {
             this.m_tailerBackupLogCompression = tailerBackupLogCompression;
         }
-        else if( orig != null && orig.getTailerBackupLogCompression() != null )
+        else if( (orig != null) && (orig.getTailerBackupLogCompression() != null) )
         {
             this.m_tailerBackupLogCompression = orig.getTailerBackupLogCompression();
         }
@@ -557,7 +562,7 @@ public final class LogCheckConfig
         {
             this.m_tailerBackupLogNameRegex = tailerBackupLogNameRegex;
         }
-        else if( orig != null && orig.getTailerBackupLogNameRegex() != null )
+        else if( (orig != null) && (orig.getTailerBackupLogNameRegex() != null) )
         {
             this.m_tailerBackupLogNameRegex = orig.getTailerBackupLogNameRegex();
         }
@@ -570,7 +575,7 @@ public final class LogCheckConfig
         {
             this.m_logEntryStores = logEntryStores;
         }
-        else if( orig != null && orig.getLogEntryStores() != null )
+        else if( (orig != null) && (orig.getLogEntryStores() != null) )
         {
             this.m_logEntryStores = orig.getLogEntryStores();
         }
@@ -583,7 +588,7 @@ public final class LogCheckConfig
         {
             this.m_storeReOpenLogFile = storeReOpenLogFile;
         }
-        else if( orig != null && orig.willStoreReOpenLogFile() != null )
+        else if( (orig != null) && (orig.willStoreReOpenLogFile() != null) )
         {
             this.m_storeReOpenLogFile = orig.willStoreReOpenLogFile();
         }
@@ -596,7 +601,7 @@ public final class LogCheckConfig
         {
             this.m_storeLogPath = storeLogPath;
         }
-        else if( orig != null && orig.getStoreLogPath() != null )
+        else if( (orig != null) && (orig.getStoreLogPath() != null) )
         {
             this.m_storeLogPath = orig.getStoreLogPath();
         }
@@ -609,7 +614,7 @@ public final class LogCheckConfig
         {
             this.m_service = service;
         }
-        else if( orig != null && orig.isService() != null )
+        else if( (orig != null) && (orig.isService() != null) )
         {
             this.m_service = orig.isService();
         }
@@ -622,7 +627,7 @@ public final class LogCheckConfig
         {
             this.m_validateTailerStats = validateTailerStats;
         }
-        else if( orig != null && orig.willValidateTailerStats() != null )
+        else if( (orig != null) && (orig.willValidateTailerStats() != null) )
         {
             this.m_validateTailerStats = orig.willValidateTailerStats();
         }
@@ -635,7 +640,7 @@ public final class LogCheckConfig
         {
             this.m_deDupeMaxLogsBeforeWrite = deDupeMaxLogsBeforeWrite;
         }
-        else if( orig != null && orig.getDeDupeMaxLogsBeforeWrite() != null )
+        else if( (orig != null) && (orig.getDeDupeMaxLogsBeforeWrite() != null) )
         {
             this.m_deDupeMaxLogsBeforeWrite = orig.getDeDupeMaxLogsBeforeWrite();
         }
@@ -648,7 +653,7 @@ public final class LogCheckConfig
         {
             this.m_deDupeMaxLogsPerFile = deDupeMaxLogsPerFile;
         }
-        else if( orig != null && orig.getDeDupeMaxLogsPerFile() != null )
+        else if( (orig != null) && (orig.getDeDupeMaxLogsPerFile() != null) )
         {
             this.m_deDupeMaxLogsPerFile = orig.getDeDupeMaxLogsPerFile();
         }
@@ -661,7 +666,7 @@ public final class LogCheckConfig
         {
             this.m_deDupeMaxLogFiles = deDupeMaxLogFiles;
         }
-        else if( orig != null && orig.getDeDupeMaxLogFiles() != null )
+        else if( (orig != null) && (orig.getDeDupeMaxLogFiles() != null) )
         {
             this.m_deDupeMaxLogFiles = orig.getDeDupeMaxLogFiles();
         }
@@ -674,7 +679,7 @@ public final class LogCheckConfig
         {
             this.m_idBlockSize = idBlockSize;
         }
-        else if( orig != null && orig.getIdBlockSize() != null )
+        else if( (orig != null) && (orig.getIdBlockSize() != null) )
         {
             this.m_idBlockSize = orig.getIdBlockSize();
         }
@@ -687,7 +692,7 @@ public final class LogCheckConfig
         {
             this.m_idBlockHashType = idBlockHashType;
         }
-        else if( orig != null && orig.getIdBlockHashType() != null )
+        else if( (orig != null) && (orig.getIdBlockHashType() != null) )
         {
             this.m_idBlockHashType = orig.getIdBlockHashType();
         }
@@ -700,7 +705,7 @@ public final class LogCheckConfig
         {
             this.m_logEntryBuilders = logEntryBuilders;
         }
-        else if( orig != null && orig.getLogEntryBuilders() != null )
+        else if( (orig != null) && (orig.getLogEntryBuilders() != null) )
         {
             this.m_logEntryBuilders = orig.getLogEntryBuilders();
         }
@@ -713,7 +718,7 @@ public final class LogCheckConfig
         {
             this.m_emailOnError = emailOnError;
         }
-        else if( orig != null && orig.getEmailOnError() != null )
+        else if( (orig != null) && (orig.getEmailOnError() != null) )
         {
             this.m_emailOnError = orig.getEmailOnError();
         }
@@ -726,7 +731,7 @@ public final class LogCheckConfig
         {
             this.m_startPositionIgnoreError = startPositionIgnoreError;
         }
-        else if( orig != null && orig.willIgnoreStartPositionError() != null )
+        else if( (orig != null) && (orig.willIgnoreStartPositionError() != null) )
         {
             this.m_startPositionIgnoreError = orig.willIgnoreStartPositionError();
         }
@@ -740,7 +745,7 @@ public final class LogCheckConfig
             this.m_elasticsearchURL
                     = elasticsearchURL;
         }
-        else if( orig != null && orig.getElasticsearchURL() != null )
+        else if( (orig != null) && (orig.getElasticsearchURL() != null) )
         {
             this.m_elasticsearchURL
                     = orig.getElasticsearchURL();
@@ -769,7 +774,7 @@ public final class LogCheckConfig
             this.m_elasticsearchIndexPrefix
                     = elasticsearchIndexPrefix;
         }
-        else if( orig != null && orig.getElasticsearchIndexPrefix() != null )
+        else if( (orig != null) && (orig.getElasticsearchIndexPrefix() != null) )
         {
             this.m_elasticsearchIndexPrefix
                     = orig.getElasticsearchIndexPrefix();
@@ -785,8 +790,8 @@ public final class LogCheckConfig
             this.m_elasticsearchIndexNameFormat
                     = elasticsearchIndexNameFormat ;
         }
-        else if( orig != null
-                && orig.getElasticsearchIndexNameFormat() != null )
+        else if( (orig != null)
+                && (orig.getElasticsearchIndexNameFormat() != null) )
         {
             this.m_elasticsearchIndexNameFormat
                     = orig.getElasticsearchIndexNameFormat();
@@ -802,8 +807,8 @@ public final class LogCheckConfig
             this.m_elasticsearchLogType
                     = elasticsearchLogType;
         }
-        else if( orig != null
-                && orig.getElasticsearchLogType() != null )
+        else if( (orig != null)
+                && (orig.getElasticsearchLogType() != null) )
         {
             this.m_elasticsearchLogType
                     = orig.getElasticsearchLogType();
@@ -818,7 +823,7 @@ public final class LogCheckConfig
         {
             this.m_elasticsearchIndexName = elasticsearchIndexName;
         }
-        else if( orig != null && orig.isService() != null )
+        else if( (orig != null) && (orig.isService() != null) )
         {
             this.m_elasticsearchIndexName = orig.getElasticsearchIndexName();
         }
@@ -831,7 +836,7 @@ public final class LogCheckConfig
         {
             this.m_smtpServer = smtpServer;
         }
-        else if( orig != null && orig.getSmtpServer() != null )
+        else if( (orig != null) && (orig.getSmtpServer() != null) )
         {
             this.m_smtpServer = orig.getSmtpServer();
         }
@@ -844,7 +849,7 @@ public final class LogCheckConfig
         {
             this.m_smtpPort = smtpPort;
         }
-        else if( orig != null && orig.getSmtpPort() != null )
+        else if( (orig != null) && (orig.getSmtpPort() != null) )
         {
             this.m_smtpPort = orig.getSmtpPort();
         }
@@ -857,7 +862,7 @@ public final class LogCheckConfig
         {
             this.m_smtpPass = smtpPass;
         }
-        else if( orig != null && orig.getSmtpPass() != null )
+        else if( (orig != null) && (orig.getSmtpPass() != null) )
         {
             this.m_smtpPass = orig.getSmtpPass();
         }
@@ -870,7 +875,7 @@ public final class LogCheckConfig
         {
             this.m_smtpUser = smtpUser;
         }
-        else if( orig != null && orig.getSmtpUser() != null )
+        else if( (orig != null) && (orig.getSmtpUser() != null) )
         {
             this.m_smtpUser = orig.getSmtpUser();
         }
@@ -883,7 +888,7 @@ public final class LogCheckConfig
         {
             this.m_smtpProto = smtpProto;
         }
-        else if( orig != null && orig.getSmtpProto() != null )
+        else if( (orig != null) && (orig.getSmtpProto() != null) )
         {
             this.m_smtpProto = orig.getSmtpProto();
         }
@@ -896,7 +901,7 @@ public final class LogCheckConfig
         {
             this.m_setName = setName;
         }
-        else if( orig != null && StringUtils.isNoneBlank(orig.getSetName()) )
+        else if( (orig != null) && StringUtils.isNoneBlank(orig.getSetName()) )
         {
             this.m_setName = orig.getSetName();
         }
@@ -909,7 +914,7 @@ public final class LogCheckConfig
         {
             this.m_dryRun = dryRun;
         }
-        else if( orig != null && orig.isDryRun() != null )
+        else if( (orig != null) && (orig.isDryRun() != null) )
         {
             this.m_dryRun = orig.isDryRun();
         }
@@ -922,7 +927,7 @@ public final class LogCheckConfig
         {
             this.m_showVersion = showVersion;
         }
-        else if( orig != null && orig.isShowVersion() != null )
+        else if( (orig != null) && (orig.isShowVersion() != null) )
         {
             this.m_showVersion = orig.isShowVersion();
         }
@@ -935,7 +940,7 @@ public final class LogCheckConfig
         {
             this.m_lockFilePath = lockFilePath;
         }
-        else if( orig != null && orig.getLockFilePath() != null )
+        else if( (orig != null) && (orig.getLockFilePath() != null) )
         {
             this.m_lockFilePath = orig.getLockFilePath();
         }
@@ -948,7 +953,7 @@ public final class LogCheckConfig
         {
             this.m_logPath = logPath;
         }
-        else if( orig != null && orig.getLogPath() != null )
+        else if( (orig != null) && (orig.getLogPath() != null) )
         {
             this.m_logPath = orig.getLogPath();
         }
@@ -961,7 +966,7 @@ public final class LogCheckConfig
         {
             this.m_statusFilePath = statusFilePath;
         }
-        else if( orig != null && orig.getStatusFilePath() != null )
+        else if( (orig != null) && (orig.getStatusFilePath() != null) )
         {
             this.m_statusFilePath = orig.getStatusFilePath();
         }
@@ -974,7 +979,7 @@ public final class LogCheckConfig
         {
             this.m_stateFilePath = stateFilePath;
         }
-        else if( orig != null && orig.getStateFilePath() != null )
+        else if( (orig != null) && (orig.getStateFilePath() != null) )
         {
             this.m_stateFilePath = orig.getStateFilePath();
         }
@@ -987,7 +992,7 @@ public final class LogCheckConfig
         {
             this.m_errorFilePath = errorFilePath;
         }
-        else if( orig != null && orig.getErrorFilePath() != null )
+        else if( (orig != null) && (orig.getErrorFilePath() != null) )
         {
             this.m_errorFilePath = orig.getErrorFilePath();
         }
@@ -1000,7 +1005,7 @@ public final class LogCheckConfig
         {
             this.m_configFilePath = configFilePath;
         }
-        else if( orig != null && orig.getConfigFilePath() != null )
+        else if( (orig != null) && (orig.getConfigFilePath() != null) )
         {
             this.m_configFilePath = orig.getConfigFilePath();
         }
@@ -1013,7 +1018,7 @@ public final class LogCheckConfig
         {
             this.m_holdingDirPath = holdingDirPath;
         }
-        else if( orig != null && orig.getHoldingDirPath() != null )
+        else if( (orig != null) && (orig.getHoldingDirPath() != null) )
         {
             this.m_holdingDirPath = orig.getHoldingDirPath();
         }
@@ -1026,7 +1031,7 @@ public final class LogCheckConfig
         {
             this.m_deDupeDirPath = deDupeDirPath;
         }
-        else if( orig != null && orig.getDeDupeDirPath() != null )
+        else if( (orig != null) && (orig.getDeDupeDirPath() != null) )
         {
             this.m_deDupeDirPath = orig.getDeDupeDirPath();
         }
@@ -1039,7 +1044,7 @@ public final class LogCheckConfig
         {
             this.m_logCutoffDate = logCutoffDate;
         }
-        else if( orig != null && orig.getLogCutoffDate() != null )
+        else if( (orig != null) && (orig.getLogCutoffDate() != null) )
         {
             this.m_logCutoffDate = orig.getLogCutoffDate();
         }
@@ -1052,7 +1057,7 @@ public final class LogCheckConfig
         {
             this.m_logCutoffDuration = logCutoffDuration;
         }
-        else if( orig != null && orig.getLogCutoffDuration() != null )
+        else if( (orig != null) && (orig.getLogCutoffDuration() != null) )
         {
             this.m_logCutoffDuration = orig.getLogCutoffDuration();
         }
@@ -1066,7 +1071,7 @@ public final class LogCheckConfig
             this.m_logDeduplicationDuration
                     = logDeduplicationDuration;
         }
-        else if( orig != null && orig.getLogDeduplicationDuration() != null )
+        else if( (orig != null) && (orig.getLogDeduplicationDuration() != null) )
         {
             this.m_logDeduplicationDuration
                     = orig.getLogDeduplicationDuration();
@@ -1080,7 +1085,7 @@ public final class LogCheckConfig
         {
             this.m_stopAfter = stopAfter;
         }
-        else if( orig != null && orig.getStopAfter() != null )
+        else if( (orig != null) && (orig.getStopAfter() != null) )
         {
             this.m_stopAfter = orig.getStopAfter();
         }
@@ -1093,7 +1098,7 @@ public final class LogCheckConfig
         {
             this.m_printLog = printLog;
         }
-        else if( orig != null && orig.willPrintLog() != null )
+        else if( (orig != null) && (orig.willPrintLog() != null) )
         {
             this.m_printLog = orig.willPrintLog();
         }
@@ -1106,7 +1111,7 @@ public final class LogCheckConfig
         {
             this.m_saveState = saveState;
         }
-        else if( orig != null && orig.willSaveState() != null )
+        else if( (orig != null) && (orig.willSaveState() != null) )
         {
             this.m_saveState = orig.willSaveState();
         }
@@ -1119,7 +1124,7 @@ public final class LogCheckConfig
         {
             this.m_collectState= collectState;
         }
-        else if( orig != null && orig.willCollectState() != null )
+        else if( (orig != null) && (orig.willCollectState() != null) )
         {
             this.m_collectState= orig.willCollectState();
         }
@@ -1132,7 +1137,7 @@ public final class LogCheckConfig
         {
             this.m_readReOpenLogFile = readReOpenLogFile;
         }
-        else if( orig != null && orig.willReadReOpenLogFile() != null )
+        else if( (orig != null) && (orig.willReadReOpenLogFile() != null) )
         {
             this.m_readReOpenLogFile = orig.willReadReOpenLogFile();
         }
@@ -1145,7 +1150,7 @@ public final class LogCheckConfig
         {
             this.m_continueState = continueState;
         }
-        else if( orig != null && orig.willContinueState() != null )
+        else if( (orig != null) && (orig.willContinueState() != null) )
         {
             this.m_continueState = orig.willContinueState();
         }
@@ -1158,7 +1163,7 @@ public final class LogCheckConfig
         {
             this.m_pollIntervalSeconds = pollIntervalSeconds;
         }
-        else if( orig != null && orig.getPollIntervalSeconds() != null )
+        else if( (orig != null) && (orig.getPollIntervalSeconds() != null) )
         {
             this.m_pollIntervalSeconds = orig.getPollIntervalSeconds();
         }
@@ -1184,7 +1189,7 @@ public final class LogCheckConfig
         {
             this.m_readMaxDeDupeEntries = readMaxDeDupeEntries;
         }
-        else if( orig != null && orig.getReadMaxDeDupeEntries() != null )
+        else if( (orig != null) && (orig.getReadMaxDeDupeEntries() != null) )
         {
             this.m_readMaxDeDupeEntries = orig.getReadMaxDeDupeEntries();
         }
@@ -1197,7 +1202,7 @@ public final class LogCheckConfig
         {
             this.m_tailFromEnd = tailFromEnd;
         }
-        else if( orig != null && orig.isTailFromEnd() != null )
+        else if( (orig != null) && (orig.isTailFromEnd() != null) )
         {
             this.m_tailFromEnd = orig.isTailFromEnd();
         }
@@ -1538,7 +1543,11 @@ public final class LogCheckConfig
             {
                 if( StringUtils.isNoneBlank(nameComp) )
                 {
-                    tailerBackupLogNameComps.add(LCFileRegexComponent.from(nameComp));
+                    String tempStr = nameComp.replace('-', '_')
+                                                .toUpperCase()
+                                                .trim();
+
+                    tailerBackupLogNameComps.add(LCFileRegexComponent.from(tempStr));
                 }
             }
         }
@@ -1549,7 +1558,9 @@ public final class LogCheckConfig
             {
                 if( StringUtils.isNoneBlank(debugFlagStr) )
                 {
-                    debugFlags.add(LCDebugFlag.from(debugFlagStr));
+                    debugFlags.add(LCDebugFlag.from(debugFlagStr.replace('-', '_')
+                            .toUpperCase()
+                            .trim()));
                 }
             }
         }
@@ -1754,6 +1765,179 @@ public final class LogCheckConfig
                 tailerBackupLogCompression,
                 tailerBackupLogNameRegex,
                 debugFlags);
+
+        return res;
+    }
+
+    @Override
+    public int hashCode()
+    {
+        int res;
+
+        HashCodeBuilder hcb = new HashCodeBuilder();
+
+        // From field definition section, using VIM :
+        // :1,$s/private final [^ ]\+/hcb.append(/gc
+        // :1,$s/;/ );/gc
+
+        hcb.append( m_pollIntervalSeconds );
+        hcb.append( m_stopAfter );
+        hcb.append( m_idBlockSize );
+        hcb.append( m_deDupeMaxLogsPerFile );
+        hcb.append( m_deDupeMaxLogsBeforeWrite );
+        hcb.append( m_deDupeMaxLogFiles );
+        hcb.append( m_readLogFileCount );
+        hcb.append( m_readMaxDeDupeEntries );
+        hcb.append( m_emailOnError );
+        hcb.append( m_smtpServer );
+        hcb.append( m_smtpPort );
+        hcb.append( m_smtpPass );
+        hcb.append( m_smtpUser );
+        hcb.append( m_smtpProto );
+        hcb.append( m_setName );
+        hcb.append( m_elasticsearchIndexName );
+        hcb.append( m_elasticsearchIndexPrefix );
+        hcb.append( m_elasticsearchLogType );
+        hcb.append( m_service );
+        hcb.append( m_dryRun );
+        hcb.append( m_showVersion );
+        hcb.append( m_tailFromEnd );
+        hcb.append( m_printLog );
+        hcb.append( m_saveState );
+        hcb.append( m_collectState );
+        hcb.append( m_continueState );
+        hcb.append( m_readReOpenLogFile );
+        hcb.append( m_storeReOpenLogFile );
+        hcb.append( m_startPositionIgnoreError );
+        hcb.append( m_validateTailerStats );
+        hcb.append( m_tailerBackupReadLog );
+        hcb.append( m_tailerBackupReadPriorLog );
+        hcb.append( m_stopOnEOF );
+        hcb.append( m_readOnlyFileMode );
+        hcb.append( m_lockFilePath );
+        hcb.append( m_logPath );
+        hcb.append( m_storeLogPath );
+        hcb.append( m_statusFilePath );
+        hcb.append( m_stateFilePath );
+        hcb.append( m_errorFilePath );
+        hcb.append( m_configFilePath );
+        hcb.append( m_holdingDirPath );
+        hcb.append( m_deDupeDirPath );
+        hcb.append( m_tailerLogBackupDir );
+        hcb.append( m_elasticsearchURL );
+        hcb.append( m_logCutoffDate );
+        hcb.append( m_logCutoffDuration );
+        hcb.append( m_logDeduplicationDuration );
+        hcb.append( m_elasticsearchIndexNameFormat );
+        hcb.append( m_idBlockHashType );
+        hcb.append( m_tailerBackupLogCompression );
+        hcb.append( m_tailerBackupLogNameRegex );
+        hcb.append( m_logEntryBuilders );
+        hcb.append( m_logEntryStores );
+        hcb.append( m_tailerBackupLogNameComps );
+        hcb.append( m_debugFlags );
+
+        res = hcb.hashCode();
+
+        return res;
+    }
+
+    /**
+     * @param obj
+     * @return
+     */
+    @Override
+    public boolean equals(Object obj)
+    {
+        boolean res;
+
+        if ( (obj == null) || ((obj instanceof LogCheckConfig) == false) )
+        {
+            return false;
+        }
+
+        LogCheckConfig lcObj  = (LogCheckConfig)obj;
+
+        EqualsBuilder eb = new EqualsBuilder();
+
+        // From hashCode() above...
+        // :1,$s/hcb.append/eb.append/gc
+        // :1,$s/\(m_[^ ]\+\)/\1, lcObj.\1/gc
+        eb.append( m_pollIntervalSeconds, lcObj.m_pollIntervalSeconds );
+        eb.append( m_stopAfter, lcObj.m_stopAfter );
+        eb.append( m_idBlockSize, lcObj.m_idBlockSize );
+        eb.append( m_deDupeMaxLogsPerFile, lcObj.m_deDupeMaxLogsPerFile );
+        eb.append( m_deDupeMaxLogsBeforeWrite, lcObj.m_deDupeMaxLogsBeforeWrite );
+        eb.append( m_deDupeMaxLogFiles, lcObj.m_deDupeMaxLogFiles );
+        eb.append( m_readLogFileCount, lcObj.m_readLogFileCount );
+        eb.append( m_readMaxDeDupeEntries, lcObj.m_readMaxDeDupeEntries );
+        eb.append( m_emailOnError, lcObj.m_emailOnError );
+        eb.append( m_smtpServer, lcObj.m_smtpServer );
+        eb.append( m_smtpPort, lcObj.m_smtpPort );
+        eb.append( m_smtpPass, lcObj.m_smtpPass );
+        eb.append( m_smtpUser, lcObj.m_smtpUser );
+        eb.append( m_smtpProto, lcObj.m_smtpProto );
+        eb.append( m_setName, lcObj.m_setName );
+        eb.append( m_elasticsearchIndexName, lcObj.m_elasticsearchIndexName );
+        eb.append( m_elasticsearchIndexPrefix, lcObj.m_elasticsearchIndexPrefix );
+        eb.append( m_elasticsearchLogType, lcObj.m_elasticsearchLogType );
+        eb.append( m_service, lcObj.m_service );
+        eb.append( m_dryRun, lcObj.m_dryRun );
+        eb.append( m_showVersion, lcObj.m_showVersion );
+        eb.append( m_tailFromEnd, lcObj.m_tailFromEnd );
+        eb.append( m_printLog, lcObj.m_printLog );
+        eb.append( m_saveState, lcObj.m_saveState );
+        eb.append( m_collectState, lcObj.m_collectState );
+        eb.append( m_continueState, lcObj.m_continueState );
+        eb.append( m_readReOpenLogFile, lcObj.m_readReOpenLogFile );
+        eb.append( m_storeReOpenLogFile, lcObj.m_storeReOpenLogFile );
+        eb.append( m_startPositionIgnoreError, lcObj.m_startPositionIgnoreError );
+        eb.append( m_validateTailerStats, lcObj.m_validateTailerStats );
+        eb.append( m_tailerBackupReadLog, lcObj.m_tailerBackupReadLog );
+        eb.append( m_tailerBackupReadPriorLog, lcObj.m_tailerBackupReadPriorLog );
+        eb.append( m_stopOnEOF, lcObj.m_stopOnEOF );
+        eb.append( m_readOnlyFileMode, lcObj.m_readOnlyFileMode );
+        eb.append( m_lockFilePath, lcObj.m_lockFilePath );
+        eb.append( m_logPath, lcObj.m_logPath );
+        eb.append( m_storeLogPath, lcObj.m_storeLogPath );
+        eb.append( m_statusFilePath, lcObj.m_statusFilePath );
+        eb.append( m_stateFilePath, lcObj.m_stateFilePath );
+        eb.append( m_errorFilePath, lcObj.m_errorFilePath );
+        eb.append( m_configFilePath, lcObj.m_configFilePath );
+        eb.append( m_holdingDirPath, lcObj.m_holdingDirPath );
+        eb.append( m_deDupeDirPath, lcObj.m_deDupeDirPath );
+        eb.append( m_tailerLogBackupDir, lcObj.m_tailerLogBackupDir );
+        eb.append( m_elasticsearchURL, lcObj.m_elasticsearchURL );
+        eb.append( m_logCutoffDate, lcObj.m_logCutoffDate );
+        eb.append( m_logCutoffDuration, lcObj.m_logCutoffDuration );
+        eb.append( m_logDeduplicationDuration, lcObj.m_logDeduplicationDuration );
+        eb.append( m_elasticsearchIndexNameFormat, lcObj.m_elasticsearchIndexNameFormat );
+        eb.append( m_logEntryBuilders, lcObj.m_logEntryBuilders );
+        eb.append( m_logEntryStores, lcObj.m_logEntryStores );
+        eb.append( m_tailerBackupLogNameComps, lcObj.m_tailerBackupLogNameComps );
+        eb.append( m_debugFlags, lcObj.m_debugFlags );
+        eb.append( m_idBlockHashType, lcObj.m_idBlockHashType );
+        eb.append( m_tailerBackupLogCompression, lcObj.m_tailerBackupLogCompression );
+
+        if( (m_tailerBackupLogNameRegex != null) && (lcObj.m_tailerBackupLogNameRegex != null) )
+        {
+            eb.append( m_tailerBackupLogNameRegex.pattern(), lcObj.m_tailerBackupLogNameRegex.pattern() );
+        }
+        else if( (m_tailerBackupLogNameRegex != null) || (lcObj.m_tailerBackupLogNameRegex != null) )
+        {
+            return false;
+        }
+
+        res = eb.build();
+
+        return res;
+    }
+
+    @Override
+    public String toString()
+    {
+        String res = ToStringBuilder.reflectionToString(this,
+                RecursiveToStringStyle.MULTI_LINE_STYLE);
 
         return res;
     }
