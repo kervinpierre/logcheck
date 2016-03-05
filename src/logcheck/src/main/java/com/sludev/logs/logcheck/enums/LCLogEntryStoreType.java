@@ -43,9 +43,10 @@ public enum LCLogEntryStoreType
         try
         {
             res = LCLogEntryStoreType.valueOf(
-                    StringUtils.upperCase(
-                            StringUtils.trim(
-                                    StringUtils.replace(s, "-", "_"))));
+                    StringUtils.remove(
+                            StringUtils.upperCase(
+                                StringUtils.trim(
+                                    StringUtils.replace(s, "-", "_"))), ' '));
         }
         catch(Exception ex)
         {
