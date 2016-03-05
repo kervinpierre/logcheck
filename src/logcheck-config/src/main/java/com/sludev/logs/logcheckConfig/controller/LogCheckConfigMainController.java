@@ -143,6 +143,7 @@ public final class LogCheckConfigMainController implements Initializable
     {
         LCCAppState appState = app.getAppState();
         String currConfigFile = null;
+        String currArgFile = null;
 
         if( appState == null )
         {
@@ -160,6 +161,11 @@ public final class LogCheckConfigMainController implements Initializable
                     = appState.getPreferences().get(LCCConstants.LCC_CONFIG_FILE_HIST01, "");
         }
 
+        if( StringUtils.isNoneBlank(appState.getArgFile()) )
+        {
+            currArgFile = appState.getArgFile();
+        }
+
         if( StringUtils.isNoneBlank(currConfigFile) )
         {
             generalTabConfigFileTextField.setText(currConfigFile);
@@ -173,11 +179,17 @@ public final class LogCheckConfigMainController implements Initializable
 
                 refreshStateToControls(false, false);
             }
-            
+
             LCCBrowseHandler.refreshLoadHistoryMenu(app, fileLoadMenu,
                     fileLoadMenuItem, fileLoadClearHistMenuItem, generalTabConfigFileTextField);
         }
-    }
+
+
+        if( StringUtils.isNoneBlank(currArgFile) )
+        {
+            generalTabArgFileTextField.setText(currArgFile);
+        }
+   }
 
     @FXML
     private AnchorPane mainPane;
@@ -452,6 +464,22 @@ public final class LogCheckConfigMainController implements Initializable
             Optional<ButtonType> result = alert.showAndWait();
 
             LOGGER.debug("Error saving configuration", ex);
+        }
+
+        try
+        {
+            LCCConfigFileHandler.saveArgFile(generalTabArgFileTextField.getText(),
+                        generalTabConfigFileTextField.getText());
+        }
+        catch( LogCheckConfigException ex )
+        {
+            Alert alert = new Alert(Alert.AlertType.ERROR,
+                    ex.getMessage(),
+                    ButtonType.OK);
+
+            Optional<ButtonType> result = alert.showAndWait();
+
+            LOGGER.debug("Error saving argument file", ex);
         }
 
         Stage stage = (Stage) buttonNext.getScene().getWindow();
