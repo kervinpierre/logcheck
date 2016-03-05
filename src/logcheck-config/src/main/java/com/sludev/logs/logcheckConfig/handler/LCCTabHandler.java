@@ -1,5 +1,7 @@
 package com.sludev.logs.logcheckConfig.handler;
 
+import com.sludev.logs.logcheckConfig.controller.LogCheckConfigMainController;
+import com.sludev.logs.logcheckConfig.enums.LCCDialogAction;
 import com.sludev.logs.logcheckConfig.main.LogCheckConfigMain;
 import javafx.event.ActionEvent;
 import javafx.scene.control.Alert;
@@ -31,11 +33,13 @@ public final class LCCTabHandler
         stage.close();
     }
 
-    public static void doButtonNext(final LogCheckConfigMain app,
-                                    final ActionEvent event,
-                                    final Button buttonNext,
-                                    final TabPane mainTabPane)
+    public static LCCDialogAction doButtonNext(final LogCheckConfigMain app,
+                                               final ActionEvent event,
+                                               final Button buttonNext,
+                                               final TabPane mainTabPane)
     {
+        LCCDialogAction res = LCCDialogAction.NONE;
+
         LOGGER.debug("Action for Button 'Next' pressed.");
 
         SingleSelectionModel<Tab> currModel = mainTabPane.getSelectionModel();
@@ -49,14 +53,19 @@ public final class LCCTabHandler
         {
             // Last tab
             // FIXME : Call the save method
-            Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Sure you'd like to save?",
-                    ButtonType.APPLY);
+            Alert alert = new Alert(Alert.AlertType.CONFIRMATION,
+                    "Are you sure you'd like to save to this configuration file?",
+                    ButtonType.YES, ButtonType.NO);
 
             Optional<ButtonType> result = alert.showAndWait();
-            if( result.isPresent() && result.get() == ButtonType.APPLY )
+            if( result.isPresent() && result.get() == ButtonType.YES )
             {
-                LOGGER.debug("Save config");
+                LOGGER.debug("Saving config...");
+
+                return LCCDialogAction.APPLY;
             }
         }
+
+        return res;
     }
 }

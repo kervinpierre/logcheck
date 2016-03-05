@@ -1,15 +1,26 @@
 package com.sludev.logs.logcheckConfig.controller;
 
+import com.sludev.logs.logcheck.config.entities.LogCheckConfig;
+import com.sludev.logs.logcheck.enums.LCDebugFlag;
+import com.sludev.logs.logcheck.enums.LCLogEntryBuilderType;
+import com.sludev.logs.logcheck.enums.LCLogEntryStoreType;
+import com.sludev.logs.logcheck.exceptions.LogCheckException;
 import com.sludev.logs.logcheckConfig.entity.LCCAppState;
+import com.sludev.logs.logcheckConfig.enums.LCCDialogAction;
 import com.sludev.logs.logcheckConfig.handler.LCCBrowseHandler;
+import com.sludev.logs.logcheckConfig.handler.LCCConfigFileHandler;
 import com.sludev.logs.logcheckConfig.handler.LCCTabHandler;
 import com.sludev.logs.logcheckConfig.handler.LCCValidateHandler;
 import com.sludev.logs.logcheckConfig.main.LogCheckConfigMain;
 import com.sludev.logs.logcheckConfig.util.LCCConstants;
+import com.sludev.logs.logcheckConfig.util.LogCheckConfigException;
+import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.DatePicker;
@@ -27,10 +38,19 @@ import javafx.scene.control.Tooltip;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.text.TextFlow;
+import javafx.stage.Stage;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 import java.util.ResourceBundle;
 
 /**
@@ -122,11 +142,41 @@ public final class LogCheckConfigMainController implements Initializable
     public void internalInit()
     {
         LCCAppState appState = app.getAppState();
-        generalTabConfigFileTextField.setText(
-                appState.getPreferences().get(LCCConstants.LCC_CONFIG_FILE_HIST01, ""));
+        String currConfigFile = null;
 
-        LCCBrowseHandler.refreshLoadHistoryMenu(app, fileLoadMenu,
-                fileLoadMenuItem, fileLoadClearHistMenuItem, generalTabConfigFileTextField);
+        if( appState == null )
+        {
+            LOGGER.error("internalInit() : app.getAppState() returned null.");
+            return;
+        }
+
+        if( StringUtils.isNoneBlank(appState.getConfigFile()) )
+        {
+            currConfigFile = appState.getConfigFile();
+        }
+        else if( appState.getPreferences() != null )
+        {
+            currConfigFile
+                    = appState.getPreferences().get(LCCConstants.LCC_CONFIG_FILE_HIST01, "");
+        }
+
+        if( StringUtils.isNoneBlank(currConfigFile) )
+        {
+            generalTabConfigFileTextField.setText(currConfigFile);
+
+            Path tempConfFile = Paths.get(currConfigFile);
+            if( Files.exists(tempConfFile) )
+            {
+                LCCConfigFileHandler.doLoadConfigFile(app, null,
+                        generalTabConfigFileTextField,
+                        mainValidationTextFlow);
+
+                refreshStateToControls(false, false);
+            }
+            
+            LCCBrowseHandler.refreshLoadHistoryMenu(app, fileLoadMenu,
+                    fileLoadMenuItem, fileLoadClearHistMenuItem, generalTabConfigFileTextField);
+        }
     }
 
     @FXML
@@ -169,6 +219,9 @@ public final class LogCheckConfigMainController implements Initializable
     private Button generalTabConfigFileBrowseButton;
 
     @FXML
+    private Button generalTabConfigFileLoadButton;
+
+    @FXML
     private TextField generalTabLockFileTextField;
 
     @FXML
@@ -184,7 +237,7 @@ public final class LogCheckConfigMainController implements Initializable
     private Button generalTabArgFileBrowseButton;
 
     @FXML
-    private Spinner<?> generalTabStopAfterSpinner;
+    private Spinner<Long> generalTabStopAfterSpinner;
 
     @FXML
     private ChoiceBox<?> generalTabStopAfterUnitsChoice;
@@ -334,10 +387,10 @@ public final class LogCheckConfigMainController implements Initializable
     private Button LogStoreOutputFileBrowseButton;
 
     @FXML
-    private TextField logStoreElastisSearchTextField;
+    private TextField logStoreElasticSearchTextField;
 
     @FXML
-    private Button logStoreElastiSearchCheckButton;
+    private Button logStoreElasticSearchCheckButton;
 
     @FXML
     private Tab tabLogBuilder;
@@ -361,6 +414,15 @@ public final class LogCheckConfigMainController implements Initializable
     private BorderPane mainBorderPane;
 
     @FXML
+    private Spinner<?> dedupTabMaxFilesSpinner;
+
+    @FXML
+    private Spinner<?> dedupTabMaxLogsBeforeWriteSpinner;
+
+    @FXML
+    private Spinner<?> dedupTabMaxEntriesReadSpinner;
+
+    @FXML
     public void onButtonCancelAction(ActionEvent event)
     {
         LCCTabHandler.doButtonCancel(app, event, buttonCancel);
@@ -369,7 +431,31 @@ public final class LogCheckConfigMainController implements Initializable
     @FXML
     public void onButtonNextAction(ActionEvent event)
     {
-        LCCTabHandler.doButtonNext(app, event, buttonNext, mainTabPane);
+        LCCDialogAction res = LCCTabHandler.doButtonNext(app, event, buttonNext, mainTabPane);
+        if( res != LCCDialogAction.APPLY )
+        {
+            return;
+        }
+
+        try
+        {
+            LogCheckConfig currConf = refreshControlsToState(false, false);
+            LCCConfigFileHandler.saveConfig(currConf,
+                    generalTabConfigFileTextField.getText());
+        }
+        catch( LogCheckConfigException ex )
+        {
+            Alert alert = new Alert(Alert.AlertType.ERROR,
+                    ex.getMessage(),
+                    ButtonType.OK);
+
+            Optional<ButtonType> result = alert.showAndWait();
+
+            LOGGER.debug("Error saving configuration", ex);
+        }
+
+        Stage stage = (Stage) buttonNext.getScene().getWindow();
+        stage.close();
     }
 
     @FXML
@@ -421,6 +507,18 @@ public final class LogCheckConfigMainController implements Initializable
                 "Please choose the name or full path of the optional argument File",
                 LCCConstants.LCC_DEFAULT_ARG_EXT_DESC,
                 LCCConstants.LCC_DEFAULT_ARG_EXT);
+    }
+
+    @FXML
+    public void onGeneralTabConfigFileLoadAction(ActionEvent event)
+    {
+        LOGGER.debug("Action for 'General Tab > Config File Load...'");
+
+        LCCConfigFileHandler.doLoadConfigFile(app, event,
+                generalTabConfigFileTextField,
+                mainValidationTextFlow);
+
+        refreshStateToControls(false, false);
     }
 
     @FXML
@@ -537,15 +635,19 @@ public final class LogCheckConfigMainController implements Initializable
     }
 
     @FXML
-    public void onLogStoreElastiSearchCheckButtonAction(ActionEvent event)
+    public void onLogStoreElasticSearchCheckButtonAction(ActionEvent event)
     {
-
+        LCCValidateHandler.doValidateElasticSearchServer(app, event,
+                logStoreElasticSearchTextField,
+                mainValidationTextFlow);
     }
 
     @FXML
-    void onLogStoreElastisSearchAction(ActionEvent event)
+    public void onLogStoreElasticSearchAction(ActionEvent event)
     {
-
+        LCCValidateHandler.doValidateElasticSearchServer(app, event,
+                logStoreElasticSearchTextField,
+                mainValidationTextFlow);
     }
 
     @FXML
@@ -570,6 +672,9 @@ public final class LogCheckConfigMainController implements Initializable
     {
         LCCBrowseHandler.doConfigBrowse(app, event, generalTabConfigFileTextField,
                 fileLoadMenu, fileLoadMenuItem, fileLoadClearHistMenuItem);
+
+        LCCConfigFileHandler.doLoadConfigFile(app, event, generalTabLockFileTextField,
+                mainValidationTextFlow);
     }
 
     @FXML
@@ -661,5 +766,504 @@ public final class LogCheckConfigMainController implements Initializable
                 "Please choose the name or full path of the Log Check Save State File",
                 LCCConstants.LCC_DEFAULT_STATE_EXT_DESC,
                 LCCConstants.LCC_DEFAULT_STATE_EXT);
+    }
+
+    public void refreshStateToControls(final boolean resetConfigFile,
+                                       final boolean resetArgFile)
+    {
+        LogCheckConfig lcc = app.getAppState().getConfig();
+        if( lcc == null )
+        {
+            return;
+        }
+
+        if( resetConfigFile
+                && app.getAppState().getConfigFile() != null)
+        {
+            generalTabConfigFileTextField.setText(app.getAppState().getConfigFile());
+        }
+
+        if( resetArgFile
+                && app.getAppState().getArgFile() != null )
+        {
+            generalTabArgFileTextField.setText(app.getAppState().getArgFile());
+        }
+
+        if( lcc.getLockFilePath() != null )
+        {
+            generalTabLockFileTextField.setText(lcc.getLockFilePath().toString());
+        }
+
+        if( lcc.isService() != null )
+        {
+            generalTabServiceCheck.setSelected(lcc.isService());
+        }
+
+        if( StringUtils.isNoneBlank(lcc.getSetName()) )
+        {
+            generalTabSetNameTextField.setText(lcc.getSetName());
+        }
+
+        if( lcc.getStopAfter() != null )
+        {
+            generalTabStopAfterSpinner.getEditor().setText(lcc.getStopAfter().toString());
+        }
+
+        if( lcc.getStoreLogPath() != null )
+        {
+            logStoreOutputFileTextField.setText(lcc.getStoreLogPath().toString());
+        }
+
+        if( lcc.isReadOnlyFileMode() != null )
+        {
+            logFileReadOnlyCheckbox.setSelected(lcc.isReadOnlyFileMode());
+        }
+
+        if( lcc.willValidateTailerStats() != null )
+        {
+            logFileValidateCheckbox.setSelected(lcc.willValidateTailerStats());
+        }
+
+        if( lcc.getLogCutoffDuration() != null )
+        {
+            logFileCutoffDurationTextField
+                    .setText(lcc.getLogCutoffDuration().toString());
+        }
+
+        if( lcc.getLogCutoffDate() != null )
+        {
+            logFileCutoffDate.setValue(LocalDate.from(lcc.getLogCutoffDate()));
+        }
+
+        if( lcc.getPollIntervalSeconds() != null )
+        {
+            tailerGeneralPollIntervalSpinner
+                    .getEditor().setText(lcc.getPollIntervalSeconds().toString());
+        }
+
+        if( lcc.getStateFilePath() != null )
+        {
+            tailerGeneralStateFileTextField.setText(lcc.getStateFilePath().toString());
+        }
+
+        if( lcc.willSaveState() != null )
+        {
+            tailerGeneralSaveStateCheckbox.setSelected(lcc.willSaveState());
+        }
+
+        if( lcc.isTailFromEnd() != null )
+        {
+            tailerGeneralFileFromStartCheckbox.setSelected(lcc.isTailFromEnd()==false);
+        }
+
+        if( lcc.willContinueState() != null )
+        {
+            tailerGeneralContinueCheckbox.setSelected(lcc.willContinueState());
+        }
+
+        if( lcc.willStoreReOpenLogFile() != null )
+        {
+            tailerGeneralReOpenCheckbox.setSelected(lcc.willStoreReOpenLogFile());
+        }
+
+        if( lcc.willIgnoreStartPositionError() != null )
+        {
+            tailerGeneralStartPositionIgnoreErrCheckbox
+                    .setSelected(lcc.willIgnoreStartPositionError());
+        }
+
+        if( lcc.willStopOnEOF() != null )
+        {
+            tailerGeneralEOFStopCheckbox
+                    .setSelected(lcc.willStopOnEOF());
+        }
+
+        if( lcc.getErrorFilePath() != null )
+        {
+            tailerGeneralErrorFileTextField.setText(lcc.getErrorFilePath().toString());
+        }
+
+        if( lcc.getTailerLogBackupDir() != null )
+        {
+            rotateTabLogBackupDirTextField.setText(lcc.getTailerLogBackupDir().toString());
+        }
+
+        if( lcc.willTailerBackupReadLog() != null )
+        {
+            rotateTabReadBackupLogsCheckbox
+                    .setSelected(lcc.willTailerBackupReadLog());
+        }
+
+        if( lcc.willTailerBackupReadPriorLog() != null )
+        {
+            rotateTabReadPriorLogsCheckbox
+                    .setSelected(lcc.willTailerBackupReadPriorLog());
+        }
+
+        if( lcc.getTailerBackupLogNameRegex() != null )
+        {
+            rotateTabLogFileRegexTextField
+                    .setText(lcc.getTailerBackupLogNameRegex().toString());
+        }
+
+        if( lcc.getTailerBackupLogNameComps() != null )
+        {
+            rotateTabLogFileCompTextField
+                    .setText(StringUtils.join(lcc.getTailerBackupLogNameComps(), ','));
+        }
+
+        if( lcc.getLogDeduplicationDuration() != null )
+        {
+            dedupTabDurationTextField
+                    .setText(lcc.getLogDeduplicationDuration().toString());
+        }
+
+        if( lcc.getDeDupeDirPath() != null )
+        {
+            dedupTabDirTextField
+                    .setText(lcc.getDeDupeDirPath().toString());
+        }
+
+        if( lcc.getDeDupeMaxLogsPerFile() != null )
+        {
+            dedupTabLogsPerFileSpinner
+                    .getEditor().setText(lcc.getDeDupeMaxLogsPerFile().toString());
+        }
+
+        if( lcc.getDeDupeMaxLogFiles() != null )
+        {
+            dedupTabMaxFilesSpinner
+                    .getEditor().setText(lcc.getDeDupeMaxLogFiles().toString());
+        }
+
+        if( lcc.getDeDupeMaxLogsBeforeWrite() != null )
+        {
+            dedupTabMaxLogsBeforeWriteSpinner
+                    .getEditor().setText(lcc.getDeDupeMaxLogsBeforeWrite().toString());
+        }
+
+        if( lcc.getLogEntryStores() != null && lcc.getLogEntryStores().size() > 0 )
+        {
+            LCLogEntryStoreType currType = lcc.getLogEntryStores().get(0);
+            int currInt = 0;
+            switch( currType )
+            {
+                case CONSOLE:
+                    currInt = 0;
+                    break;
+
+                case SIMPLEFILE:
+                    currInt = 1;
+                    break;
+
+                case ELASTICSEARCH:
+                    currInt = 2;
+                    break;
+            }
+
+            logStoreTabLogStore01Choicebox.getSelectionModel().select(currInt);
+
+            if( lcc.getLogEntryStores().size() > 1 )
+            {
+                currType = lcc.getLogEntryStores().get(1);
+                currInt = 0;
+                switch( currType )
+                {
+                    case CONSOLE:
+                        currInt = 0;
+                        break;
+
+                    case SIMPLEFILE:
+                        currInt = 1;
+                        break;
+
+                    case ELASTICSEARCH:
+                        currInt = 2;
+                        break;
+                }
+
+                logStoreTabLogStore02Choicebox.getSelectionModel().select(currInt);
+
+                if( lcc.getLogEntryStores().size() > 2 )
+                {
+                    currType = lcc.getLogEntryStores().get(2);
+                    currInt = 0;
+                    switch( currType )
+                    {
+                        case CONSOLE:
+                            currInt = 0;
+                            break;
+
+                        case SIMPLEFILE:
+                            currInt = 1;
+                            break;
+
+                        case ELASTICSEARCH:
+                            currInt = 2;
+                            break;
+                    }
+
+                    logStoreTabLogStore03Choicebox.getSelectionModel().select(currInt);
+                }
+            }
+        }
+
+        if( lcc.getStoreLogPath() != null )
+        {
+            logStoreOutputFileTextField
+                    .setText(lcc.getStoreLogPath().toString());
+        }
+
+        if( lcc.getElasticsearchURL() != null )
+        {
+            logStoreElasticSearchTextField
+                    .setText(lcc.getElasticsearchURL().toString());
+        }
+
+
+        if( lcc.getLogEntryBuilders() != null && lcc.getLogEntryBuilders().size() > 0 )
+        {
+            LCLogEntryBuilderType currType = lcc.getLogEntryBuilders().get(0);
+            int currInt = 0;
+            switch( currType )
+            {
+                case SINGLELINE:
+                    currInt = 0;
+                    break;
+
+                case MULTILINE_DELIMITED:
+                    currInt = 1;
+                    break;
+
+                case NCSACOMMONLOG:
+                    currInt = 2;
+                    break;
+            }
+
+            logBuilderTabChoicebox.getSelectionModel().select(currInt);
+        }
+
+        if( lcc.getDebugFlags() != null && lcc.getDebugFlags().size() > 0 )
+        {
+            for( LCDebugFlag flag : lcc.getDebugFlags() )
+            {
+                ObservableList<?> currList = debugTabFlagsListView.getItems();
+                int i=0;
+                for( Object o : currList )
+                {
+                    if( o.toString().equals(flag.toString()) )
+                    {
+                        debugTabFlagsListView.getSelectionModel().select(i);
+                    }
+                    i++;
+                }
+            }
+        }
+    }
+
+
+    public LogCheckConfig refreshControlsToState(final boolean resetConfigFile,
+                                       final boolean resetArgFile)
+    {
+        LogCheckConfig res = null;
+
+        Boolean currService = null;
+        Boolean currDryRun = null;
+        Boolean currShowVersion = null;
+        Boolean currTailFromEnd = null;
+        Boolean currPrintLogs = null;
+        Boolean currSaveState = null;
+        Boolean currContinue = null;
+        Boolean currReadReOpenLogFile = null;
+        Boolean currStoreReOpenLogFile = null;
+        Boolean currStartPositionIgnoreError = null;
+        Boolean currValidateTailerStats = null;
+        Boolean currTailerBackupReadLogs = null;
+        Boolean currTailerBackupReadPriorLogs = null;
+        Boolean currStopOnEOF = null;
+        Boolean currReadOnlyFileMode = null;
+        String currPollIntervalSeconds = null;
+        String currEmailOnError = null;
+        String currSmtpServer = null;
+        String currSmtpPort = null;
+        String currSmtpUser = null;
+        String currSmtpPass = null;
+        String currSmtpProto = null;
+        String currLogDeduplicationDuration = null;
+        String currLockFile = null;
+        String currLogPath = null;
+        String currLogCutoffDuration = null;
+        String currLogCutoffDate = null;
+        String currElasticsearchUrl = null;
+        String currStatusFile = null;
+        String currStateFile = null;
+        String currErrorFile = null;
+        String currIdBlockHashtype = null;
+        String currIdBlockSize = null;
+        String currSetName = null;
+        String currDeDupeDirPath = null;
+        String currDeDupeMaxLogsPerFile = null;
+        String currDeDupeMaxLogFiles = null;
+        String currDeDupeMaxLogsBeforeWrite = null;
+        String currStopAfter = null;
+        String currReadLogFileCount = null;
+        String currReadMaxDeDupeEntries = null;
+        String currStoreLogFile = null;
+        String currTailerBackupLogNameRegex = null;
+        String currTailerBackupLogCompression = null;
+        String currTailerBackupLogDir = null;
+        String[] currLEBuilderType = null;
+        String[] currLEStoreType = null;
+        String[] currTailerBackupLogNameComps = null;
+        String[] currDebugFlags = null;
+
+        Path configFile = null;
+        String configFileStr = generalTabConfigFileTextField.getText();
+        if( StringUtils.isNoneBlank(configFileStr) )
+        {
+            configFile = Paths.get(configFileStr);
+        }
+        else
+        {
+            LOGGER.warn("Configuration File cannot be blank.");
+        }
+
+        currLockFile = generalTabLockFileTextField.getText();
+        currService = generalTabServiceCheck.isSelected();
+        currSetName = generalTabSetNameTextField.getText();
+        currStopAfter = generalTabStopAfterSpinner.getEditor().getText();
+        currStoreLogFile = logStoreOutputFileTextField.getText();
+        currReadOnlyFileMode = logFileReadOnlyCheckbox.isSelected();
+        currValidateTailerStats = logFileValidateCheckbox.isSelected();
+        currLogCutoffDuration = logFileCutoffDurationTextField.getText();
+        currLogCutoffDate = logFileCutoffDate.getEditor().getText();
+        currPollIntervalSeconds = tailerGeneralPollIntervalSpinner.getEditor().getText();
+        currStateFile = tailerGeneralStateFileTextField.getText();
+        currSaveState = tailerGeneralSaveStateCheckbox.isSelected();
+        currTailFromEnd = !tailerGeneralFileFromStartCheckbox.isSelected();
+        currContinue = tailerGeneralContinueCheckbox.isSelected();
+        currReadReOpenLogFile = tailerGeneralReOpenCheckbox.isSelected();
+        currStartPositionIgnoreError = tailerGeneralStartPositionIgnoreErrCheckbox.isSelected();
+        currStopOnEOF = tailerGeneralEOFStopCheckbox.isSelected();
+        currErrorFile = tailerGeneralErrorFileTextField.getText();
+        currTailerBackupLogDir = rotateTabLogBackupDirTextField.getText();
+        currTailerBackupReadLogs = rotateTabReadBackupLogsCheckbox.isSelected();
+        currTailerBackupReadPriorLogs = rotateTabReadPriorLogsCheckbox.isSelected();
+        currTailerBackupLogNameRegex = rotateTabLogFileRegexTextField.getText();
+        currTailerBackupLogNameComps = StringUtils.split(rotateTabLogFileCompTextField.getText(), ", ");
+        currDeDupeDirPath = dedupTabDirTextField.getText();
+        currDeDupeMaxLogsPerFile = dedupTabLogsPerFileSpinner.getEditor().getText();
+        currDeDupeMaxLogFiles = dedupTabMaxFilesSpinner.getEditor().getText();
+        currDeDupeMaxLogsBeforeWrite = dedupTabMaxLogsBeforeWriteSpinner.getEditor().getText();
+        currLogPath = logStoreOutputFileTextField.getText();
+        currElasticsearchUrl = logStoreElasticSearchTextField.getText();
+
+        List<String> currLEStoreTypeList = new ArrayList<>();
+        List<String> currLEBuilderList = new ArrayList<>();
+
+        if( logStoreTabLogStore01Choicebox.getSelectionModel().getSelectedItem() != null )
+        {
+            currLEStoreTypeList.add(
+                    logStoreTabLogStore01Choicebox
+                            .getSelectionModel().getSelectedItem().toString());
+        }
+
+        if( logStoreTabLogStore02Choicebox.getSelectionModel().getSelectedItem() != null )
+        {
+            currLEStoreTypeList.add(
+                    logStoreTabLogStore02Choicebox
+                            .getSelectionModel().getSelectedItem().toString());
+        }
+
+        if( logStoreTabLogStore03Choicebox.getSelectionModel().getSelectedItem() != null )
+        {
+            currLEStoreTypeList.add(
+                    logStoreTabLogStore03Choicebox
+                            .getSelectionModel().getSelectedItem().toString());
+        }
+
+        currLEStoreType = currLEStoreTypeList.toArray(new String[currLEStoreTypeList.size()]);
+
+        currLEBuilderList.add(
+            logBuilderTabChoicebox.getSelectionModel().getSelectedItem().toString());
+
+        ObservableList<?> currList = debugTabFlagsListView.getSelectionModel().getSelectedItems();
+        if( currList != null && currList.size() > 0 )
+        {
+            currDebugFlags = new String[currList.size()];
+
+            for( int i=0; i<currList.size(); i++)
+            {
+                currDebugFlags[i] = currList.get(i).toString();
+            }
+        }
+
+
+        try
+        {
+            res = LogCheckConfig.from(null,
+                    currService, // service,
+                    currEmailOnError, // emailOnError,
+                    currSmtpServer,
+                    currSmtpPort,
+                    currSmtpPass,
+                    currSmtpUser,
+                    currSmtpProto,
+                    currSetName,
+                    currDryRun,
+                    currShowVersion, // showVersion,
+                    currPrintLogs, // printLog,
+                    currTailFromEnd, // tailFromEnd,
+                    currReadReOpenLogFile, // reOpenLogFile
+                    currStoreReOpenLogFile, // --store-reopen-log-file
+                    currSaveState,  // saveState
+                    null, // collectState
+                    currContinue,
+                    currStartPositionIgnoreError,
+                    currValidateTailerStats,
+                    currTailerBackupReadLogs,
+                    currTailerBackupReadPriorLogs,
+                    currStopOnEOF,
+                    currReadOnlyFileMode,
+                    currLockFile,
+                    currLogPath,
+                    currStoreLogFile,
+                    currStatusFile,
+                    currStateFile,
+                    currErrorFile,
+                    null, // configFilePath,
+                    null, // holdingDir
+                    currDeDupeDirPath,
+                    currTailerBackupLogDir,
+                    currElasticsearchUrl,
+                    null, // elasticsearchIndexName,
+                    null, // elasticsearchIndexPrefix,
+                    null, // elasticsearchLogType,
+                    null, // elasticsearchIndexNameFormat,
+                    currLogCutoffDate, // logCutoffDate,
+                    currLogCutoffDuration, // logCutoffDuration,
+                    currLogDeduplicationDuration, // logDeduplicationDuration,
+                    currPollIntervalSeconds,
+                    currStopAfter,
+                    currReadLogFileCount,
+                    currReadMaxDeDupeEntries,
+                    currIdBlockSize,
+                    currDeDupeMaxLogsBeforeWrite,
+                    currDeDupeMaxLogsPerFile,
+                    currDeDupeMaxLogFiles,
+                    currLEBuilderType,
+                    currLEStoreType,
+                    currTailerBackupLogNameComps,
+                    currIdBlockHashtype,
+                    currTailerBackupLogCompression,
+                    currTailerBackupLogNameRegex,
+                    currDebugFlags);
+        }
+        catch( LogCheckException ex )
+        {
+            LOGGER.debug("Error creating state object.", ex);
+        }
+
+        return res;
     }
 }
