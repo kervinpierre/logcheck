@@ -454,7 +454,7 @@ public class LogCheckInitialize
                 }
             }
 
-            config = LogCheckConfig.from(null,
+            config = LogCheckConfig.from(config,
                     currService, // service,
                     currEmailOnError, // emailOnError,
                     currSmtpServer,
