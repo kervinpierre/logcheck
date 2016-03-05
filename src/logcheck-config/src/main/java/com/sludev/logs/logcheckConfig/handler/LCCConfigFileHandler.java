@@ -20,9 +20,16 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.nio.file.StandardOpenOption;
+import java.time.Instant;
 import java.util.Optional;
 
 /**
@@ -148,6 +155,46 @@ public final class LCCConfigFileHandler
             Optional<ButtonType> result = alert.showAndWait();
 
             LOGGER.debug(errMsg, ex);
+        }
+    }
+
+    public static void saveArgFile(final String argFilePath,
+                                  final String confFilePath ) throws LogCheckConfigException
+    {
+        if( StringUtils.isBlank(argFilePath) )
+        {
+            return;
+        }
+
+        Path argFile = Paths.get(argFilePath);
+        if( Files.exists(argFile) )
+        {
+            String bkFileName = String.format("%s_%s", argFile.getFileName(), Instant.now());
+            bkFileName = bkFileName.replaceAll("[^a-zA-Z0-9.-]", "_").concat(".bak");
+
+            Path bkFile = argFile.getParent().resolve(bkFileName);
+            try
+            {
+                Files.move(argFile, bkFile, StandardCopyOption.COPY_ATTRIBUTES);
+            }
+            catch( IOException ex )
+            {
+                LOGGER.warn(String.format("Failed backing up argument file '%s' to '%s'",
+                        argFile, bkFile), ex);
+            }
+        }
+
+        try( BufferedWriter bw = Files.newBufferedWriter(argFile,
+                                                StandardOpenOption.WRITE,
+                                                StandardOpenOption.CREATE_NEW) )
+        {
+            String outStr = String.format("--config-file %s", confFilePath);
+
+            bw.write(outStr);
+        }
+        catch( IOException ex )
+        {
+            LOGGER.warn(String.format("Failed writing argument file at '%s'", argFile), ex);
         }
     }
 }

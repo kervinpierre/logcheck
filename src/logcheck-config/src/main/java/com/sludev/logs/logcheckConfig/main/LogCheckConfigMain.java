@@ -105,6 +105,12 @@ public class LogCheckConfigMain extends Application
                 .argName("CONFFILE")
                 .build());
 
+        options.addOption(Option.builder().longOpt("load-arg-file")
+                .desc("Argument file.")
+                .hasArg()
+                .argName("ARGFILE")
+                .build());
+
         return options;
     }
 
@@ -138,6 +144,10 @@ public class LogCheckConfigMain extends Application
                 {
                     case "load-config-file":
                         appState.setConfigFile(currOpt.getValue());
+                        break;
+
+                    case "load-arg-file":
+                        appState.setArgFile(currOpt.getValue());
                         break;
                 }
             }
