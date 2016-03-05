@@ -1,5 +1,6 @@
 package com.sludev.logs.logcheckConfig.entity;
 
+import com.sludev.logs.logcheck.config.entities.LogCheckConfig;
 import com.sludev.logs.logcheckConfig.enums.LCCErrorMsgType;
 import javafx.scene.control.Control;
 import javafx.scene.text.Text;
@@ -23,7 +24,10 @@ public final class LCCAppState
     private static final Logger LOGGER = LogManager.getLogger(LCCAppState.class);
 
     private String configFile;
+    private String argFile;
     private Preferences preferences;
+    private LogCheckConfig config;
+
     private final Map<Control, List<Pair<LCCErrorMsgType, String>>> controlErrorMap;
     private final Map<Control, List<Pair<LCCErrorMsgType, String>>> controlWarningMap;
 
@@ -47,10 +51,32 @@ public final class LCCAppState
         configFile = s;
     }
 
+    public LogCheckConfig getConfig()
+    {
+        return config;
+    }
+
+    public void setConfig(LogCheckConfig c)
+    {
+        config = c;
+    }
+
+    public String getArgFile()
+    {
+        return argFile;
+    }
+
+    public void setArgFile(String a)
+    {
+        argFile = a;
+    }
+
     public LCCAppState()
     {
         configFile  = null;
         preferences = null;
+        config = null;
+        argFile = null;
 
         controlErrorMap   = new HashMap<>();
         controlWarningMap = new HashMap<>();
