@@ -1682,7 +1682,10 @@ public final class LogCheckConfig
             try
             {
                 Pair<Long,TimeUnit> stop = ParseNumberWithSuffix.parseIntWithTimeUnits(stopAfterStr);
-                stopAfter = stop.getRight().toSeconds(stop.getLeft());
+                if( stop != null )
+                {
+                    stopAfter = stop.getRight().toSeconds(stop.getLeft());
+                }
             }
             catch( NumberFormatException ex )
             {

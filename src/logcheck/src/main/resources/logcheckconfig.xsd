@@ -32,7 +32,26 @@ NOTICE:  All information contained herein is, and remains
                         <xs:documentation>Run as a background service</xs:documentation>
                     </xs:annotation>
                 </xs:element>
-                
+
+                <xs:element name="readOnlyLogFile" type="xs:boolean" minOccurs="0" maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>Treat the log file as 'Read-Only'</xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+
+                <xs:element name="ignoreStartPosError" type="xs:boolean" minOccurs="0" maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>If there is a discrepancy between the State File and the Log
+                            File, e.g. invalid position.  Then ignore the state file</xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+
+                <xs:element name="collectState" type="xs:boolean" minOccurs="0" maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>DEPRECATED</xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+
                 <xs:element name="holdingFolder" type="xs:string" minOccurs="0"  maxOccurs="1">
                      <xs:annotation>
                         <xs:documentation>Local folder for keeping downloaded data.</xs:documentation>
@@ -135,6 +154,12 @@ NOTICE:  All information contained herein is, and remains
                     </xs:annotation>
                 </xs:element>
 
+                <xs:element name="stopOnEOF" type="xs:boolean" minOccurs="0"  maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>Stop tailing the log file when EOF is reached.</xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+
                 <xs:element name="lockFilePath" type="xs:string" minOccurs="0" maxOccurs="1">
                     <xs:annotation>
                         <xs:documentation>Prevent multiple instances of the service from running.</xs:documentation>
@@ -180,6 +205,12 @@ NOTICE:  All information contained herein is, and remains
                 <xs:element name="deDuplicationLogDir" type="xs:string" minOccurs="0" maxOccurs="1">
                     <xs:annotation>
                         <xs:documentation>Directory for storing all deduplication logs.</xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+
+                <xs:element name="deDuplicationDuration" type="xs:string" minOccurs="0" maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>Do not process logs older than this duration. E.g. "P2DT3H4M"  becomes "2 days, 3 hours and 4 minutes</xs:documentation>
                     </xs:annotation>
                 </xs:element>
 
@@ -304,7 +335,8 @@ NOTICE:  All information contained herein is, and remains
         <xs:restriction base="xs:string">
             <xs:enumeration value="none"/>
             <xs:enumeration value="singleline"/>
-            <xs:enumeration value="multiline-delimited"/>
+            <xs:enumeration value="multiline delimited"/>
+            <xs:enumeration value="ncsa common log"/>
         </xs:restriction>
     </xs:simpleType>
 

@@ -89,6 +89,9 @@ public class LogCheckConfigWriterTest
         // Top tailing afer 1 minute
         argsList.add("--stop-after=1M");
 
+        argsList.add("--service");
+        argsList.add("--email-on-error test@example.com");
+
         // Read the backup file from the
         argsList.add("--file-from-start");
 

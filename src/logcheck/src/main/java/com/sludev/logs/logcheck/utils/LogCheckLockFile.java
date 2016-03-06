@@ -24,6 +24,8 @@ import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+
+import com.sludev.logs.logcheck.exceptions.LogCheckException;
 import jnr.posix.POSIX;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -35,21 +37,36 @@ import org.apache.logging.log4j.Logger;
  */
 public class LogCheckLockFile
 {
-    private static final Logger log 
+    private static final Logger LOGGER
                       = LogManager.getLogger(LogCheckLockFile.class);
     
-    public static int getLockPID(Path lk) throws IOException
+    public static int getLockPID(final Path lkFile) throws IOException, LogCheckException
     {
         int res = 0;
         
-        if( Files.exists(lk) == false )
+        if( (lkFile == null) || (Files.exists(lkFile) == false) )
         {
-            throw new FileNotFoundException();
+            throw new FileNotFoundException(String.format("Missing Lock File '%s", lkFile));
         }
         
-        List<String> lkLines = Files.readAllLines(lk);
+        List<String> lkLines = Files.readAllLines(lkFile);
+
+        if( (lkLines == null) || (lkLines.size() < 1) )
+        {
+            throw new LogCheckException(
+                    String.format("Invalid or empty LOCK file specified at %s.\nPlease delete it to continue.", lkFile));
+        }
+
         String pidStr = lkLines.get(0);
-        res = Integer.parseInt(pidStr.trim());
+
+        try
+        {
+            res = Integer.parseInt(pidStr.trim());
+        }
+        catch( NumberFormatException ex )
+        {
+            throw new LogCheckException(String.format("Invalid LOCK file PID '%s'", pidStr), ex);
+        }
         
         return res;
     }
@@ -57,16 +74,16 @@ public class LogCheckLockFile
     /**
      * Create a lock file if it doesn't exist.
      * 
-     * @param lk Path to the lock file being created.
+     * @param lkPath Path to the lock file being created.
      * @return true if the lock file was created
      */
-    public static boolean acquireLockFile(Path lk)
+    public static boolean acquireLockFile(final Path lkPath)
     {
         boolean res = false;
         
         try
         {
-            File lkFile = lk.toFile();
+            File lkFile = lkPath.toFile();
             if( lkFile.exists() )
             {
                 return false;
@@ -90,7 +107,7 @@ public class LogCheckLockFile
         }
         catch (IOException ex)
         {
-            log.error( String.format("Error locking '%s'", lk), ex);
+            LOGGER.error( String.format("Error locking '%s'", lkPath), ex);
         }
         
         return res;
@@ -99,21 +116,21 @@ public class LogCheckLockFile
     /**
      * Delete the lock file.
      * 
-     * @param lk
+     * @param lkPath
      * @return
      */
-    public static boolean releaseLockFile(Path lk)
+    public static boolean releaseLockFile(final Path lkPath)
     {
         boolean res = false;
         
         try
         {
-            Files.delete(lk);
+            Files.delete(lkPath);
             res = true;
         }
         catch (IOException ex)
         {
-            log.error( String.format("Error deleting lock file '%s'", lk), ex);
+            LOGGER.error( String.format("Error deleting lock file '%s'", lkPath), ex);
             return false;
         }
         
