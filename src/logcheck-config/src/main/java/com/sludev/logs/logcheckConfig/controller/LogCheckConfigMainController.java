@@ -837,6 +837,11 @@ public final class LogCheckConfigMainController implements Initializable
             generalTabStopAfterSpinner.getEditor().setText(lcc.getStopAfter().toString());
         }
 
+        if( lcc.getLogPath() != null )
+        {
+            logFileTargetFileTextField.setText(lcc.getLogPath().toString());
+        }
+
         if( lcc.getStoreLogPath() != null )
         {
             logStoreOutputFileTextField.setText(lcc.getStoreLogPath().toString());
@@ -889,9 +894,9 @@ public final class LogCheckConfigMainController implements Initializable
             tailerGeneralContinueCheckbox.setSelected(lcc.willContinueState());
         }
 
-        if( lcc.willStoreReOpenLogFile() != null )
+        if( lcc.willReadReOpenLogFile() != null )
         {
-            tailerGeneralReOpenCheckbox.setSelected(lcc.willStoreReOpenLogFile());
+            tailerGeneralReOpenCheckbox.setSelected(lcc.willReadReOpenLogFile());
         }
 
         if( lcc.willIgnoreStartPositionError() != null )
@@ -970,22 +975,28 @@ public final class LogCheckConfigMainController implements Initializable
                     .getEditor().setText(lcc.getDeDupeMaxLogsBeforeWrite().toString());
         }
 
+        if( lcc.getReadMaxDeDupeEntries() != null )
+        {
+            dedupTabMaxEntriesReadSpinner
+                    .getEditor().setText(lcc.getReadMaxDeDupeEntries().toString());
+        }
+
         if( lcc.getLogEntryStores() != null && lcc.getLogEntryStores().size() > 0 )
         {
             LCLogEntryStoreType currType = lcc.getLogEntryStores().get(0);
             int currInt = 0;
             switch( currType )
             {
-                case CONSOLE:
-                    currInt = 0;
-                    break;
-
                 case SIMPLEFILE:
                     currInt = 1;
                     break;
 
-                case ELASTICSEARCH:
+                case CONSOLE:
                     currInt = 2;
+                    break;
+
+                case ELASTICSEARCH:
+                    currInt = 3;
                     break;
             }
 
@@ -997,16 +1008,16 @@ public final class LogCheckConfigMainController implements Initializable
                 currInt = 0;
                 switch( currType )
                 {
-                    case CONSOLE:
-                        currInt = 0;
-                        break;
-
                     case SIMPLEFILE:
                         currInt = 1;
                         break;
 
-                    case ELASTICSEARCH:
+                    case CONSOLE:
                         currInt = 2;
+                        break;
+
+                    case ELASTICSEARCH:
+                        currInt = 3;
                         break;
                 }
 
@@ -1018,16 +1029,16 @@ public final class LogCheckConfigMainController implements Initializable
                     currInt = 0;
                     switch( currType )
                     {
-                        case CONSOLE:
-                            currInt = 0;
-                            break;
-
                         case SIMPLEFILE:
                             currInt = 1;
                             break;
 
-                        case ELASTICSEARCH:
+                        case CONSOLE:
                             currInt = 2;
+                            break;
+
+                        case ELASTICSEARCH:
+                            currInt = 3;
                             break;
                     }
 
@@ -1056,15 +1067,15 @@ public final class LogCheckConfigMainController implements Initializable
             switch( currType )
             {
                 case SINGLELINE:
-                    currInt = 0;
-                    break;
-
-                case MULTILINE_DELIMITED:
                     currInt = 1;
                     break;
 
-                case NCSACOMMONLOG:
+                case MULTILINE_DELIMITED:
                     currInt = 2;
+                    break;
+
+                case NCSA_COMMON_LOG:
+                    currInt = 3;
                     break;
             }
 
@@ -1183,7 +1194,9 @@ public final class LogCheckConfigMainController implements Initializable
         currDeDupeMaxLogsPerFile = dedupTabLogsPerFileSpinner.getEditor().getText();
         currDeDupeMaxLogFiles = dedupTabMaxFilesSpinner.getEditor().getText();
         currDeDupeMaxLogsBeforeWrite = dedupTabMaxLogsBeforeWriteSpinner.getEditor().getText();
-        currLogPath = logStoreOutputFileTextField.getText();
+        currReadMaxDeDupeEntries = dedupTabMaxEntriesReadSpinner.getEditor().getText();
+        currLogDeduplicationDuration = dedupTabDurationTextField.getText();
+        currLogPath = logFileTargetFileTextField.getText();
         currElasticsearchUrl = logStoreElasticSearchTextField.getText();
 
         List<String> currLEStoreTypeList = new ArrayList<>();
@@ -1215,6 +1228,18 @@ public final class LogCheckConfigMainController implements Initializable
         currLEBuilderList.add(
             logBuilderTabChoicebox.getSelectionModel().getSelectedItem().toString());
 
+        if( logBuilderTabChoicebox.getSelectionModel().getSelectedItem() != null  )
+        {
+            String selectedBuilder = logBuilderTabChoicebox.getSelectionModel()
+                                                .getSelectedItem().toString();
+
+            if( StringUtils.isNoneBlank(selectedBuilder))
+            {
+                currLEBuilderType = new String[1];
+                currLEBuilderType[0] = selectedBuilder;
+            }
+        }
+
         ObservableList<?> currList = debugTabFlagsListView.getSelectionModel().getSelectedItems();
         if( currList != null && currList.size() > 0 )
         {
@@ -1225,7 +1250,6 @@ public final class LogCheckConfigMainController implements Initializable
                 currDebugFlags[i] = currList.get(i).toString();
             }
         }
-
 
         try
         {

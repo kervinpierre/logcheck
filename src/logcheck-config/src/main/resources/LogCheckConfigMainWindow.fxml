@@ -474,7 +474,6 @@
                                                     <RowConstraints maxHeight="50.0" minHeight="50.0" prefHeight="50.0" vgrow="SOMETIMES" />
                                                     <RowConstraints maxHeight="50.0" minHeight="50.0" prefHeight="50.0" vgrow="SOMETIMES" />
                                                     <RowConstraints maxHeight="50.0" minHeight="50.0" prefHeight="50.0" vgrow="SOMETIMES" />
-                                                    <RowConstraints maxHeight="50.0" minHeight="50.0" prefHeight="50.0" vgrow="SOMETIMES" />
                                                     <RowConstraints maxHeight="301.0" minHeight="10.0" prefHeight="47.0" vgrow="SOMETIMES" />
                                                     <RowConstraints maxHeight="301.0" minHeight="10.0" prefHeight="47.0" vgrow="SOMETIMES" />
                                                 </rowConstraints>
@@ -502,26 +501,21 @@
                                                             </HBox>
                                                         </children>
                                                     </AnchorPane>
-                                                    <Label text="Validate Log File" GridPane.rowIndex="1">
+                                                    <Label text="Read Backup Logs" GridPane.rowIndex="1">
                                                         <GridPane.margin>
                                                             <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                                                         </GridPane.margin></Label>
-                                                    <CheckBox fx:id="rotateTabValidateLogCheckbox" mnemonicParsing="false" GridPane.columnIndex="1" GridPane.rowIndex="1" />
-                                                    <Label text="Read Backup Logs" GridPane.rowIndex="2">
+                                                    <CheckBox fx:id="rotateTabReadBackupLogsCheckbox" mnemonicParsing="false" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                                                    <Label text="Read Prior Backup Logs" GridPane.rowIndex="2">
                                                         <GridPane.margin>
                                                             <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                                                         </GridPane.margin></Label>
-                                                    <CheckBox fx:id="rotateTabReadBackupLogsCheckbox" mnemonicParsing="false" GridPane.columnIndex="1" GridPane.rowIndex="2" />
-                                                    <Label text="Read Prior Backup Logs" GridPane.rowIndex="3">
+                                                    <CheckBox fx:id="rotateTabReadPriorLogsCheckbox" mnemonicParsing="false" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+                                                    <Label text="Log Filename Regex" GridPane.rowIndex="3">
                                                         <GridPane.margin>
                                                             <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                                                         </GridPane.margin></Label>
-                                                    <CheckBox fx:id="rotateTabReadPriorLogsCheckbox" mnemonicParsing="false" GridPane.columnIndex="1" GridPane.rowIndex="3" />
-                                                    <Label text="Log Filename Regex" GridPane.rowIndex="4">
-                                                        <GridPane.margin>
-                                                            <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
-                                                        </GridPane.margin></Label>
-                                                    <AnchorPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" styleClass="general-tab-anchor" GridPane.columnIndex="1" GridPane.rowIndex="4">
+                                                    <AnchorPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" styleClass="general-tab-anchor" GridPane.columnIndex="1" GridPane.rowIndex="3">
                                                         <children>
                                                             <HBox alignment="CENTER_LEFT" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="100.0" prefWidth="200.0" styleClass="general-tab-config-text-field" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                                                                 <children>
@@ -539,11 +533,11 @@
                                                             </HBox>
                                                         </children>
                                                     </AnchorPane>
-                                                    <Label text="Log Filename Component" GridPane.rowIndex="5">
+                                                    <Label text="Log Filename Component" GridPane.rowIndex="4">
                                                         <GridPane.margin>
                                                             <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                                                         </GridPane.margin></Label>
-                                                    <AnchorPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" styleClass="general-tab-anchor" GridPane.columnIndex="1" GridPane.rowIndex="5">
+                                                    <AnchorPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" styleClass="general-tab-anchor" GridPane.columnIndex="1" GridPane.rowIndex="4">
                                                         <children>
                                                             <HBox alignment="CENTER_LEFT" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="100.0" prefWidth="200.0" styleClass="general-tab-config-text-field" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                                                                 <children>
@@ -712,7 +706,7 @@
                                                                 <children>
                                                                     <HBox alignment="CENTER_LEFT" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="100.0" prefWidth="200.0" styleClass="general-tab-config-text-field" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                                                                         <children>
-                                                                            <ChoiceBox fx:id="logStoreTabLogStore02Choicebox" prefWidth="150.0" value="Simple File">
+                                                                            <ChoiceBox fx:id="logStoreTabLogStore02Choicebox" prefWidth="150.0" value="None">
                                                                                 <items>
                                                                                     <FXCollections fx:factory="observableArrayList">
                                                                                         <String fx:value="None" />
@@ -738,7 +732,7 @@
                                                                 <children>
                                                                     <HBox alignment="CENTER_LEFT" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="100.0" prefWidth="200.0" styleClass="general-tab-config-text-field" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                                                                         <children>
-                                                                            <ChoiceBox fx:id="logStoreTabLogStore03Choicebox" prefWidth="150.0" value="Simple File">
+                                                                            <ChoiceBox fx:id="logStoreTabLogStore03Choicebox" prefWidth="150.0" value="None">
                                                                                 <items>
                                                                                     <FXCollections fx:factory="observableArrayList">
                                                                                         <String fx:value="None" />
@@ -862,15 +856,15 @@
                                                         <children>
                                                             <HBox alignment="CENTER_LEFT" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="100.0" prefWidth="200.0" styleClass="general-tab-config-text-field" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                                                                 <children>
-                                                                    <ChoiceBox fx:id="logBuilderTabChoicebox" prefWidth="150.0" value="Single Line">
+                                                                    <ChoiceBox fx:id="logBuilderTabChoicebox" prefWidth="150.0" value="None">
                                                                         <HBox.margin>
                                                                             <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                                                                         </HBox.margin>
                                                                         <items>
                                                                             <FXCollections fx:factory="observableArrayList">
                                                                                 <String fx:value="None" />
-                                                                                <String fx:value="Single Line" />
-                                                                                <String fx:value="Multi-Line" />
+                                                                                <String fx:value="Single-Line" />
+                                                                                <String fx:value="Multi-Line Delimited" />
                                                                                 <String fx:value="NCSA Common Log" />
                                                                             </FXCollections>
                                                                         </items>

@@ -175,7 +175,7 @@ public final class LCCConfigFileHandler
             Path bkFile = argFile.getParent().resolve(bkFileName);
             try
             {
-                Files.move(argFile, bkFile, StandardCopyOption.COPY_ATTRIBUTES);
+                Files.move(argFile, bkFile);
             }
             catch( IOException ex )
             {
