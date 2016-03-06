@@ -153,7 +153,7 @@ public class LogCheckRun implements Callable<LogCheckResult>
                 }
                 break;
 
-                case NCSACOMMONLOG:
+                case NCSA_COMMON_LOG:
                 {
                     currLogEntryBuilders.add(NCSACommonLogBuilder.from(null, logEntrySink));
                 }
@@ -385,7 +385,7 @@ public class LogCheckRun implements Callable<LogCheckResult>
                 {
                     runningPID = LogCheckLockFile.getLockPID(lk);
                 }
-                catch (IOException ex)
+                catch (IOException|LogCheckException ex)
                 {
                     throw new LogCheckException(String.format(
                             "Exception reading lock file '%s'", lk), ex);

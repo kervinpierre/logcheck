@@ -16,7 +16,7 @@ import java.util.regex.Pattern;
  */
 public final class ParseNumberWithSuffix
 {
-    private static final Logger log = LogManager.getLogger(ParseNumberWithSuffix.class);
+    private static final Logger LOGGER = LogManager.getLogger(ParseNumberWithSuffix.class);
 
     public static Pair<Long,TimeUnit> parseIntWithTimeUnits(String n) throws LogCheckException
     {
@@ -25,7 +25,7 @@ public final class ParseNumberWithSuffix
 
         if( StringUtils.isBlank(n) )
         {
-            log.debug(String.format("Invalid number '%s'", n));
+            LOGGER.debug(String.format("Invalid number '%s'", n));
             return null;
         }
 
@@ -47,7 +47,7 @@ public final class ParseNumberWithSuffix
             String errMsg
                     = String.format("Invalid integer with time units '%s'", n);
 
-            log.debug(errMsg);
+            LOGGER.debug(errMsg);
 
             throw new LogCheckException(errMsg);
         }
@@ -58,13 +58,13 @@ public final class ParseNumberWithSuffix
         }
         catch(NumberFormatException ex)
         {
-            log.debug(String.format("Invalid number '%s'", n));
+            LOGGER.debug(String.format("Invalid number '%s'", n));
             return null;
         }
 
         if( resLong < 1 )
         {
-            log.debug(String.format("Invalid number '%s'", n));
+            LOGGER.debug(String.format("Invalid number '%s'", n));
             return null;
         }
 
@@ -92,10 +92,10 @@ public final class ParseNumberWithSuffix
                 break;
 
             default:
-                lastChar = "SECONDS";
-                log.warn(String.format(
-                        "Invalid time units '%s'. Defaulting to 'S' for seconds",
+                LOGGER.warn(String.format(
+                        "Invalid or missing time units '%s'. Defaulting to 'S' for seconds",
                         lastChar));
+                lastChar = "SECONDS";
                 break;
         }
 
@@ -107,7 +107,7 @@ public final class ParseNumberWithSuffix
         }
         catch( IllegalArgumentException ex )
         {
-            log.debug(String.format("Invalid time units '%s'. Defaulting to 'S' for seconds", lastChar));
+            LOGGER.debug(String.format("Invalid time units '%s'. Defaulting to 'S' for seconds", lastChar));
         }
 
         res = Pair.of(resLong, resUnit);
@@ -121,7 +121,7 @@ public final class ParseNumberWithSuffix
 
         if( StringUtils.isBlank(n) )
         {
-            log.debug(String.format("Invalid number '%s'", n));
+            LOGGER.debug(String.format("Invalid number '%s'", n));
             return null;
         }
 
@@ -140,13 +140,13 @@ public final class ParseNumberWithSuffix
         }
         catch(NumberFormatException ex)
         {
-            log.debug(String.format("Invalid number '%s'", n));
+            LOGGER.debug(String.format("Invalid number '%s'", n));
             return null;
         }
 
         if( res < 1 )
         {
-            log.debug(String.format("Invalid number '%s'", n));
+            LOGGER.debug(String.format("Invalid number '%s'", n));
             return null;
         }
 
@@ -168,7 +168,7 @@ public final class ParseNumberWithSuffix
 
                 default:
                 {
-                    log.debug(String.format("Invalid suffix '%s'", lastChar));
+                    LOGGER.debug(String.format("Invalid suffix '%s'", lastChar));
                     return null;
                 }
             }

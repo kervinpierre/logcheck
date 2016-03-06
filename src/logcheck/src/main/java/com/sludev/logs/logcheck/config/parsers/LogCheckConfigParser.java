@@ -31,7 +31,9 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  *
@@ -62,11 +64,17 @@ public class LogCheckConfigParser
         Boolean dryRun = null;
         Boolean currSaveState = null;
         Boolean continueState = null;
+        Boolean collectState = null;
         Boolean tailFromEnd = null;
         Boolean reOpenLogFile = null;
         Boolean tailerBackupReadPriorLog = null;
         Boolean validateTailerStats = null;
         Boolean tailerBackupReadLog = null;
+        Boolean currService = null;
+        Boolean readOnlyFileMode = null;
+        Boolean stopOnEOF = null;
+        Boolean startPositionIgnoreError = null;
+        String emailOnError = null;
         String lockFileStr = null;
         String elasticsearchURLStr = null;
         String logFileStr = null;
@@ -86,6 +94,7 @@ public class LogCheckConfigParser
         String stopAfterStr = null;
         String readLogFileCountStr = null;
         String readMaxDeDupeEntriesStr = null;
+        String logDeduplicationDuration = null;
         String[] leBuilderType = null;
         String[] leStoreType = null;
         String[] tailerBackupLogNameComp = null;
@@ -112,14 +121,17 @@ public class LogCheckConfigParser
             if( (currElList != null) && (currElList.getLength() > 0) )
             {
                 List<String> tempList = new ArrayList<>();
+                Set<String> tempSet = new HashSet<>();
+
                 for(int i=0; i<currElList.getLength(); i++)
                 {
                     Element tempEl = (Element)currElList.item(i);
                     String tempStr = tempEl.getTextContent();
 
-                    if( StringUtils.isNoneBlank(tempStr) )
+                    if( StringUtils.isNoneBlank(tempStr) && (tempSet.contains(tempStr) == false) )
                     {
                         tempList.add(tempStr);
+                        tempSet.add(tempStr);
                     }
                 }
 
@@ -545,6 +557,19 @@ public class LogCheckConfigParser
 
         try
         {
+            String tempStr = currXPath.compile("./deDuplicationDuration").evaluate(currEl);
+            if( StringUtils.isNoneBlank(tempStr) )
+            {
+                logDeduplicationDuration = tempStr;
+            }
+        }
+        catch (XPathExpressionException ex)
+        {
+            LOGGER.debug("configuration parsing error.", ex);
+        }
+
+        try
+        {
             String tempStr = currXPath.compile("./stopAfter").evaluate(currEl);
             if( StringUtils.isNoneBlank(tempStr) )
             {
@@ -575,6 +600,19 @@ public class LogCheckConfigParser
             if( StringUtils.isNoneBlank(tempStr) )
             {
                 readMaxDeDupeEntriesStr = tempStr;
+            }
+        }
+        catch (XPathExpressionException ex)
+        {
+            LOGGER.debug("configuration parsing error.", ex);
+        }
+
+        try
+        {
+            String tempStr = currXPath.compile("./emailOnError").evaluate(currEl);
+            if( StringUtils.isNoneBlank(tempStr) )
+            {
+                emailOnError = tempStr;
             }
         }
         catch (XPathExpressionException ex)
@@ -649,6 +687,71 @@ public class LogCheckConfigParser
 
         try
         {
+            String tempStr = currXPath.compile("./service").evaluate(currEl);
+            if( StringUtils.isNoneBlank(tempStr) )
+            {
+                currService = Boolean.parseBoolean(tempStr);
+            }
+        }
+        catch (XPathExpressionException ex)
+        {
+            LOGGER.debug("configuration parsing error.", ex);
+        }
+
+        try
+        {
+            String tempStr = currXPath.compile("./readOnlyLogFile").evaluate(currEl);
+            if( StringUtils.isNoneBlank(tempStr) )
+            {
+                readOnlyFileMode = Boolean.parseBoolean(tempStr);
+            }
+        }
+        catch (XPathExpressionException ex)
+        {
+            LOGGER.debug("configuration parsing error.", ex);
+        }
+
+        try
+        {
+            String tempStr = currXPath.compile("./stopOnEOF").evaluate(currEl);
+            if( StringUtils.isNoneBlank(tempStr) )
+            {
+                stopOnEOF = Boolean.parseBoolean(tempStr);
+            }
+        }
+        catch (XPathExpressionException ex)
+        {
+            LOGGER.debug("configuration parsing error.", ex);
+        }
+
+        try
+        {
+            String tempStr = currXPath.compile("./ignoreStartPosError").evaluate(currEl);
+            if( StringUtils.isNoneBlank(tempStr) )
+            {
+                startPositionIgnoreError = Boolean.parseBoolean(tempStr);
+            }
+        }
+        catch (XPathExpressionException ex)
+        {
+            LOGGER.debug("configuration parsing error.", ex);
+        }
+
+        try
+        {
+            String tempStr = currXPath.compile("./collectState").evaluate(currEl);
+            if( StringUtils.isNoneBlank(tempStr) )
+            {
+                collectState = Boolean.parseBoolean(tempStr);
+            }
+        }
+        catch (XPathExpressionException ex)
+        {
+            LOGGER.debug("configuration parsing error.", ex);
+        }
+
+        try
+        {
             String tempStr = currXPath.compile("./tailerBackupReadLog").evaluate(currEl);
             if( StringUtils.isNoneBlank(tempStr) )
             {
@@ -661,8 +764,8 @@ public class LogCheckConfigParser
         }
 
         res = LogCheckConfig.from(null,
-                null, // service,
-                null, // emailOnError,
+                currService,
+                emailOnError,
                 smtpServerStr,
                 smtpPortStr,
                 smtpPassStr,
@@ -672,18 +775,18 @@ public class LogCheckConfigParser
                 dryRun,
                 null, // showVersion,
                 null, // printLog,
-                tailFromEnd, // tailFromEnd,
-                reOpenLogFile, // reOpenLogFile
+                tailFromEnd,
+                reOpenLogFile,
                 null, // storeReOpenLogFile
-                currSaveState, // saveState
-                null, // collectState
-                continueState, // continueState
-                null, // startPositionIgnoreError
+                currSaveState,
+                collectState,
+                continueState,
+                startPositionIgnoreError,
                 validateTailerStats,
                 tailerBackupReadLog,
                 tailerBackupReadPriorLog,
-                null, // stopOnEOF
-                null, // readOnlyFileMode
+                stopOnEOF,
+                readOnlyFileMode,
                 lockFileStr,
                 logFileStr,
                 storeLogPathStr,
@@ -701,11 +804,11 @@ public class LogCheckConfigParser
                 null, // elasticsearchIndexNameFormat,
                 null, // logCutoffDate,
                 null, // logCutoffDuration,
-                null, // logDeduplicationDuration,
+                logDeduplicationDuration,
                 pollIntervalStr,
-                stopAfterStr, // stopAfter
-                readLogFileCountStr, // readLogFileCount
-                readMaxDeDupeEntriesStr, // readMaxDeDupeEntries
+                stopAfterStr,
+                readLogFileCountStr,
+                readMaxDeDupeEntriesStr,
                 idBlockSize,
                 deDupeMaxLogsBeforeWrite,
                 deDupeMaxLogsPerFile,

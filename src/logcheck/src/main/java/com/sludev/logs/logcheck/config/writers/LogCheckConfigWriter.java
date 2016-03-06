@@ -44,6 +44,9 @@ import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
@@ -311,6 +314,32 @@ public final class LogCheckConfigWriter
             res.appendChild(currElem);
         }
 
+        // collectState
+        currBoolean = lcc.willCollectState();
+        if( currBoolean == null )
+        {
+            ; // throw new LogCheckException("Missing <collectState />");
+        }
+        else
+        {
+            currElem = doc.createElement("collectState");
+            currElem.appendChild(doc.createTextNode(currBoolean.toString()));
+            res.appendChild(currElem);
+        }
+
+        // readOnlyLogFile
+        currBoolean = lcc.isReadOnlyFileMode();
+        if( currBoolean == null )
+        {
+            ; // throw new LogCheckException("Missing <readOnlyLogFile />");
+        }
+        else
+        {
+            currElem = doc.createElement("readOnlyLogFile");
+            currElem.appendChild(doc.createTextNode(currBoolean.toString()));
+            res.appendChild(currElem);
+        }
+
         // setName
         currStr = lcc.getSetName();
         if( StringUtils.isBlank(currStr) )
@@ -350,6 +379,19 @@ public final class LogCheckConfigWriter
             res.appendChild(currElem);
         }
 
+        // deDuplicationDuration
+        Duration currDuration = lcc.getLogDeduplicationDuration();
+        if( currDuration == null )
+        {
+            ; // throw new LogCheckException("Missing <deDuplicationDuration />");
+        }
+        else
+        {
+            currElem = doc.createElement("deDuplicationDuration");
+            currElem.appendChild(doc.createTextNode(currDuration.toString()));
+            res.appendChild(currElem);
+        }
+
         // deDuplicationMaxLogsBeforeWrite
         Integer currInt = lcc.getDeDupeMaxLogsBeforeWrite();
         if( currInt == null )
@@ -386,6 +428,45 @@ public final class LogCheckConfigWriter
         {
             currElem = doc.createElement("deDuplicationMaxLogFiles");
             currElem.appendChild(doc.createTextNode(currInt.toString()));
+            res.appendChild(currElem);
+        }
+
+        // readMaxDeDupeEntries
+        currInt = lcc.getReadMaxDeDupeEntries();
+        if( currInt == null )
+        {
+            ; // throw new LogCheckException("Missing <readMaxDeDupeEntries />");
+        }
+        else
+        {
+            currElem = doc.createElement("readMaxDeDupeEntries");
+            currElem.appendChild(doc.createTextNode(currInt.toString()));
+            res.appendChild(currElem);
+        }
+
+        // stopOnEOF
+        currBoolean = lcc.willStopOnEOF();
+        if( currBoolean == null )
+        {
+            ; // throw new LogCheckException("Missing <stopOnEOF />");
+        }
+        else
+        {
+            currElem = doc.createElement("stopOnEOF");
+            currElem.appendChild(doc.createTextNode(currBoolean.toString()));
+            res.appendChild(currElem);
+        }
+
+        // ignoreStartPosError
+        currBoolean = lcc.willIgnoreStartPositionError();
+        if( currBoolean == null )
+        {
+            ; // throw new LogCheckException("Missing <ignoreStartPosError />");
+        }
+        else
+        {
+            currElem = doc.createElement("ignoreStartPosError");
+            currElem.appendChild(doc.createTextNode(currBoolean.toString()));
             res.appendChild(currElem);
         }
 
@@ -472,8 +553,16 @@ public final class LogCheckConfigWriter
 
         Element stores = doc.createElement("logEntryStores");
 
+        Set<LCLogEntryStoreType> lcleStoreSet = new HashSet<>();
         for( LCLogEntryStoreType currStore : lcc.getLogEntryStores() )
         {
+            if( lcleStoreSet.contains(currStore) )
+            {
+                continue;
+            }
+
+            lcleStoreSet.add(currStore);
+
             currElem = doc.createElement("store");
             currElem.appendChild(doc.createTextNode(
                     StringUtils.lowerCase(currStore.name())));
@@ -484,11 +573,19 @@ public final class LogCheckConfigWriter
 
         Element builders = doc.createElement("logEntryBuilders");
 
+        Set<LCLogEntryBuilderType> lcleBuilderSet = new HashSet<>();
         for( LCLogEntryBuilderType currBuilder : lcc.getLogEntryBuilders() )
         {
+            if( lcleBuilderSet.contains(currBuilder) )
+            {
+                continue;
+            }
+
+            lcleBuilderSet.add(currBuilder);
+
             currElem = doc.createElement("builder");
             currElem.appendChild(doc.createTextNode(
-                    StringUtils.lowerCase(currBuilder.name())));
+                    StringUtils.lowerCase(currBuilder.name().replace('_', ' '))));
             builders.appendChild(currElem);
         }
 
