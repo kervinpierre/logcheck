@@ -19,6 +19,7 @@
 package com.sludev.logs.logcheck.enums;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.Level;
 
 /**
  *
@@ -51,6 +52,53 @@ public enum FSSVerbosityEnum
             {
                 ;
             }
+        }
+
+        return res;
+    }
+
+    public static Level toLevel(FSSVerbosityEnum verbosityEnum)
+    {
+        Level res = Level.OFF;
+
+        if( verbosityEnum == null )
+        {
+            return Level.OFF;
+        }
+
+        switch( verbosityEnum )
+        {
+            case NONE:
+                res = Level.OFF;
+                break;
+
+            case ALL:
+                res = Level.ALL;
+                break;
+
+            case MINIMUM:
+                res = Level.ERROR;
+                break;
+
+            case MAXIMUM:
+                res = Level.DEBUG;
+                break;
+
+            case DEBUG:
+                res = Level.DEBUG;
+                break;
+
+            case INFO:
+                res = Level.INFO;
+                break;
+
+            case WARN:
+                res = Level.WARN;
+                break;
+
+            case ERROR:
+                res = Level.ERROR;
+                break;
         }
 
         return res;

@@ -43,8 +43,7 @@ import org.apache.logging.log4j.core.config.ConfigurationSource;
  */
 public class LogCheckMain 
 {
-    private static final Logger LOGGER
-                             = LogManager.getLogger(LogCheckMain.class);
+    /*
     static
     {
         // Initialize config free logging.
@@ -59,19 +58,19 @@ public class LogCheckMain
                         };
             }
 
-            /**
-             * @see org.apache.logging.log4j.core.config.ConfigurationFactory#getConfiguration(org.apache.logging.log4j.core.config.ConfigurationSource)
-             */
+            ///
+            // @see org.apache.logging.log4j.core.config.ConfigurationFactory#getConfiguration(org.apache.logging.log4j.core.config.ConfigurationSource)
+            ///
             @Override
             public Configuration getConfiguration(ConfigurationSource source)
             {
                 return null;
             }
 
-            /**
-             * @see org.apache.logging.log4j.core.config.ConfigurationFactory#getConfiguration(java.lang.String,
-             * java.net.URI)
-             */
+            ////
+            // @see org.apache.logging.log4j.core.config.ConfigurationFactory#getConfiguration(java.lang.String,
+            // java.net.URI)
+            ////
             @Override
             public Configuration getConfiguration(String name, URI configLocation)
             {
@@ -81,6 +80,13 @@ public class LogCheckMain
             }
         });
     }
+    */
+
+    /**
+     * NB : Set this after the static log configuration block at all times.
+     */
+    private static final Logger LOGGER
+            = LogManager.getLogger(LogCheckMain.class);
 
     private static String[] s_staticArgs = null;
     private static ExecutorService s_mainThreadExe = null;
