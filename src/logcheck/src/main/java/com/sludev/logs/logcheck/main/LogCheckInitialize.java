@@ -20,9 +20,11 @@ package com.sludev.logs.logcheck.main;
 import com.sludev.logs.logcheck.config.entities.LogCheckConfig;
 import com.sludev.logs.logcheck.config.parsers.LogCheckConfigParser;
 import com.sludev.logs.logcheck.config.parsers.ParserUtil;
+import com.sludev.logs.logcheck.enums.FSSVerbosityEnum;
 import com.sludev.logs.logcheck.enums.LCFileFormat;
 import com.sludev.logs.logcheck.utils.FSSArgFile;
 import com.sludev.logs.logcheck.exceptions.LogCheckException;
+import com.sludev.logs.logcheck.utils.FSSLog4JConfiguration;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -107,6 +109,8 @@ public class LogCheckInitialize
         String currTailerBackupLogNameRegex = null;
         String currTailerBackupLogCompression = null;
         String currTailerBackupLogDir = null;
+        String currVerbosity = null;
+        String currStdOutFile = null;
         String[] currLEBuilderType = null;
         String[] currLEStoreType = null;
         String[] currTailerBackupLogNameComps = null;
@@ -451,7 +455,43 @@ public class LogCheckInitialize
                         // Read Only File
                         currReadOnlyFileMode = true;
                         break;
+
+                    case "verbosity":
+                        // Verbosity
+                        currVerbosity = currOpt.getValue();
+                        break;
+
+                    case "stdout-file":
+                        // Standard Output
+                        currStdOutFile = currOpt.getValue();
+                        break;
                 }
+            }
+
+            /*
+            Set the application's verbosity level.  Prior to this call here, it's
+            set to WARN by default, or by the -DFSSVERBOSITY java command line
+            property.
+
+            --verbosity has the top precedence.  Using this argument to set the
+               verbosity on any command run.
+
+            -DFSSVERBOSITY can be used as a default system-wide verbosity.  Since
+               it sets the logger's verbosity from the "java/jre" start, you should set it so
+               that you do not lose any messages
+            */
+            FSSVerbosityEnum currVerbose = FSSVerbosityEnum.from(currVerbosity);
+            if( currVerbose != null )
+            {
+                FSSLog4JConfiguration.setVerbosity( currVerbose );
+            }
+
+            /*
+              Or use -DFSSOUTREDIRECT=/path/to/file
+             */
+            if( StringUtils.isNoneBlank(currStdOutFile) )
+            {
+                FSSLog4JConfiguration.outputRedirect(Paths.get(currStdOutFile));
             }
 
             config = LogCheckConfig.from(config,
@@ -521,7 +561,7 @@ public class LogCheckInitialize
                 pw.append(String.format("Error : '%s'\n\n", ex.getMessage()));
 
                 HelpFormatter formatter = new HelpFormatter();
-                formatter.printHelp(pw, 80, "\njava -jar logcheck-0.9.jar ",
+                formatter.printHelp(pw, 80, "\njava [-DFSSVERBOSITY=warn] [-DFSSOUTREDIRECT=/path/to/file] -jar logcheck-0.9.jar ",
                         "\nThe logcheck application can be used in a variety of options and modes.\n", options,
                         0, 2, "© All Rights Reserved.",
                         true);
@@ -807,6 +847,17 @@ public class LogCheckInitialize
 
         options.addOption( Option.builder().longOpt( "tailer-read-only-file" )
                 .desc( "The file we're tailing will not be modified in anyway by external programs. E.g. A backup log." )
+                .build() );
+
+        options.addOption( Option.builder().longOpt( "verbosity" )
+                .desc( "Verbosity level for the application."
+                        + "  Values include NONE, ALL, MINIMUM, MAXIMUM, DEBUG, INFO, WARN, ERROR.")
+                .hasArgs()
+                .build() );
+
+        options.addOption( Option.builder().longOpt( "stdout-file" )
+                .desc( "Send out standard output to the specified file.")
+                .hasArgs()
                 .build() );
 
         return options;
