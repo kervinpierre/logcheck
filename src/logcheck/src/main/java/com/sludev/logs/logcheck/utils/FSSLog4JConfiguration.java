@@ -100,17 +100,28 @@ public class FSSLog4JConfiguration extends AbstractConfiguration
                 // Unfortunately we can't even log yet.
             }
         }
-        
+
+        addConsoleAppender(currLevel);
+    }
+
+    public void addConsoleAppender(final Level currLevel)
+    {
+        super.removeAppender("CONSOLE");
+
         final Layout<? extends Serializable> layout = PatternLayout.newBuilder().withPattern(PATTERN).build();
+
         final Appender appender =
-            ConsoleAppender.createAppender(layout, null, ConsoleAppender.Target.SYSTEM_OUT, "CONSOLE", true, true);
+                ConsoleAppender.createAppender(layout, null,
+                        ConsoleAppender.Target.SYSTEM_OUT,
+                        "CONSOLE", true, true);
+
         appender.start();
-        
+
         super.addAppender(appender);
 
         final LoggerConfig logger01 = new LoggerConfig(
-                            FSSLog4JConfiguration.ROOTLOGGER, currLevel, false);
-        
+                FSSLog4JConfiguration.ROOTLOGGER, currLevel, false);
+
         // This appender is ok to use with ALL levels
         logger01.addAppender(appender, Level.ALL, null);
         super.addLogger(logger01.getName(), logger01);
@@ -119,7 +130,7 @@ public class FSSLog4JConfiguration extends AbstractConfiguration
         root.addAppender(appender, Level.ALL, null);
         root.setLevel(currLevel);
     }
-    
+
     /**
      * Set a new Log Level on the root logger.
      * 
@@ -233,7 +244,7 @@ public class FSSLog4JConfiguration extends AbstractConfiguration
         try
         {
             TeeOutputStream stdOut = new TeeOutputStream(System.out, currFileStream);
-            System.setOut(new PrintStream(stdOut));
+            System.setOut(new PrintStream(stdOut, true));
         }
         catch (Exception ex)
         {
@@ -245,7 +256,7 @@ public class FSSLog4JConfiguration extends AbstractConfiguration
         try
         {
             TeeOutputStream stdErr = new TeeOutputStream(System.err, currFileStream);
-            System.setErr(new PrintStream(stdErr));
+            System.setErr(new PrintStream(stdErr, true));
         }
         catch (Exception ex)
         {
@@ -253,7 +264,5 @@ public class FSSLog4JConfiguration extends AbstractConfiguration
             LOGGER.error(err, ex);
             throw new LogCheckException(err, ex );
         }
-
-        //      FSSLog4JConfiguration.reconfigureAppender();
     }
 }
