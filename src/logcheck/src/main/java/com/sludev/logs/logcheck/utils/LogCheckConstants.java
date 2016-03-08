@@ -78,4 +78,30 @@ public class LogCheckConstants
     public static String DEFAULT_DEDUPE_LOG_FILE_NAME = "LogEntryDeDupe";
 
     public static int DEFAULT_SAVE_STATE_INTERVAL_SECONDS = 15;
+
+
+    /**
+     * A property for setting the programs logging level.
+     *
+     * We also have "--verbosity" command line argument as well.  But this
+     * argument only takes effect after command line arguments are parsed.  And
+     * hence we may miss the log calls prior to parsing command line arguments.
+     *
+     * Use this property instead of the command line arguments if you need to be
+     * absolutely sure you are setting verbosity before any affected logging calls.
+     */
+    public static final String CMDLINE_VERBOSITY_PROPERTY = "FSSVERBOSITY";
+
+    /**
+     * A property for setting a file for standard out and standard error.
+     *
+     * We also have the "--output-redirect" command line argument as well.
+     * But setting that argument
+     * only takes effect after command line arguments are parsed.  This means we
+     * would have missed the first, sometimes important, logs going to the console.
+     *
+     * In general use this command line property if you want to be absolutely sure
+     * you are getting all logs in your log file.
+     */
+    public static final String CMDLINE_OUTREDIRECT_PROPERTY = "FSSOUTREDIRECT";
 }

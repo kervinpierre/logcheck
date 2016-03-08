@@ -20,7 +20,10 @@ package com.sludev.logs.logcheck.main;
 import com.sludev.logs.logcheck.config.entities.LogCheckConfig;
 import com.sludev.logs.logcheck.enums.LCResultStatus;
 import com.sludev.logs.logcheck.exceptions.LogCheckException;
+import com.sludev.logs.logcheck.utils.FSSLog4JConfiguration;
 import com.sludev.logs.logcheck.utils.LogCheckResult;
+
+import java.net.URI;
 import java.util.Arrays;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -30,6 +33,9 @@ import java.util.concurrent.FutureTask;
 import org.apache.commons.lang3.concurrent.BasicThreadFactory;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.config.Configuration;
+import org.apache.logging.log4j.core.config.ConfigurationFactory;
+import org.apache.logging.log4j.core.config.ConfigurationSource;
 
 /**
  *
@@ -37,18 +43,54 @@ import org.apache.logging.log4j.Logger;
  */
 public class LogCheckMain 
 {
-    private static final Logger log 
+    private static final Logger LOGGER
                              = LogManager.getLogger(LogCheckMain.class);
-    
-    private static String[] staticArgs = null;
-    private static ExecutorService mainThreadExe = null;
+    static
+    {
+        // Initialize config free logging.
+        ConfigurationFactory.setConfigurationFactory(new ConfigurationFactory()
+        {
+            @Override
+            protected String[] getSupportedTypes()
+            {
+                return new String[]
+                        {
+                                "*"
+                        };
+            }
+
+            /**
+             * @see org.apache.logging.log4j.core.config.ConfigurationFactory#getConfiguration(org.apache.logging.log4j.core.config.ConfigurationSource)
+             */
+            @Override
+            public Configuration getConfiguration(ConfigurationSource source)
+            {
+                return null;
+            }
+
+            /**
+             * @see org.apache.logging.log4j.core.config.ConfigurationFactory#getConfiguration(java.lang.String,
+             * java.net.URI)
+             */
+            @Override
+            public Configuration getConfiguration(String name, URI configLocation)
+            {
+                final Configuration configuration = new FSSLog4JConfiguration();
+
+                return configuration;
+            }
+        });
+    }
+
+    private static String[] s_staticArgs = null;
+    private static ExecutorService s_mainThreadExe = null;
     
     /**
      * @param args the command line arguments
      */
     public static void main(String[] args)
     {  
-        log.debug("Starting Log Check via its Command Line Interface.");
+        LOGGER.debug("Starting Log Check via its Command Line Interface.");
         
         commonStart(args);
     }
@@ -65,7 +107,7 @@ public class LogCheckMain
      */
     public static void commonStart(String[] args)
     {
-        log.debug( String.format("LogCheckMain::commonStart() called [%s]",
+        LOGGER.debug( String.format("LogCheckMain::commonStart() called [%s]",
                 Arrays.toString(args)) );
         
         // Initialize only.  Don't actually run or do anything else
@@ -78,13 +120,13 @@ public class LogCheckMain
         }
         catch (LogCheckException ex)
         {
-            log.error("Error running application.", ex);
+            LOGGER.error("Error running application.", ex);
         }   
     }
     
     public static void commonStop(String[] args)
     {
-        log.debug( String.format("LogCheckMain::commonStop() called [%s]",
+        LOGGER.debug( String.format("LogCheckMain::commonStop() called [%s]",
                 Arrays.toString(args)) );
         
         // Initialize only.  Don't actually run or do anything else
@@ -97,17 +139,17 @@ public class LogCheckMain
     
     public void destroy()
     {
-        log.info("Service destroy called.");
+        LOGGER.info("Service destroy called.");
         
-        commonStop(LogCheckMain.staticArgs);
+        commonStop(LogCheckMain.s_staticArgs);
     }
 
     public void init(String[] args) 
     {
-        log.info( String.format("Service init called.\n[[%s]]\n", 
+        LOGGER.info( String.format("Service init called.\n[[%s]]\n",
                 Arrays.toString(args)) );
         
-        LogCheckMain.staticArgs = args;
+        LogCheckMain.s_staticArgs = args;
     }
 
     /**
@@ -116,9 +158,9 @@ public class LogCheckMain
      */
     public void start()
     {
-        log.info("Starting LogCheck via its Unix Service Interface.");
+        LOGGER.info("Starting LogCheck via its Unix Service Interface.");
         
-        commonStart(LogCheckMain.staticArgs);
+        commonStart(LogCheckMain.s_staticArgs);
     }
 
     /**
@@ -127,7 +169,7 @@ public class LogCheckMain
      */
     public void stop()
     {
-        log.info("Service stop called...");
+        LOGGER.info("Service stop called...");
         
         ;
     }
@@ -139,7 +181,7 @@ public class LogCheckMain
      */
     public static void windowsStop(String args[])
     {
-        log.info("Windows service stop called...");
+        LOGGER.info("Windows service stop called...");
 
         commonStop(args);
     }
@@ -170,7 +212,7 @@ public class LogCheckMain
      */
     public static void windowsStart(String args[])
     {
-        log.info("Starting LogCheck via its Windows Service Interface.");
+        LOGGER.info("Starting LogCheck via its Windows Service Interface.");
         
         commonStart(args);
     }
@@ -192,10 +234,10 @@ public class LogCheckMain
             .namingPattern("mainLogCheckThread-%d")
             .build();
 
-        mainThreadExe = Executors.newSingleThreadExecutor(thFactory);
-        Future exeRes = mainThreadExe.submit(currRunTask);
+        s_mainThreadExe = Executors.newSingleThreadExecutor(thFactory);
+        Future exeRes = s_mainThreadExe.submit(currRunTask);
 
-        mainThreadExe.shutdown();
+        s_mainThreadExe.shutdown();
 
         try
         {
@@ -203,18 +245,18 @@ public class LogCheckMain
         }
         catch (InterruptedException ex)
         {
-            log.error("Application 'main' thread was interrupted", ex);
+            LOGGER.error("Application 'main' thread was interrupted", ex);
             throw new LogCheckException("Application thread was interrupted", ex);
         }
         catch (ExecutionException ex)
         {
-            log.error("Application 'main' thread execution error", ex);
+            LOGGER.error("Application 'main' thread execution error", ex);
             throw new LogCheckException("Application execution error", ex);
         }
         finally
         {
             // If main leaves for any reason, shutdown all threads
-            mainThreadExe.shutdownNow();
+            s_mainThreadExe.shutdownNow();
         }
         
         return resp;
@@ -231,12 +273,12 @@ public class LogCheckMain
     {
         LogCheckResult resp = LogCheckResult.from(LCResultStatus.SUCCESS);
         
-        if( mainThreadExe != null )
+        if( s_mainThreadExe != null )
         {
             // Shutdown the main thread if we have one.
             // This will only work in ProcRun/JSvc JVM hosted mode.
             // IPC would be needed otherwise
-            mainThreadExe.shutdownNow();
+            s_mainThreadExe.shutdownNow();
         }
         
         return resp;
