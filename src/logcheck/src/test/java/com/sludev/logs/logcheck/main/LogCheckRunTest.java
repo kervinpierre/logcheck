@@ -158,6 +158,7 @@ public class LogCheckRunTest
         argsList.add("--dedupe-max-log-files=5");
         argsList.add("--tailer-validate-log-file");
         argsList.add("--debug-flags=LOG_SOURCE_LC_APP");
+        argsList.add("--verbosity=all");
 
         args = FSSArgFile.getArgArray(argsList);
 
@@ -290,7 +291,8 @@ public class LogCheckRunTest
         argsList.add("--poll-interval=1");
         argsList.add("--tailer-validate-log-file");
         argsList.add("--debug-flags=LOG_SOURCE_LC_APP");
-       // argsList.add("--random-wait-max=1");
+        argsList.add("--verbosity=all");
+        // argsList.add("--random-wait-max=1");
 
         args = FSSArgFile.getArgArray(argsList);
         LogCheckConfig config = LogCheckInitialize.initialize(args);
@@ -432,13 +434,6 @@ public class LogCheckRunTest
                 .namingPattern("testLCAppRunThread-%d")
                 .build();
         ExecutorService appThreadExe = Executors.newSingleThreadExecutor(thFactory);
-        Future<LCSAResult> lcAppFuture = appThreadExe.submit(currAppRun);
-        appThreadExe.shutdown();
-
-        // Wait for the logger to finish before parsing.
-        // This gives us a chance to test log backup processing
-        LCSAResult appRes = lcAppFuture.get();
-        Assert.assertTrue(appRes==LCSAResult.SUCCESS);
 
         argsList.clear();
 
@@ -469,10 +464,22 @@ public class LogCheckRunTest
         argsList.add("--tailer-backup-log-file-name-component=FILENAME_PREFIX");
         argsList.add("--tailer-backup-log-file-name-component=INTEGER_INC");
         argsList.add("--debug-flags=LOG_SOURCE_LC_APP");
+        argsList.add("--verbosity=all");
         argsList.add(String.format("--tailer-backup-log-dir %s", testDir));
 
         args = FSSArgFile.getArgArray(argsList);
         LogCheckConfig config = LogCheckInitialize.initialize(args);
+
+        // Start the sample app
+        Future<LCSAResult> lcAppFuture = appThreadExe.submit(currAppRun);
+        appThreadExe.shutdown();
+
+        // Wait for the logger to finish before parsing.
+        // This gives us a chance to test log backup processing
+        LCSAResult appRes = lcAppFuture.get();
+        Assert.assertTrue(appRes==LCSAResult.SUCCESS);
+
+        // Now the tailer
         LogCheckRun currRun = new LogCheckRun(config);
 
         thFactory = new BasicThreadFactory.Builder()
