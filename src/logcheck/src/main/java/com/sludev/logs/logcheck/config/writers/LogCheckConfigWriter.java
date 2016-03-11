@@ -19,6 +19,7 @@
 package com.sludev.logs.logcheck.config.writers;
 
 import com.sludev.logs.logcheck.config.entities.LogCheckConfig;
+import com.sludev.logs.logcheck.enums.FSSVerbosityEnum;
 import com.sludev.logs.logcheck.enums.LCDebugFlag;
 import com.sludev.logs.logcheck.enums.LCFileRegexComponent;
 import com.sludev.logs.logcheck.enums.LCLogEntryBuilderType;
@@ -548,6 +549,19 @@ public final class LogCheckConfigWriter
             {
                 currElem.appendChild(doc.createTextNode(currPattern.pattern()));
             }
+            res.appendChild(currElem);
+        }
+
+        // verbosity
+        FSSVerbosityEnum currVerbosity = lcc.getVerbosity();
+        if( currVerbosity == null )
+        {
+            ; // throw new LogCheckException("Missing <verbosity />");
+        }
+        else
+        {
+            currElem = doc.createElement("verbosity");
+            currElem.appendChild(doc.createTextNode(currVerbosity.toString().toLowerCase()));
             res.appendChild(currElem);
         }
 

@@ -67,7 +67,9 @@ public final class ContinueUtil
         }
         catch( IOException ex )
         {
-            log.debug("", ex);
+            log.debug("Error listing Deduplication directory.", ex);
+
+            throw new LogCheckException("Error listing Deduplication directory.", ex);
         }
 
         List<Path> currFiles;
