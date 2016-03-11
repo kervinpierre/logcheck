@@ -61,6 +61,7 @@ public class LogCheckConfigParser
         String smtpPassStr = null;
         String smtpPortStr = null;
         String smtpProtocolStr = null;
+        String verbosity = null;
         Boolean dryRun = null;
         Boolean currSaveState = null;
         Boolean continueState = null;
@@ -609,6 +610,19 @@ public class LogCheckConfigParser
 
         try
         {
+            String tempStr = currXPath.compile("./verbosity").evaluate(currEl);
+            if( StringUtils.isNoneBlank(tempStr) )
+            {
+                verbosity = tempStr;
+            }
+        }
+        catch (XPathExpressionException ex)
+        {
+            LOGGER.debug("configuration parsing error.", ex);
+        }
+
+        try
+        {
             String tempStr = currXPath.compile("./emailOnError").evaluate(currEl);
             if( StringUtils.isNoneBlank(tempStr) )
             {
@@ -787,6 +801,7 @@ public class LogCheckConfigParser
                 tailerBackupReadPriorLog,
                 stopOnEOF,
                 readOnlyFileMode,
+                null, // createMissingDirs
                 lockFileStr,
                 logFileStr,
                 storeLogPathStr,
@@ -813,6 +828,7 @@ public class LogCheckConfigParser
                 deDupeMaxLogsBeforeWrite,
                 deDupeMaxLogsPerFile,
                 deDupeMaxLogFiles,
+                verbosity,
                 leBuilderType,
                 leStoreType,
                 tailerBackupLogNameComp,

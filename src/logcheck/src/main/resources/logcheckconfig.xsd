@@ -245,6 +245,12 @@ NOTICE:  All information contained herein is, and remains
                     </xs:annotation>
                 </xs:element>
 
+                <xs:element name="verbosity" type="VerbosityType" minOccurs="0" maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>how verbose to make the application.  E.g. none, all, minimum, maximum, debug, info, warn, error.</xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+
                 <xs:element name="stopAfter" type="xs:integer" minOccurs="0" maxOccurs="1">
                     <xs:annotation>
                         <xs:documentation>The number of seconds to run before stopping.</xs:documentation>
@@ -361,6 +367,20 @@ NOTICE:  All information contained herein is, and remains
             <xs:enumeration value="md5"/>
             <xs:enumeration value="sha1"/>
             <xs:enumeration value="sha2"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+
+    <xs:simpleType name="VerbosityType">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="none"/>
+            <xs:enumeration value="all"/>
+            <xs:enumeration value="minimum"/>
+            <xs:enumeration value="maximum"/>
+            <xs:enumeration value="debug"/>
+            <xs:enumeration value="info"/>
+            <xs:enumeration value="warn"/>
+            <xs:enumeration value="error"/>
         </xs:restriction>
     </xs:simpleType>
 

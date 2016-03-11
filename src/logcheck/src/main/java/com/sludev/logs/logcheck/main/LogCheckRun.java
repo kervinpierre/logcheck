@@ -55,6 +55,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingDeque;
 
+import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.concurrent.BasicThreadFactory;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -102,8 +104,7 @@ public class LogCheckRun implements Callable<LogCheckResult>
 
         LogCheckResult res = LogCheckResult.from(LCResultStatus.SUCCESS);
         
-        if( (m_config.isShowVersion() != null)
-                && m_config.isShowVersion() )
+        if( BooleanUtils.isTrue(m_config.isShowVersion()) )
         {
             LogCheckUtil.displayVersion();
             res = LogCheckResult.from(LCResultStatus.SUCCESS);
@@ -171,6 +172,28 @@ public class LogCheckRun implements Callable<LogCheckResult>
 
                     LOGGER.debug(errMsg);
                     throw new LogCheckException(errMsg);
+            }
+        }
+
+        // Create missing directories if necessary
+        if( BooleanUtils.isTrue(m_config.willCreateMissingDirs()) )
+        {
+            if( (m_config.getDeDupeDirPath() != null)
+                    && Files.notExists(m_config.getDeDupeDirPath()) )
+            {
+                try
+                {
+                    Files.createDirectory(m_config.getDeDupeDirPath());
+                }
+                catch( IOException ex )
+                {
+                    String msg = String.format("Failed creating De-duplication directory '%s'",
+                            m_config.getDeDupeDirPath());
+
+                    LOGGER.debug(msg, ex);
+
+                    throw new LogCheckException(msg, ex);
+                }
             }
         }
 

@@ -20,76 +20,33 @@ package com.sludev.logs.logcheck.main;
 import com.sludev.logs.logcheck.config.entities.LogCheckConfig;
 import com.sludev.logs.logcheck.enums.LCResultStatus;
 import com.sludev.logs.logcheck.exceptions.LogCheckException;
-import com.sludev.logs.logcheck.utils.FSSLog4JConfiguration;
 import com.sludev.logs.logcheck.utils.LogCheckResult;
 
-import java.net.URI;
 import java.util.Arrays;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.FutureTask;
+
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.concurrent.BasicThreadFactory;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.core.config.Configuration;
-import org.apache.logging.log4j.core.config.ConfigurationFactory;
-import org.apache.logging.log4j.core.config.ConfigurationSource;
 
 /**
  *
- * @author kervin
+ * E.g. java -cp 'logcheck-0.9.jar:*' com.sludev.logs.logcheck.main.LogCheckMain --argfile /opt/logcheck/logcheck-service-args-01.txt --verbosity=debu
+ *
+ *  @author kervin
  */
 public class LogCheckMain 
 {
-    /*
-    static
-    {
-        // Initialize config free logging.
-        ConfigurationFactory.setConfigurationFactory(new ConfigurationFactory()
-        {
-            @Override
-            protected String[] getSupportedTypes()
-            {
-                return new String[]
-                        {
-                                "*"
-                        };
-            }
-
-            ///
-            // @see org.apache.logging.log4j.core.config.ConfigurationFactory#getConfiguration(org.apache.logging.log4j.core.config.ConfigurationSource)
-            ///
-            @Override
-            public Configuration getConfiguration(ConfigurationSource source)
-            {
-                return null;
-            }
-
-            ////
-            // @see org.apache.logging.log4j.core.config.ConfigurationFactory#getConfiguration(java.lang.String,
-            // java.net.URI)
-            ////
-            @Override
-            public Configuration getConfiguration(String name, URI configLocation)
-            {
-                final Configuration configuration = new FSSLog4JConfiguration();
-
-                return configuration;
-            }
-        });
-    }
-    */
-
-    /**
-     * NB : Set this after the static log configuration block at all times.
-     */
     private static final Logger LOGGER
-            = LogManager.getLogger(LogCheckMain.class);
+                                    = LogManager.getLogger(LogCheckMain.class);
 
     private static String[] s_staticArgs = null;
     private static ExecutorService s_mainThreadExe = null;
+    private static volatile boolean s_run = true;
     
     /**
      * @param args the command line arguments
@@ -225,7 +182,9 @@ public class LogCheckMain
     
     /**
      * Start a process thread for doing the actual work.
-     * 
+     *
+     * FIXME : Does not return.
+     *
      * @param config 
      * @return  
      * @throws LogCheckException
@@ -234,34 +193,59 @@ public class LogCheckMain
     {
         LogCheckResult resp = null;
         LogCheckRun currRun = new LogCheckRun(config);
-        FutureTask<LogCheckResult> currRunTask = new FutureTask<>(currRun);
 
         BasicThreadFactory thFactory = new BasicThreadFactory.Builder()
             .namingPattern("mainLogCheckThread-%d")
             .build();
 
         s_mainThreadExe = Executors.newSingleThreadExecutor(thFactory);
-        Future exeRes = s_mainThreadExe.submit(currRunTask);
-
-        s_mainThreadExe.shutdown();
 
         try
         {
-            resp = currRunTask.get();
-        }
-        catch (InterruptedException ex)
-        {
-            LOGGER.error("Application 'main' thread was interrupted", ex);
-            throw new LogCheckException("Application thread was interrupted", ex);
-        }
-        catch (ExecutionException ex)
-        {
-            LOGGER.error("Application 'main' thread execution error", ex);
-            throw new LogCheckException("Application execution error", ex);
+            long i=0;
+            do
+            {
+                LOGGER.debug(String.format("processStart() : Run #%d", i++));
+
+                Future<LogCheckResult> currTask = s_mainThreadExe.submit(currRun);
+
+                //s_mainThreadExe.shutdown();
+
+                try
+                {
+                    resp = currTask.get();
+                }
+                catch( InterruptedException ex )
+                {
+                    LOGGER.warn("processStart() : Application 'main' thread was interrupted", ex);
+                   // throw new LogCheckException("Application thread was interrupted", ex);
+                }
+                catch( ExecutionException ex )
+                {
+                    LOGGER.error("processStart() : Application 'main' thread execution error", ex);
+                    throw new LogCheckException("Application execution error", ex);
+                }
+                finally
+                {
+                    ;
+                }
+            }
+            while( s_run && BooleanUtils.isTrue(config.isService()) );
         }
         finally
         {
             // If main leaves for any reason, shutdown all threads
+            s_mainThreadExe.shutdown();
+
+            try
+            {
+                Thread.sleep(100);
+            }
+            catch( InterruptedException ex )
+            {
+                ;
+            }
+
             s_mainThreadExe.shutdownNow();
         }
         
@@ -278,7 +262,9 @@ public class LogCheckMain
     public static LogCheckResult processStop(LogCheckConfig config)
     {
         LogCheckResult resp = LogCheckResult.from(LCResultStatus.SUCCESS);
-        
+
+        s_run = false;
+
         if( s_mainThreadExe != null )
         {
             // Shutdown the main thread if we have one.

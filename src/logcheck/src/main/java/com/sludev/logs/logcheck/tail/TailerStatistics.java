@@ -296,12 +296,11 @@ public final class TailerStatistics
         return res;
     }
 
-
-    public synchronized static LogCheckState restore(final Path stateFile,
-                                              final Path deDupeDir,
-                                              final String setName,
-                                              final Integer logFileCount,
-                                              final Integer maxLogEntries) throws LogCheckException
+    public static synchronized LogCheckState restore(final Path stateFile,
+                                                     final Path deDupeDir,
+                                                     final String setName,
+                                                     final Integer logFileCount,
+                                                     final Integer maxLogEntries) throws LogCheckException
     {
         // Read the last run's deduplication logs
         List<LogCheckDeDupeLog> ddLogs

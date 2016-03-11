@@ -17,6 +17,7 @@
  */
 package com.sludev.logs.logcheck.config.entities;
 
+import com.sludev.logs.logcheck.enums.FSSVerbosityEnum;
 import com.sludev.logs.logcheck.enums.LCCompressionType;
 import com.sludev.logs.logcheck.enums.LCDebugFlag;
 import com.sludev.logs.logcheck.enums.LCFileRegexComponent;
@@ -93,6 +94,7 @@ public final class LogCheckConfig
     private final Boolean m_tailerBackupReadPriorLog;
     private final Boolean m_stopOnEOF;
     private final Boolean m_readOnlyFileMode;
+    private final Boolean m_createMissingDirs;
     private final Path m_lockFilePath;
     private final Path m_logPath;
     private final Path m_storeLogPath;
@@ -115,10 +117,21 @@ public final class LogCheckConfig
     private final LCHashType m_idBlockHashType;
     private final LCCompressionType m_tailerBackupLogCompression;
     private final Pattern m_tailerBackupLogNameRegex;
+    private final FSSVerbosityEnum m_verbosity;
+
+    public FSSVerbosityEnum getVerbosity()
+    {
+        return m_verbosity;
+    }
 
     public Boolean isReadOnlyFileMode()
     {
         return m_readOnlyFileMode;
+    }
+
+    public Boolean willCreateMissingDirs()
+    {
+        return m_createMissingDirs;
     }
 
     public Set<LCDebugFlag> getDebugFlags()
@@ -420,6 +433,7 @@ public final class LogCheckConfig
                            final Boolean tailerBackupReadPriorLog,
                            final Boolean stopOnEOF,
                            final Boolean readOnlyFileMode,
+                           final Boolean createMissingDirs,
                            final Path lockFilePath,
                            final Path logPath,
                            final Path storeLogPath,
@@ -446,6 +460,7 @@ public final class LogCheckConfig
                            final Integer deDupeMaxLogsBeforeWrite,
                            final Integer deDupeMaxLogsPerFile,
                            final Integer deDupeMaxLogFiles,
+                           final FSSVerbosityEnum verbosity,
                            final List<LCLogEntryBuilderType> logEntryBuilders,
                            final List<LCLogEntryStoreType> logEntryStores,
                            final List<LCFileRegexComponent> tailerBackupLogNameComps,
@@ -465,6 +480,32 @@ public final class LogCheckConfig
         else
         {
             this.m_stopOnEOF = null;
+        }
+
+        if( verbosity != null )
+        {
+            this.m_verbosity = verbosity;
+        }
+        else if( (orig != null) && (orig.getVerbosity() != null) )
+        {
+            this.m_verbosity = orig.getVerbosity();
+        }
+        else
+        {
+            this.m_verbosity = null;
+        }
+
+        if( createMissingDirs != null )
+        {
+            this.m_createMissingDirs = createMissingDirs;
+        }
+        else if( (orig != null) && (orig.willCreateMissingDirs() != null) )
+        {
+            this.m_createMissingDirs = orig.willCreateMissingDirs();
+        }
+        else
+        {
+            this.m_createMissingDirs = null;
         }
 
         if( debugFlags != null )
@@ -1236,6 +1277,7 @@ public final class LogCheckConfig
                                       final Boolean tailerBackupReadPriorLog,
                                       final Boolean stopOnEOF,
                                       final Boolean readOnlyFileMode,
+                                      final Boolean createMissingDirs,
                                       final Path lockFilePath,
                                       final Path logPath,
                                       final Path storeLogPath,
@@ -1262,6 +1304,7 @@ public final class LogCheckConfig
                                       final Integer deDupeMaxLogsBeforeWrite,
                                       final Integer deDupeMaxLogsPerFile,
                                       final Integer deDupeMaxLogFiles,
+                                      final FSSVerbosityEnum verbosity,
                                       final List<LCLogEntryBuilderType> logEntryBuilders,
                                       final List<LCLogEntryStoreType> logEntryStores,
                                       final List<LCFileRegexComponent> tailerBackupLogNameComps,
@@ -1294,6 +1337,7 @@ public final class LogCheckConfig
                 tailerBackupReadPriorLog,
                 stopOnEOF,
                 readOnlyFileMode,
+                createMissingDirs,
                 lockFilePath,
                 logPath,
                 storeLogPath,
@@ -1320,6 +1364,7 @@ public final class LogCheckConfig
                 deDupeMaxLogsBeforeWrite,
                 deDupeMaxLogsPerFile,
                 deDupeMaxLogFiles,
+                verbosity,
                 logEntryBuilders,
                 logEntryStores,
                 tailerBackupLogNameComps,
@@ -1360,6 +1405,7 @@ public final class LogCheckConfig
                                         final Boolean tailerBackupReadPriorLog,
                                         final Boolean stopOnEOF,
                                         final Boolean readOnlyFileMode,
+                                        final Boolean createMissingDirs,
                                        final String lockFilePathStr,
                                        final String logPathStr,
                                         final String storeLogPathStr,
@@ -1386,6 +1432,7 @@ public final class LogCheckConfig
                                         final String deDupeMaxLogsBeforeWriteStr,
                                         final String deDupeMaxLogsPerFileStr,
                                         final String deDupeMaxLogFilesStr,
+                                        final String verbosityStr,
                                        final String[] logEntryBuilderStrs,
                                         final String[] logEntryStoreStrs,
                                         final String[] tailerBackupLogNameCompStrs,
@@ -1410,9 +1457,9 @@ public final class LogCheckConfig
         Duration logCutoffDuration = null;
         Duration logDeduplicationDuration = null;
         Long pollIntervalSeconds = null;
-        List<LCLogEntryBuilderType> logEntryBuilders  = new ArrayList<>(10);
-        List<LCLogEntryStoreType> logEntryStores = new ArrayList<>(10);
-        List<LCFileRegexComponent> tailerBackupLogNameComps = new ArrayList<>(10);
+        List<LCLogEntryBuilderType> logEntryBuilders  = null;
+        List<LCLogEntryStoreType> logEntryStores = null;
+        List<LCFileRegexComponent> tailerBackupLogNameComps = null;
         Integer readLogFileCount = null;
         Integer readMaxDeDupeEntries = null;
         Integer idBlockSize = null;
@@ -1422,8 +1469,9 @@ public final class LogCheckConfig
         Long stopAfter = null;
         LCHashType idBlockHash = null;
         LCCompressionType tailerBackupLogCompression = null;
+        FSSVerbosityEnum verbosity = null;
         Pattern tailerBackupLogNameRegex = null;
-        Set<LCDebugFlag> debugFlags = new HashSet<>(10);
+        Set<LCDebugFlag> debugFlags = null;
 
         if(StringUtils.isNoneBlank(tailBackupLogCompressionStr))
         {
@@ -1539,6 +1587,8 @@ public final class LogCheckConfig
 
         if(tailerBackupLogNameCompStrs != null )
         {
+            tailerBackupLogNameComps = new ArrayList<>(10);
+
             for( String nameComp : tailerBackupLogNameCompStrs )
             {
                 if( StringUtils.isNoneBlank(nameComp) )
@@ -1554,6 +1604,8 @@ public final class LogCheckConfig
 
         if(debugFlagStrs != null )
         {
+            debugFlags = new HashSet<>();
+
             for( String debugFlagStr : debugFlagStrs )
             {
                 if( StringUtils.isNoneBlank(debugFlagStr) )
@@ -1567,6 +1619,8 @@ public final class LogCheckConfig
 
         if(logEntryBuilderStrs != null )
         {
+            logEntryBuilders = new ArrayList<>(10);
+
             for( String builder : logEntryBuilderStrs )
             {
                 if( StringUtils.isNoneBlank(builder) )
@@ -1578,6 +1632,8 @@ public final class LogCheckConfig
 
         if(logEntryStoreStrs != null )
         {
+            logEntryStores = new ArrayList<>(10);
+
             for( String store : logEntryStoreStrs )
             {
                 if( StringUtils.isNoneBlank(store) )
@@ -1711,6 +1767,21 @@ public final class LogCheckConfig
             }
         }
 
+        if(StringUtils.isNoneBlank(verbosityStr))
+        {
+            try
+            {
+                verbosity = FSSVerbosityEnum.from(verbosityStr);
+            }
+            catch( Exception ex )
+            {
+                String errMsg = String.format("Error parsing verbosity '%s'", verbosityStr);
+
+                LOGGER.debug(errMsg, ex);
+                throw new LogCheckException(errMsg, ex);
+            }
+        }
+
         LogCheckConfig res = LogCheckConfig.from(orig,
                 service,
                 emailOnError,
@@ -1735,6 +1806,7 @@ public final class LogCheckConfig
                 tailerBackupReadPriorLog,
                 stopOnEOF,
                 readOnlyFileMode,
+                createMissingDirs,
                 lockFilePath,
                 logPath,
                 storeLogPath,
@@ -1761,6 +1833,7 @@ public final class LogCheckConfig
                 deDupeMaxLogsBeforeWrite,
                 deDupeMaxLogsPerFile,
                 deDupeMaxLogFiles,
+                verbosity,
                 logEntryBuilders,
                 logEntryStores,
                 tailerBackupLogNameComps,

@@ -113,6 +113,7 @@ public class LogCheckConfigWriterTest
 
         argsList.add("--read-reopen-log-file");
         argsList.add("--tailer-read-prior-backup-log");
+        argsList.add("--verbosity=all");
 
         // Aggressive poll interval to increase chances of
         // Race-conditions
