@@ -393,6 +393,9 @@ public final class LogCheckConfigMainController implements Initializable
     private TextField logStoreOutputFileTextField;
 
     @FXML
+    private ChoiceBox<?> debugVerbosityChoiceBox;
+
+    @FXML
     private TextFlow mainValidationTextFlow;
 
     @FXML
@@ -981,6 +984,47 @@ public final class LogCheckConfigMainController implements Initializable
                     .getEditor().setText(lcc.getReadMaxDeDupeEntries().toString());
         }
 
+        if( lcc.getVerbosity() != null )
+        {
+            int currInt = 0;
+            switch( lcc.getVerbosity() )
+            {
+                case NONE:
+                    currInt = 0;
+                    break;
+
+                case ALL:
+                    currInt = 1;
+                    break;
+
+                case MINIMUM:
+                    currInt = 2;
+                    break;
+
+                case MAXIMUM:
+                    currInt = 3;
+                    break;
+
+                case DEBUG:
+                    currInt = 4;
+                    break;
+
+                case INFO:
+                    currInt = 5;
+                    break;
+
+                case WARN:
+                    currInt = 6;
+                    break;
+
+                case ERROR:
+                    currInt = 7;
+                    break;
+            }
+
+            debugVerbosityChoiceBox.getSelectionModel().select(currInt);
+        }
+
         if( lcc.getLogEntryStores() != null && lcc.getLogEntryStores().size() > 0 )
         {
             LCLogEntryStoreType currType = lcc.getLogEntryStores().get(0);
@@ -1058,7 +1102,6 @@ public final class LogCheckConfigMainController implements Initializable
             logStoreElasticSearchTextField
                     .setText(lcc.getElasticsearchURL().toString());
         }
-
 
         if( lcc.getLogEntryBuilders() != null && lcc.getLogEntryBuilders().size() > 0 )
         {
@@ -1151,6 +1194,7 @@ public final class LogCheckConfigMainController implements Initializable
         String currTailerBackupLogNameRegex = null;
         String currTailerBackupLogCompression = null;
         String currTailerBackupLogDir = null;
+        String currDebugVerbosity = null;
         String[] currLEBuilderType = null;
         String[] currLEStoreType = null;
         String[] currTailerBackupLogNameComps = null;
@@ -1198,6 +1242,8 @@ public final class LogCheckConfigMainController implements Initializable
         currLogDeduplicationDuration = dedupTabDurationTextField.getText();
         currLogPath = logFileTargetFileTextField.getText();
         currElasticsearchUrl = logStoreElasticSearchTextField.getText();
+
+        currDebugVerbosity = debugVerbosityChoiceBox.getSelectionModel().getSelectedItem().toString();
 
         List<String> currLEStoreTypeList = new ArrayList<>();
         List<String> currLEBuilderList = new ArrayList<>();
@@ -1277,6 +1323,7 @@ public final class LogCheckConfigMainController implements Initializable
                     currTailerBackupReadPriorLogs,
                     currStopOnEOF,
                     currReadOnlyFileMode,
+                    null, // createMissingDirs
                     currLockFile,
                     currLogPath,
                     currStoreLogFile,
@@ -1303,6 +1350,7 @@ public final class LogCheckConfigMainController implements Initializable
                     currDeDupeMaxLogsBeforeWrite,
                     currDeDupeMaxLogsPerFile,
                     currDeDupeMaxLogFiles,
+                    currDebugVerbosity,
                     currLEBuilderType,
                     currLEStoreType,
                     currTailerBackupLogNameComps,

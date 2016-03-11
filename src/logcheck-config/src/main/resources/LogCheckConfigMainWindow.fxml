@@ -890,6 +890,7 @@
                                                 </columnConstraints>
                                                 <rowConstraints>
                                                     <RowConstraints maxHeight="240.0" minHeight="-Infinity" prefHeight="120.0" vgrow="SOMETIMES" />
+                                          <RowConstraints maxHeight="473.0" minHeight="10.0" prefHeight="445.0" vgrow="SOMETIMES" />
                                                     <RowConstraints maxHeight="473.0" minHeight="10.0" prefHeight="445.0" vgrow="SOMETIMES" />
                                                 </rowConstraints>
                                                 <children>
@@ -918,6 +919,28 @@
                                                             </HBox>
                                                         </children>
                                                     </AnchorPane>
+                                          <Label text="Verbosity" GridPane.rowIndex="1">
+                                             <GridPane.margin>
+                                                <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                                             </GridPane.margin>
+                                          </Label>
+                                          <ChoiceBox fx:id="debugVerbosityChoiceBox" prefWidth="150.0" GridPane.columnIndex="1" GridPane.halignment="LEFT" GridPane.rowIndex="1" value="None">
+                                             <GridPane.margin>
+                                                <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                                             </GridPane.margin>
+                                              <items>
+                                                  <FXCollections fx:factory="observableArrayList">
+                                                      <String fx:value="None" />
+                                                      <String fx:value="All" />
+                                                      <String fx:value="Minimum" />
+                                                      <String fx:value="Maximum" />
+                                                      <String fx:value="Debug" />
+                                                      <String fx:value="Info" />
+                                                      <String fx:value="Warn" />
+                                                      <String fx:value="Error" />
+                                                  </FXCollections>
+                                              </items>
+                                          </ChoiceBox>
                                                 </children>
                                             </GridPane>
                                         </children>
