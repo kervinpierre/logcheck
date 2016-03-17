@@ -122,7 +122,7 @@ public final class LogEntrySimpleFile implements ILogEntryStore
     }
 
     @Override
-    public LogCheckResult put(LogEntryVO le) throws InterruptedException, LogCheckException
+    public LogCheckResult putValueObj(LogEntryVO entryVO) throws InterruptedException, LogCheckException
     {
         LogCheckResult res
                 = LogCheckResult.from(LCResultStatus.SUCCESS);
@@ -148,7 +148,7 @@ public final class LogEntrySimpleFile implements ILogEntryStore
             currFile = file;
         }
 
-        String outStr = String.format("%s\n", LogEntryVO.toJSON(le));
+        String outStr = String.format("%s\n", LogEntryVO.toJSON(entryVO));
         ByteBuffer buff = ByteBuffer.wrap(outStr.getBytes());
 
         try

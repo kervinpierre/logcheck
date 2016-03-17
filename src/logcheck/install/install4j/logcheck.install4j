@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <install4j version="6.1.1" transformSequenceNumber="5">
   <directoryPresets config="../artifacts/icons" />
-  <application name="LogCheck File Processing Application" distributionSourceDir="" applicationId="2474-1487-2928-3793" mediaDir="./media" mediaFilePattern="${compiler:sys.shortName}_${compiler:sys.platform}_${compiler:sys.version}" compression="6" lzmaCompression="false" pack200Compression="false" excludeSignedFromPacking="true" commonExternalFiles="false" createMd5Sums="true" shrinkRuntime="true" shortName="logcheck" publisher="" publisherWeb="" version="0.9.0" allPathsRelative="true" backupOnSave="false" autoSave="false" convertDotsToUnderscores="true" macSignature="????" macVolumeId="b25d4f39a4afb8eb" javaMinVersion="1.8" javaMaxVersion="" allowBetaVM="false" jdkMode="runtimeJre" jdkName="">
+  <application name="LogCheck File Processing Application" distributionSourceDir="" applicationId="2474-1487-2928-3793" mediaDir="./media" mediaFilePattern="${compiler:sys.shortName}_${compiler:sys.platform}_${compiler:sys.version}" compression="6" lzmaCompression="false" pack200Compression="false" excludeSignedFromPacking="true" commonExternalFiles="false" createMd5Sums="true" shrinkRuntime="true" shortName="logcheck" publisher="SLUDev Inc." publisherWeb="http://sludev.com/" version="0.9.0" allPathsRelative="true" backupOnSave="false" autoSave="false" convertDotsToUnderscores="true" macSignature="????" macVolumeId="b25d4f39a4afb8eb" javaMinVersion="1.8" javaMaxVersion="" allowBetaVM="false" jdkMode="runtimeJre" jdkName="">
     <languages skipLanguageSelection="false" languageSelectionInPrincipalLanguage="false">
       <principalLanguage id="en" customLocalizationFile="" />
       <additionalLanguages />
@@ -99,7 +99,7 @@
       </iconImageFiles>
     </launcher>
     <launcher name="logcheck-service" id="24" customizedId="" external="false" excludeFromMenu="false" unixMode="755" menuName="" icnsFile="" customMacBundleIdentifier="false" macBundleIdentifier="" swtApp="false" fileset="" macBundleBinary="JavaApplicationStub" addMacEntitlements="false" macEntitlementsFile="" useCustomMacosExecutableName="false" customMacosExecutableName="">
-      <executable name="logcheck-service" type="1" iconSet="true" iconFile="" executableDir="" redirectStderr="true" stderrFile="logcheck-service-error.log" stderrMode="append" redirectStdout="true" stdoutFile="logcheck-service-output.log" stdoutMode="append" failOnStderrOutput="true" executableMode="3" changeWorkingDirectory="true" workingDirectory="." singleInstance="false" serviceStartType="2" serviceDependencies="" serviceDescription="" jreLocation="" executionLevel="asInvoker" checkConsoleParameter="false" globalSingleInstance="false" singleInstanceActivate="true" dpiAware="false">
+      <executable name="logcheck-service" type="1" iconSet="true" iconFile="" executableDir="" redirectStderr="false" stderrFile="logcheck-service-error.log" stderrMode="append" redirectStdout="false" stdoutFile="logcheck-service-output.log" stdoutMode="append" failOnStderrOutput="true" executableMode="3" changeWorkingDirectory="true" workingDirectory="." singleInstance="false" serviceStartType="2" serviceDependencies="" serviceDescription="" jreLocation="" executionLevel="asInvoker" checkConsoleParameter="false" globalSingleInstance="false" singleInstanceActivate="true" dpiAware="false">
         <versionInfo include="false" fileVersion="" fileDescription="" legalCopyright="" internalName="" productName="" />
       </executable>
       <splashScreen show="false" width="0" height="0" bitmapFile="" windowsNative="false" textOverlay="false">
@@ -108,7 +108,7 @@
           <versionLine x="20" y="40" text="version ${compiler:sys.version}" fontSize="8" fontColor="0,0,0" bold="false" />
         </text>
       </splashScreen>
-      <java mainClass="com.sludev.logs.logcheck.main.LogCheckMain" vmParameters="" arguments="--service --argfile ${launcher:sys.launcherDirectory}/logcheck-service-args-01.txt" allowVMPassthroughParameters="true" preferredVM="" bundleRuntime="true">
+      <java mainClass="com.sludev.logs.logcheck.main.LogCheckMain" vmParameters="" arguments="--service --argfile logcheck-service-args-01.txt" allowVMPassthroughParameters="true" preferredVM="" bundleRuntime="true">
         <classPath>
           <archive location="logcheck-0.9.jar" failOnError="false" />
           <scanDirectory location="." failOnError="false" />
@@ -652,6 +652,7 @@
   </mediaSets>
   <buildIds buildAll="false">
     <mediaSet refId="25" />
+    <mediaSet refId="26" />
   </buildIds>
   <buildOptions verbose="true" faster="false" disableSigning="false" disableJreBundling="false" debug="true" />
 </install4j>

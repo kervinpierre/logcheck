@@ -122,6 +122,7 @@ public class LogCheckConfigWriterTest
         // Tailer log configuration/parameters
         argsList.add("--tailer-validate-log-file");
         argsList.add("--tailer-read-backup-log");
+        argsList.add("--tailer-read-backup-reverse-order");
         argsList.add("--tailer-backup-log-file-name-regex=(.*?)\\\\.(\\\\d+)\\\\.bak");
         argsList.add("--tailer-backup-log-file-name-component=FILENAME_PREFIX");
         argsList.add("--tailer-backup-log-file-name-component=INTEGER_INC");

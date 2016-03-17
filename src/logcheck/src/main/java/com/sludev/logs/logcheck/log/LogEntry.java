@@ -36,13 +36,13 @@ public final class LogEntry
 {
     private static final Logger LOGGER
                              = LogManager.getLogger(LogEntry.class);
-    
+
+    private final String m_type;
     private LCLogLevel m_level;
     private String m_logger;
     private String m_message;
     private String m_exception;
     private LocalDateTime m_timeStamp;
-    private final String m_type;
     private String m_host;
 
     public LCLogLevel getLevel()
@@ -125,7 +125,13 @@ public final class LogEntry
         this.m_host = host;
     }
 
-    private LogEntry(final String type)
+    private LogEntry(   final String type,
+                        final LCLogLevel level,
+                        final String logger,
+                        final String message,
+                        final String exception,
+                        final LocalDateTime timeStamp,
+                        final String host)
     {
         if( type != null )
         {
@@ -135,11 +141,33 @@ public final class LogEntry
         {
             this.m_type = LogCheckConstants.DEFAULT_LOG_TYPE;
         }
+
+        this.m_level = level;
+        this.m_logger = logger;
+        this.m_message = message;
+        this.m_exception = exception;
+        this.m_timeStamp = timeStamp;
+        this.m_host = host;
+    }
+
+    public static LogEntry from(final String type,
+                                final LCLogLevel level,
+                                final String logger,
+                                final String message,
+                                final String exception,
+                                final LocalDateTime timeStamp,
+                                final String host)
+    {
+        LogEntry logEntry = new LogEntry(type, level, logger, message,
+                                            exception, timeStamp, host);
+
+        return logEntry;
     }
 
     public static LogEntry from(final String type)
     {
-        LogEntry logEntry = new LogEntry(type);
+        LogEntry logEntry = LogEntry.from(type, null, null, null,
+                                            null, null, null);
 
         return logEntry;
     }
@@ -163,11 +191,11 @@ public final class LogEntry
     public static LogEntryVO toValueObject(LogEntry le)
     {
         LogEntryVO res = LogEntryVO.from(
-                StringUtils.defaultIfBlank(le.getLevel()==null?null:le.getLevel().toString(), ""),
+                StringUtils.defaultIfBlank((le.getLevel() == null) ? null : le.getLevel().toString(), ""),
                 StringUtils.defaultIfBlank(le.getLogger(), ""),
                 StringUtils.defaultIfBlank(le.getMessage(), ""),
                 StringUtils.defaultIfBlank(le.getException(), ""),
-                StringUtils.defaultIfBlank(le.getTimeStamp()==null?null:le.getTimeStamp().toString(), ""),
+                StringUtils.defaultIfBlank((le.getTimeStamp() == null) ? null : le.getTimeStamp().toString(), ""),
                 StringUtils.defaultIfBlank(le.getType(), ""),
                 StringUtils.defaultIfBlank(le.getHost(), "")
         );

@@ -74,12 +74,6 @@ public final class LogEntryElasticSearch implements ILogEntryStore
         this.m_elasticsearchIndexNameFormat = e;
     }
 
-    public void setElasticsearchIndexNameFormat(String e)
-    {
-        LCIndexNameFormat lcinf = LCIndexNameFormat.valueOf(e);
-        this.m_elasticsearchIndexNameFormat = lcinf;
-    }
-    
     public String getElasticsearchIndexName()
     {
         return m_elasticsearchIndexName;
@@ -244,21 +238,24 @@ public final class LogEntryElasticSearch implements ILogEntryStore
     /**
      * Put a LOGGER entry into the backend store, which is Elastic Search in this case.
      *
-     * @param le The LOGGER entry that needs to be stored.
+     * You can debug delete all like...
+     * curl -XDELETE 'http://localhost:9200/_all'
+     *
+     * @param entryVO The LOGGER entry that needs to be stored.
      * @return
      * @throws InterruptedException
      * @throws LogCheckException
      */
     @Override
-    public LogCheckResult put(LogEntryVO le) throws InterruptedException, LogCheckException
+    public LogCheckResult putValueObj(LogEntryVO entryVO) throws InterruptedException, LogCheckException
     {
-        LOGGER.debug( String.format("put() for logEntry '%s'\n", le.getTimeStamp()));
+        LOGGER.debug( String.format("putValueObj() for logEntry '%s'\n", entryVO.getTimeStamp()));
         
         LogCheckResult res = LogCheckResult.from(LCResultStatus.SUCCESS);
 
         String currIndex = getIndex();
         String currLogType = getElasticsearchLogType();
-        String currJSON = LogEntryVO.toJSON(le);
+        String currJSON = LogEntryVO.toJSON(entryVO);
         
         Index index = new Index.Builder(currJSON).index(currIndex).type(currLogType).build();
 
@@ -268,7 +265,7 @@ public final class LogEntryElasticSearch implements ILogEntryStore
         }
         catch (Exception ex)
         {
-            String errMsg = String.format("Error sending log entry to Elasticsearch '%s'", le.getLogger());
+            String errMsg = String.format("Error sending log entry to Elasticsearch '%s'", entryVO.getLogger());
             
             LOGGER.info( errMsg, ex);
             

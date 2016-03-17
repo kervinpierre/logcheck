@@ -20,6 +20,7 @@ package com.sludev.logs.logcheck.config.writers;
 
 import com.sludev.logs.logcheck.config.entities.LogCheckConfig;
 import com.sludev.logs.logcheck.enums.FSSVerbosityEnum;
+import com.sludev.logs.logcheck.enums.LCDeDupeAction;
 import com.sludev.logs.logcheck.enums.LCDebugFlag;
 import com.sludev.logs.logcheck.enums.LCFileRegexComponent;
 import com.sludev.logs.logcheck.enums.LCLogEntryBuilderType;
@@ -445,6 +446,58 @@ public final class LogCheckConfigWriter
             res.appendChild(currElem);
         }
 
+        // deDuplicationIgnoreUntilCount
+        currLong = lcc.getDeDupeIgnoreCount();
+        if( currLong == null )
+        {
+            ; // throw new LogCheckException("Missing <deDuplicationIgnoreUntilCount />");
+        }
+        else
+        {
+            currElem = doc.createElement("deDuplicationIgnoreUntilCount");
+            currElem.appendChild(doc.createTextNode(currLong.toString()));
+            res.appendChild(currElem);
+        }
+
+        // deDuplicationSkipUntilCount
+        currLong = lcc.getDeDupeSkipCount();
+        if( currLong == null )
+        {
+            ; // throw new LogCheckException("Missing <deDuplicationSkipUntilCount />");
+        }
+        else
+        {
+            currElem = doc.createElement("deDuplicationSkipUntilCount");
+            currElem.appendChild(doc.createTextNode(currLong.toString()));
+            res.appendChild(currElem);
+        }
+
+        // deDuplicationIgnoreUntilPercent
+        currInt = lcc.getDeDupeIgnorePercent();
+        if( currInt == null )
+        {
+            ; // throw new LogCheckException("Missing <deDuplicationIgnoreUntilPercent />");
+        }
+        else
+        {
+            currElem = doc.createElement("deDuplicationIgnoreUntilPercent");
+            currElem.appendChild(doc.createTextNode(currInt.toString()));
+            res.appendChild(currElem);
+        }
+
+        // deDuplicationSkipUntilPercent
+        currInt = lcc.getDeDupeSkipPercent();
+        if( currInt == null )
+        {
+            ; // throw new LogCheckException("Missing <deDuplicationSkipUntilPercent />");
+        }
+        else
+        {
+            currElem = doc.createElement("deDuplicationSkipUntilPercent");
+            currElem.appendChild(doc.createTextNode(currInt.toString()));
+            res.appendChild(currElem);
+        }
+
         // stopOnEOF
         currBoolean = lcc.willStopOnEOF();
         if( currBoolean == null )
@@ -523,6 +576,19 @@ public final class LogCheckConfigWriter
             res.appendChild(currElem);
         }
 
+        // tailerBackupReadLogReverse
+        currBoolean = lcc.willTailerBackupReadLogReverse();
+        if( currBoolean == null )
+        {
+            ; // throw new LogCheckException("Missing <tailerBackupReadLogReverse />");
+        }
+        else
+        {
+            currElem = doc.createElement("tailerBackupReadLogReverse");
+            currElem.appendChild(doc.createTextNode(currBoolean.toString()));
+            res.appendChild(currElem);
+        }
+
         // tailerLogBackupDir
         currPath = lcc.getTailerLogBackupDir();
         if( currPath == null )
@@ -562,6 +628,19 @@ public final class LogCheckConfigWriter
         {
             currElem = doc.createElement("verbosity");
             currElem.appendChild(doc.createTextNode(currVerbosity.toString().toLowerCase()));
+            res.appendChild(currElem);
+        }
+
+        // deDuplicationDefaultAction
+        LCDeDupeAction currDedupeAction = lcc.getDeDupeDefaultAction();
+        if( currDedupeAction == null )
+        {
+            ; // throw new LogCheckException("Missing <deDuplicationDefaultAction />");
+        }
+        else
+        {
+            currElem = doc.createElement("deDuplicationDefaultAction");
+            currElem.appendChild(doc.createTextNode(currDedupeAction.toString().toLowerCase()));
             res.appendChild(currElem);
         }
 
@@ -605,33 +684,40 @@ public final class LogCheckConfigWriter
 
         res.appendChild(builders);
 
-        Element nameComps = doc.createElement("tailerBackupLogNameComps");
-
-        for( LCFileRegexComponent currComp : lcc.getTailerBackupLogNameComps() )
+        if( (lcc.getTailerBackupLogNameComps() != null)
+                && (lcc.getTailerBackupLogNameComps().size() > 0) )
         {
-            currElem = doc.createElement("nameComponent");
-            currElem.appendChild(doc.createTextNode(
-                    StringUtils.lowerCase(currComp.name()
-                            .replace('_', '-')
-                            .toLowerCase())));
-            nameComps.appendChild(currElem);
+            Element nameComps = doc.createElement("tailerBackupLogNameComps");
+
+            for( LCFileRegexComponent currComp : lcc.getTailerBackupLogNameComps() )
+            {
+                currElem = doc.createElement("nameComponent");
+                currElem.appendChild(doc.createTextNode(
+                        StringUtils.lowerCase(currComp.name()
+                                .replace('_', '-')
+                                .toLowerCase())));
+                nameComps.appendChild(currElem);
+            }
+
+            res.appendChild(nameComps);
         }
 
-        res.appendChild(nameComps);
-
-        Element debugFlags = doc.createElement("debugFlags");
-
-        for( LCDebugFlag currFlag : lcc.getDebugFlags() )
+        if( (lcc.getDebugFlags() != null) && (lcc.getDebugFlags().size() > 0))
         {
-            currElem = doc.createElement("flag");
-            currElem.appendChild(doc.createTextNode(
-                    StringUtils.lowerCase(currFlag.name()
-                            .replace('_', '-')
-                            .toLowerCase())));
-            debugFlags.appendChild(currElem);
-        }
+            Element debugFlags = doc.createElement("debugFlags");
 
-        res.appendChild(debugFlags);
+            for( LCDebugFlag currFlag : lcc.getDebugFlags() )
+            {
+                currElem = doc.createElement("flag");
+                currElem.appendChild(doc.createTextNode(
+                        StringUtils.lowerCase(currFlag.name()
+                                .replace('_', '-')
+                                .toLowerCase())));
+                debugFlags.appendChild(currElem);
+            }
+
+            res.appendChild(debugFlags);
+        }
 
         return res;
     }

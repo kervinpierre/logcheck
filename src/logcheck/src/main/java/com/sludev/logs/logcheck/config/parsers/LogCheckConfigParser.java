@@ -71,6 +71,7 @@ public class LogCheckConfigParser
         Boolean tailerBackupReadPriorLog = null;
         Boolean validateTailerStats = null;
         Boolean tailerBackupReadLog = null;
+        Boolean tailerBackupReadLogReverse = null;
         Boolean currService = null;
         Boolean readOnlyFileMode = null;
         Boolean stopOnEOF = null;
@@ -96,6 +97,11 @@ public class LogCheckConfigParser
         String readLogFileCountStr = null;
         String readMaxDeDupeEntriesStr = null;
         String logDeduplicationDuration = null;
+        String deDuplicationIgnoreUntilCount = null;
+        String deDuplicationSkipUntilCount = null;
+        String deDuplicationIgnoreUntilPercent = null;
+        String deDuplicationSkipUntilPercent = null;
+        String deDuplicationDefaultAction = null;
         String[] leBuilderType = null;
         String[] leStoreType = null;
         String[] tailerBackupLogNameComp = null;
@@ -558,6 +564,71 @@ public class LogCheckConfigParser
 
         try
         {
+            String tempStr = currXPath.compile("./deDuplicationIgnoreUntilCount").evaluate(currEl);
+            if( StringUtils.isNoneBlank(tempStr) )
+            {
+                deDuplicationIgnoreUntilCount = tempStr;
+            }
+        }
+        catch (XPathExpressionException ex)
+        {
+            LOGGER.debug("configuration parsing error.", ex);
+        }
+
+        try
+        {
+            String tempStr = currXPath.compile("./deDuplicationSkipUntilPercent").evaluate(currEl);
+            if( StringUtils.isNoneBlank(tempStr) )
+            {
+                deDuplicationSkipUntilPercent = tempStr;
+            }
+        }
+        catch (XPathExpressionException ex)
+        {
+            LOGGER.debug("configuration parsing error.", ex);
+        }
+
+        try
+        {
+            String tempStr = currXPath.compile("./deDuplicationIgnoreUntilPercent").evaluate(currEl);
+            if( StringUtils.isNoneBlank(tempStr) )
+            {
+                deDuplicationIgnoreUntilPercent = tempStr;
+            }
+        }
+        catch (XPathExpressionException ex)
+        {
+            LOGGER.debug("configuration parsing error.", ex);
+        }
+
+        try
+        {
+            String tempStr = currXPath.compile("./deDuplicationDefaultAction").evaluate(currEl);
+            if( StringUtils.isNoneBlank(tempStr) )
+            {
+                deDuplicationDefaultAction = tempStr;
+            }
+        }
+        catch (XPathExpressionException ex)
+        {
+            LOGGER.debug("configuration parsing error.", ex);
+        }
+
+        try
+        {
+            String tempStr = currXPath.compile("./deDuplicationSkipUntilCount").evaluate(currEl);
+            if( StringUtils.isNoneBlank(tempStr) )
+            {
+                deDuplicationSkipUntilCount = tempStr;
+            }
+        }
+        catch (XPathExpressionException ex)
+        {
+            LOGGER.debug("configuration parsing error.", ex);
+        }
+
+        try
+        {
             String tempStr = currXPath.compile("./deDuplicationDuration").evaluate(currEl);
             if( StringUtils.isNoneBlank(tempStr) )
             {
@@ -777,6 +848,19 @@ public class LogCheckConfigParser
             LOGGER.debug("configuration parsing error.", ex);
         }
 
+        try
+        {
+            String tempStr = currXPath.compile("./tailerBackupReadLogReverse").evaluate(currEl);
+            if( StringUtils.isNoneBlank(tempStr) )
+            {
+                tailerBackupReadLogReverse = Boolean.parseBoolean(tempStr);
+            }
+        }
+        catch (XPathExpressionException ex)
+        {
+            LOGGER.debug("configuration parsing error.", ex);
+        }
+
         res = LogCheckConfig.from(null,
                 currService,
                 emailOnError,
@@ -798,6 +882,7 @@ public class LogCheckConfigParser
                 startPositionIgnoreError,
                 validateTailerStats,
                 tailerBackupReadLog,
+                tailerBackupReadLogReverse,
                 tailerBackupReadPriorLog,
                 stopOnEOF,
                 readOnlyFileMode,
@@ -822,13 +907,18 @@ public class LogCheckConfigParser
                 logDeduplicationDuration,
                 pollIntervalStr,
                 stopAfterStr,
+                deDuplicationIgnoreUntilCount,
+                deDuplicationSkipUntilCount,
                 readLogFileCountStr,
                 readMaxDeDupeEntriesStr,
                 idBlockSize,
                 deDupeMaxLogsBeforeWrite,
                 deDupeMaxLogsPerFile,
                 deDupeMaxLogFiles,
+                deDuplicationIgnoreUntilPercent,
+                deDuplicationSkipUntilPercent,
                 verbosity,
+                deDuplicationDefaultAction,
                 leBuilderType,
                 leStoreType,
                 tailerBackupLogNameComp,

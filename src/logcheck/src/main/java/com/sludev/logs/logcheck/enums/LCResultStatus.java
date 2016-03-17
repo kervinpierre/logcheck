@@ -29,5 +29,7 @@ public enum LCResultStatus
     STARTED,
     ALREADYRUNNING,
     INTERRUPTED,
-    CANCELLED
+    CANCELLED,
+    BREAK,
+    TIMEDOUT
 }

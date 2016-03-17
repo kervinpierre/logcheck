@@ -19,6 +19,7 @@ package com.sludev.logs.logcheck.config.entities;
 
 import com.sludev.logs.logcheck.enums.FSSVerbosityEnum;
 import com.sludev.logs.logcheck.enums.LCCompressionType;
+import com.sludev.logs.logcheck.enums.LCDeDupeAction;
 import com.sludev.logs.logcheck.enums.LCDebugFlag;
 import com.sludev.logs.logcheck.enums.LCFileRegexComponent;
 import com.sludev.logs.logcheck.enums.LCHashType;
@@ -62,10 +63,14 @@ public final class LogCheckConfig
 
     private final Long m_pollIntervalSeconds;
     private final Long m_stopAfter;
+    private final Long m_deDupeIgnoreCount;
+    private final Long m_deDupeSkipCount;
     private final Integer m_idBlockSize;
     private final Integer m_deDupeMaxLogsPerFile;
     private final Integer m_deDupeMaxLogsBeforeWrite;
     private final Integer m_deDupeMaxLogFiles;
+    private final Integer m_deDupeIgnorePercent;
+    private final Integer m_deDupeSkipPercent;
     private final Integer m_readLogFileCount;
     private final Integer m_readMaxDeDupeEntries;
     private final String m_emailOnError;
@@ -91,6 +96,7 @@ public final class LogCheckConfig
     private final Boolean m_startPositionIgnoreError;
     private final Boolean m_validateTailerStats;
     private final Boolean m_tailerBackupReadLog;
+    private final Boolean m_tailerBackupReadLogReverse;
     private final Boolean m_tailerBackupReadPriorLog;
     private final Boolean m_stopOnEOF;
     private final Boolean m_readOnlyFileMode;
@@ -109,6 +115,7 @@ public final class LogCheckConfig
     private final LocalTime m_logCutoffDate;
     private final Duration m_logCutoffDuration;
     private final Duration m_logDeduplicationDuration;
+    private final LCDeDupeAction m_deDupeDefaultAction;
     private final LCIndexNameFormat m_elasticsearchIndexNameFormat;
     private final List<LCLogEntryBuilderType> m_logEntryBuilders;
     private final List<LCLogEntryStoreType> m_logEntryStores;
@@ -118,6 +125,31 @@ public final class LogCheckConfig
     private final LCCompressionType m_tailerBackupLogCompression;
     private final Pattern m_tailerBackupLogNameRegex;
     private final FSSVerbosityEnum m_verbosity;
+
+    public Long getDeDupeIgnoreCount()
+    {
+        return m_deDupeIgnoreCount;
+    }
+
+    public Long getDeDupeSkipCount()
+    {
+        return m_deDupeSkipCount;
+    }
+
+    public Integer getDeDupeIgnorePercent()
+    {
+        return m_deDupeIgnorePercent;
+    }
+
+    public Integer getDeDupeSkipPercent()
+    {
+        return m_deDupeSkipPercent;
+    }
+
+    public LCDeDupeAction getDeDupeDefaultAction()
+    {
+        return m_deDupeDefaultAction;
+    }
 
     public FSSVerbosityEnum getVerbosity()
     {
@@ -157,6 +189,11 @@ public final class LogCheckConfig
     public Boolean willTailerBackupReadLog()
     {
         return m_tailerBackupReadLog;
+    }
+
+    public Boolean willTailerBackupReadLogReverse()
+    {
+        return m_tailerBackupReadLogReverse;
     }
 
     public Boolean willTailerBackupReadPriorLog()
@@ -430,6 +467,7 @@ public final class LogCheckConfig
                            final Boolean startPositionIgnoreError,
                            final Boolean validateTailerStats,
                            final Boolean tailerBackupReadLog,
+                           final Boolean tailerBackupReadLogReverse,
                            final Boolean tailerBackupReadPriorLog,
                            final Boolean stopOnEOF,
                            final Boolean readOnlyFileMode,
@@ -454,13 +492,18 @@ public final class LogCheckConfig
                            final Duration logDeduplicationDuration,
                            final Long pollIntervalSeconds,
                            final Long stopAfter,
+                           final Long deDupeIgnoreCount,
+                           final Long deDupeSkipCount,
                            final Integer readLogFileCount,
                            final Integer readMaxDeDupeEntries,
                            final Integer idBlockSize,
                            final Integer deDupeMaxLogsBeforeWrite,
                            final Integer deDupeMaxLogsPerFile,
                            final Integer deDupeMaxLogFiles,
+                           final Integer deDupeIgnorePercent,
+                           final Integer deDupeSkipPercent,
                            final FSSVerbosityEnum verbosity,
+                           final LCDeDupeAction deDupeDefaultAction,
                            final List<LCLogEntryBuilderType> logEntryBuilders,
                            final List<LCLogEntryStoreType> logEntryStores,
                            final List<LCFileRegexComponent> tailerBackupLogNameComps,
@@ -469,6 +512,71 @@ public final class LogCheckConfig
                            final Pattern tailerBackupLogNameRegex,
                            final Set<LCDebugFlag> debugFlags) throws LogCheckException
     {
+        if( deDupeIgnoreCount != null )
+        {
+            this.m_deDupeIgnoreCount = deDupeIgnoreCount;
+        }
+        else if( (orig != null) && (orig.getDeDupeIgnoreCount() != null) )
+        {
+            this.m_deDupeIgnoreCount = orig.getDeDupeIgnoreCount();
+        }
+        else
+        {
+            this.m_deDupeIgnoreCount = null;
+        }
+
+        if( deDupeIgnorePercent != null )
+        {
+            this.m_deDupeIgnorePercent = deDupeIgnorePercent;
+        }
+        else if( (orig != null) && (orig.getDeDupeIgnorePercent() != null) )
+        {
+            this.m_deDupeIgnorePercent = orig.getDeDupeIgnorePercent();
+        }
+        else
+        {
+            this.m_deDupeIgnorePercent = null;
+        }
+
+        if( deDupeSkipCount != null )
+        {
+            this.m_deDupeSkipCount = deDupeSkipCount;
+        }
+        else if( (orig != null) && (orig.getDeDupeSkipCount() != null) )
+        {
+            this.m_deDupeSkipCount = orig.getDeDupeSkipCount();
+        }
+        else
+        {
+            this.m_deDupeSkipCount = null;
+        }
+
+        if( deDupeSkipPercent != null )
+        {
+            this.m_deDupeSkipPercent = deDupeSkipPercent;
+        }
+        else if( (orig != null) && (orig.getDeDupeSkipPercent() != null) )
+        {
+            this.m_deDupeSkipPercent = orig.getDeDupeSkipPercent();
+        }
+        else
+        {
+            this.m_deDupeSkipPercent = null;
+        }
+
+        if( deDupeDefaultAction != null )
+        {
+            this.m_deDupeDefaultAction = deDupeDefaultAction;
+        }
+        else if( (orig != null) && (orig.getDeDupeDefaultAction() != null) )
+        {
+            this.m_deDupeDefaultAction = orig.getDeDupeDefaultAction();
+        }
+        else
+        {
+            this.m_deDupeDefaultAction = null;
+        }
+
         if( stopOnEOF != null )
         {
             this.m_stopOnEOF = stopOnEOF;
@@ -545,6 +653,19 @@ public final class LogCheckConfig
         else
         {
             this.m_tailerBackupReadLog = null;
+        }
+
+        if( tailerBackupReadLogReverse != null )
+        {
+            this.m_tailerBackupReadLogReverse = tailerBackupReadLogReverse;
+        }
+        else if( (orig != null) && (orig.willTailerBackupReadLogReverse() != null) )
+        {
+            this.m_tailerBackupReadLogReverse = orig.willTailerBackupReadLogReverse();
+        }
+        else
+        {
+            this.m_tailerBackupReadLogReverse = null;
         }
 
         if( tailerBackupReadPriorLog != null )
@@ -1274,6 +1395,7 @@ public final class LogCheckConfig
                                       final Boolean startPositionIgnoreError,
                                       final Boolean validateTailerStats,
                                       final Boolean tailerBackupReadLog,
+                                      final Boolean tailerBackupReadLogReverse,
                                       final Boolean tailerBackupReadPriorLog,
                                       final Boolean stopOnEOF,
                                       final Boolean readOnlyFileMode,
@@ -1298,13 +1420,18 @@ public final class LogCheckConfig
                                       final Duration logDeduplicationDuration,
                                       final Long pollIntervalSeconds,
                                       final Long stopAfter,
+                                      final Long deDupeIgnoreCount,
+                                      final Long deDupeSkipCount,
                                       final Integer readLogFileCount,
                                       final Integer readMaxDeDupeEntries,
                                       final Integer idBlockSize,
                                       final Integer deDupeMaxLogsBeforeWrite,
                                       final Integer deDupeMaxLogsPerFile,
                                       final Integer deDupeMaxLogFiles,
+                                      final Integer deDupeIgnorePercent,
+                                      final Integer deDupeSkipPercent,
                                       final FSSVerbosityEnum verbosity,
+                                      final LCDeDupeAction deDupeDefaultAction,
                                       final List<LCLogEntryBuilderType> logEntryBuilders,
                                       final List<LCLogEntryStoreType> logEntryStores,
                                       final List<LCFileRegexComponent> tailerBackupLogNameComps,
@@ -1334,6 +1461,7 @@ public final class LogCheckConfig
                 startPositionIgnoreError,
                 validateTailerStats,
                 tailerBackupReadLog,
+                tailerBackupReadLogReverse,
                 tailerBackupReadPriorLog,
                 stopOnEOF,
                 readOnlyFileMode,
@@ -1358,13 +1486,18 @@ public final class LogCheckConfig
                 logDeduplicationDuration,
                 pollIntervalSeconds,
                 stopAfter,
+                deDupeIgnoreCount,
+                deDupeSkipCount,
                 readLogFileCount,
                 readMaxDeDupeEntries,
                 idBlockSize,
                 deDupeMaxLogsBeforeWrite,
                 deDupeMaxLogsPerFile,
                 deDupeMaxLogFiles,
+                deDupeIgnorePercent,
+                deDupeSkipPercent,
                 verbosity,
+                deDupeDefaultAction,
                 logEntryBuilders,
                 logEntryStores,
                 tailerBackupLogNameComps,
@@ -1402,6 +1535,7 @@ public final class LogCheckConfig
                                         final Boolean startPositionIgnoreError,
                                         final Boolean validateTailerStats,
                                         final Boolean tailerBackupReadLog,
+                                        final Boolean tailerBackupReadLogReverse,
                                         final Boolean tailerBackupReadPriorLog,
                                         final Boolean stopOnEOF,
                                         final Boolean readOnlyFileMode,
@@ -1426,13 +1560,18 @@ public final class LogCheckConfig
                                        final String logDeduplicationDurationStr,
                                        final String pollIntervalSecondsStr,
                                         final String stopAfterStr,
+                                        final String deDupeIgnoreCountStr,
+                                        final String deDupeSkipCountStr,
                                         final String readLogFileCountStr,
                                         final String readMaxDeDupeEntriesStr,
                                        final String idBlockSizeStr,
                                         final String deDupeMaxLogsBeforeWriteStr,
                                         final String deDupeMaxLogsPerFileStr,
                                         final String deDupeMaxLogFilesStr,
+                                        final String deDupeIgnorePercentStr,
+                                        final String deDupeSkipPercentStr,
                                         final String verbosityStr,
+                                        final String deDupeDefaultActionStr,
                                        final String[] logEntryBuilderStrs,
                                         final String[] logEntryStoreStrs,
                                         final String[] tailerBackupLogNameCompStrs,
@@ -1466,10 +1605,15 @@ public final class LogCheckConfig
         Integer deDupeMaxLogsBeforeWrite = null;
         Integer deDupeMaxLogsPerFile = null;
         Integer deDupeMaxLogFiles = null;
+        Integer deDupeIgnorePercent = null;
+        Integer deDupeSkipPercent = null;
         Long stopAfter = null;
+        Long deDupeIgnoreCount = null;
+        Long deDupeSkipCount = null;
         LCHashType idBlockHash = null;
         LCCompressionType tailerBackupLogCompression = null;
         FSSVerbosityEnum verbosity = null;
+        LCDeDupeAction deDupeDefaultAction = null;
         Pattern tailerBackupLogNameRegex = null;
         Set<LCDebugFlag> debugFlags = null;
 
@@ -1579,6 +1723,36 @@ public final class LogCheckConfig
             catch( NumberFormatException ex )
             {
                 String errMsg = String.format("Error parsing long '%s'", pollIntervalSecondsStr);
+
+                LOGGER.debug(errMsg, ex);
+                throw new LogCheckException(errMsg, ex);
+            }
+        }
+
+        if(StringUtils.isNoneBlank(deDupeIgnoreCountStr))
+        {
+            try
+            {
+                deDupeIgnoreCount = Long.parseLong(deDupeIgnoreCountStr);
+            }
+            catch( NumberFormatException ex )
+            {
+                String errMsg = String.format("Error parsing long '%s'", deDupeIgnoreCount);
+
+                LOGGER.debug(errMsg, ex);
+                throw new LogCheckException(errMsg, ex);
+            }
+        }
+
+        if(StringUtils.isNoneBlank(deDupeSkipCountStr))
+        {
+            try
+            {
+                deDupeSkipCount = Long.parseLong(deDupeSkipCountStr);
+            }
+            catch( NumberFormatException ex )
+            {
+                String errMsg = String.format("Error parsing long '%s'", deDupeSkipCount);
 
                 LOGGER.debug(errMsg, ex);
                 throw new LogCheckException(errMsg, ex);
@@ -1733,6 +1907,36 @@ public final class LogCheckConfig
             }
         }
 
+        if(StringUtils.isNoneBlank(deDupeIgnorePercentStr))
+        {
+            try
+            {
+                deDupeIgnorePercent = Integer.parseInt(deDupeIgnorePercentStr);
+            }
+            catch( NumberFormatException ex )
+            {
+                String errMsg = String.format("Error parsing integer '%s'", deDupeIgnorePercent);
+
+                LOGGER.debug(errMsg, ex);
+                throw new LogCheckException(errMsg, ex);
+            }
+        }
+
+        if(StringUtils.isNoneBlank(deDupeSkipPercentStr))
+        {
+            try
+            {
+                deDupeSkipPercent = Integer.parseInt(deDupeSkipPercentStr);
+            }
+            catch( NumberFormatException ex )
+            {
+                String errMsg = String.format("Error parsing integer '%s'", deDupeSkipPercent);
+
+                LOGGER.debug(errMsg, ex);
+                throw new LogCheckException(errMsg, ex);
+            }
+        }
+
         if(StringUtils.isNoneBlank(stopAfterStr))
         {
             try
@@ -1761,6 +1965,21 @@ public final class LogCheckConfig
             catch( LogCheckException ex )
             {
                 String errMsg = String.format("Error parsing ID Block Hash '%s'", idBlockHashTypeStr);
+
+                LOGGER.debug(errMsg, ex);
+                throw new LogCheckException(errMsg, ex);
+            }
+        }
+
+        if(StringUtils.isNoneBlank(deDupeDefaultActionStr))
+        {
+            try
+            {
+                deDupeDefaultAction = LCDeDupeAction.from(deDupeDefaultActionStr);
+            }
+            catch( LogCheckException ex )
+            {
+                String errMsg = String.format("Error parsing ID Block Hash '%s'", deDupeDefaultActionStr);
 
                 LOGGER.debug(errMsg, ex);
                 throw new LogCheckException(errMsg, ex);
@@ -1803,6 +2022,7 @@ public final class LogCheckConfig
                 startPositionIgnoreError,
                 validateTailerStats,
                 tailerBackupReadLog,
+                tailerBackupReadLogReverse,
                 tailerBackupReadPriorLog,
                 stopOnEOF,
                 readOnlyFileMode,
@@ -1827,13 +2047,18 @@ public final class LogCheckConfig
                 logDeduplicationDuration,
                 pollIntervalSeconds,
                 stopAfter,
+                deDupeIgnoreCount,
+                deDupeSkipCount,
                 readLogFileCount,
                 readMaxDeDupeEntries,
                 idBlockSize,
                 deDupeMaxLogsBeforeWrite,
                 deDupeMaxLogsPerFile,
                 deDupeMaxLogFiles,
+                deDupeIgnorePercent,
+                deDupeSkipPercent,
                 verbosity,
+                deDupeDefaultAction,
                 logEntryBuilders,
                 logEntryStores,
                 tailerBackupLogNameComps,

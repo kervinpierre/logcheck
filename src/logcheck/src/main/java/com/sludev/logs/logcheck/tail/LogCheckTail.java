@@ -91,6 +91,7 @@ public final class LogCheckTail implements Callable<LogCheckResult>
     private final Boolean m_collectTailerStatistics;
     private final Boolean m_watchBackupDirectory;
     private final Boolean m_tailerBackupReadLog;
+    private final Boolean m_tailerBackupReadLogReverse;
     private final Boolean m_tailerBackupReadPriorLog;
     private final Boolean m_stopOnEOF;
     private final Boolean m_readOnlyFileMode;
@@ -125,6 +126,7 @@ public final class LogCheckTail implements Callable<LogCheckResult>
                          final Boolean collectTailerStatistics,
                          final Boolean watchBackupDirectory,
                          final Boolean tailerBackupReadLog,
+                         final Boolean m_tailerBackupReadLogReverse,
                          final Boolean tailerBackupReadPriorLog,
                          final Boolean stopOnEOF,
                          final Boolean readOnlyFileMode,
@@ -182,6 +184,15 @@ public final class LogCheckTail implements Callable<LogCheckResult>
         else
         {
             this.m_tailerBackupReadLog = true;
+        }
+
+        if( m_tailerBackupReadLogReverse != null )
+        {
+            this.m_tailerBackupReadLogReverse = m_tailerBackupReadLogReverse;
+        }
+        else
+        {
+            this.m_tailerBackupReadLogReverse = true;
         }
 
         if( tailerBackupReadPriorLog != null )
@@ -316,6 +327,7 @@ public final class LogCheckTail implements Callable<LogCheckResult>
                                     final Boolean collectTailerStatistics,
                                     final Boolean watchBackupDirectory,
                                     final Boolean tailerBackupReadLog,
+                                    final Boolean tailerBackupReadLogReverse,
                                     final Boolean tailerBackupReadPriorLog,
                                     final Boolean stopOnEOF,
                                     final Boolean readOnlyFileMode,
@@ -350,6 +362,7 @@ public final class LogCheckTail implements Callable<LogCheckResult>
                 collectTailerStatistics,
                 watchBackupDirectory,
                 tailerBackupReadLog,
+                tailerBackupReadLogReverse,
                 tailerBackupReadPriorLog,
                 stopOnEOF,
                 readOnlyFileMode,
@@ -403,12 +416,14 @@ public final class LogCheckTail implements Callable<LogCheckResult>
         boolean currStatsValidate = BooleanUtils.isTrue(m_validateTailerStatistics);
         boolean currStatsCollect = BooleanUtils.isNotFalse(m_collectTailerStatistics);
         boolean currTailerBackupReadLog = BooleanUtils.isTrue(m_tailerBackupReadLog);
+        boolean currTailerBackupReadLogReverse = BooleanUtils.isTrue(m_tailerBackupReadLogReverse);
         boolean currStopOnEOF = BooleanUtils.isTrue(m_stopOnEOF);
         boolean currSaveState = BooleanUtils.isNotFalse(m_saveState);
         boolean currStatsReset = BooleanUtils.isTrue(m_statsReset);
 
+        // Watch for backup files *only* if we are checking backup logs at all
         boolean currWatchBackupDirectory
-                = BooleanUtils.isTrue(m_watchBackupDirectory);
+                = BooleanUtils.isTrue(m_watchBackupDirectory) && currTailerBackupReadLog;
 
         final ScheduledExecutorService statsSchedulerExe;
         final ExecutorService watchBackupDirExe;
@@ -840,7 +855,7 @@ public final class LogCheckTail implements Callable<LogCheckResult>
                                             null,
                                             m_tailerBackupLogNameComps,
                                             true,
-                                            true);
+                                            currTailerBackupReadLogReverse);
 
                                     if( backupLogFile == null )
                                     {
@@ -1016,6 +1031,7 @@ public final class LogCheckTail implements Callable<LogCheckResult>
                                                 false, // collectStats
                                                 false, // watch backup dir
                                                 m_tailerBackupReadLog,
+                                                m_tailerBackupReadLogReverse,
                                                 false, // tailerBackupReadPriorLog
                                                 true, // stopOnEOF
                                                 true, // readOnlyFileMode

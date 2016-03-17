@@ -35,7 +35,7 @@ public class LogCheckConstants
     public static final int DEFAULT_LCBLOCK_SAMPLE_SIZE = 80;
 
     public static final String DEFAULT_MULTILINE_ROW_START_PATTERN
-            = "^[\\s]*([A-Z]+)[\\s]+\\[([\\p{Alnum}:,\\s-]+)\\][\\s]+([\\p{Alnum}\\.]+)[\\s]+([\\w\\.-]+)[\\s]*$";
+            = "^[\\s]*([A-Z]+)[\\s]+\\[([\\p{Alnum}:,\\s-]+)\\][\\s]+([\\p{Alnum}_\\.-]+)[\\s]+([\\w\\.-]+)[\\s]*$";
 
     public static final String DEFAULT_MULTILINE_ROW_END_PATTERN
             = "^\\[logging row end\\]$";
