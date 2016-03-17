@@ -37,20 +37,20 @@ import org.apache.logging.log4j.Logger;
  */
 public final class MultiLineDelimitedBuilder implements ILogEntryBuilder
 {
-    private static final Logger log
+    private static final Logger LOGGER
             = LogManager.getLogger(MultiLineDelimitedBuilder.class);
 
-    private final Pattern logRowStartPattern;
-    private final Pattern logRowEndPattern;
-    private final Pattern logColumnStartPattern;
-    private final Pattern logColumnEndPattern;
-    private final List<Pattern> logIngoreLine;
-    private final StringBuilder columnString;
-    private final ILogEntrySink completionCallback;
+    private final Pattern m_logRowStartPattern;
+    private final Pattern m_logRowEndPattern;
+    private final Pattern m_logColumnStartPattern;
+    private final Pattern m_logColumnEndPattern;
+    private final List<Pattern> m_logIngoreLine;
+    private final StringBuilder m_columnStrBuild;
+    private final ILogEntrySink m_completionCallback;
 
     // Mutable
-    private LogEntry currentLogEntry;
-    private Integer columnCount;
+    private LogEntry m_currentLogEntry;
+    private Integer m_columnCount;
 
     private MultiLineDelimitedBuilder( final Pattern logRowStartPattern,
                                       final Pattern logRowEndPattern,
@@ -59,25 +59,25 @@ public final class MultiLineDelimitedBuilder implements ILogEntryBuilder
                                       final List<Pattern> ignoreLinePattern,
                                       final ILogEntrySink completionCallback)
     {
-        this.logRowStartPattern = logRowStartPattern;
-        this.logRowEndPattern = logRowEndPattern;
-        this.logColumnStartPattern = logColumnStartPattern;
-        this.logColumnEndPattern = logColumnEndPattern;
-        this.completionCallback = completionCallback;
+        this.m_logRowStartPattern = logRowStartPattern;
+        this.m_logRowEndPattern = logRowEndPattern;
+        this.m_logColumnStartPattern = logColumnStartPattern;
+        this.m_logColumnEndPattern = logColumnEndPattern;
+        this.m_completionCallback = completionCallback;
 
         if( ignoreLinePattern != null )
         {
-            logIngoreLine = ignoreLinePattern;
+            m_logIngoreLine = ignoreLinePattern;
         }
         else
         {
-            logIngoreLine = new ArrayList<>();
+            m_logIngoreLine = new ArrayList<>();
         }
 
-        columnString = new StringBuilder();
+        m_columnStrBuild = new StringBuilder();
 
-        this.currentLogEntry = null;
-        this.columnCount = null;
+        this.m_currentLogEntry = null;
+        this.m_columnCount = null;
     }
 
     public static MultiLineDelimitedBuilder from( final String logRowStartPatternStr,
@@ -113,7 +113,7 @@ public final class MultiLineDelimitedBuilder implements ILogEntryBuilder
             logColEndPattern = Pattern.compile(logColEndPatternStr);
         }
 
-        if(ignoreLinePatternList != null && ignoreLinePatternList.size() > 0)
+        if( (ignoreLinePatternList != null) && (ignoreLinePatternList.size() > 0) )
         {
             ignoreLineList = new ArrayList<>();
             for(String s : ignoreLinePatternList)
@@ -158,96 +158,109 @@ public final class MultiLineDelimitedBuilder implements ILogEntryBuilder
     @Override
     public void handleLogLine(String currLineStr) throws InterruptedException
     {
-        if( ILogEntryBuilder.ignoreLine(logIngoreLine, currLineStr) )
+        if( ILogEntryBuilder.ignoreLine(m_logIngoreLine, currLineStr) )
         {
             return;
         }
 
-        if(logRowStartPattern != null
-                && logRowStartPattern.matcher(currLineStr).matches())
+        if( (m_logRowStartPattern != null)
+                && m_logRowStartPattern.matcher(currLineStr).matches() )
         {
-            currentLogEntry = LogEntry.from(null);
-            columnString.setLength(0);
-            columnCount = 0;
+            m_currentLogEntry = LogEntry.from(null);
+            m_columnStrBuild.setLength(0);
+            m_columnCount = 0;
 
             // Marks a row start
-            Matcher currM = logRowStartPattern.matcher(currLineStr);
+            Matcher currM = m_logRowStartPattern.matcher(currLineStr);
             currM.matches();
             int currGC = currM.groupCount();
             if(currGC > 0)
             {
                 // Use the row start pattern for the first columns
-                currentLogEntry.setLevel(currM.group(1));
-                currentLogEntry.setTimeStamp(currM.group(2));
-                currentLogEntry.setLogger(currM.group(3));
-                currentLogEntry.setHost(currM.group(4));
+                m_currentLogEntry.setLevel(currM.group(1));
+                m_currentLogEntry.setTimeStamp(currM.group(2));
+                m_currentLogEntry.setLogger(currM.group(3));
+                m_currentLogEntry.setHost(currM.group(4));
             }
         }
-        else if(currentLogEntry != null
-                && logColumnEndPattern != null
-                && logColumnEndPattern.matcher(currLineStr).matches())
+        else if( (m_currentLogEntry != null)
+                && (m_logColumnEndPattern != null)
+                && m_logColumnEndPattern.matcher(currLineStr).matches() )
         {
             // Marks a column end
-            switch(columnCount)
+            switch( m_columnCount )
             {
                 case 0:
-                    currentLogEntry.setMessage(columnString.toString());
+                    m_currentLogEntry.setMessage(m_columnStrBuild.toString());
                     break;
 
                 case 1:
-                    currentLogEntry.setException(columnString.toString());
+                    m_currentLogEntry.setException(m_columnStrBuild.toString());
                     break;
 
                 default:
-                    log.error(String.format("Error : Unexpected column '%s'\n",
-                            columnString.toString()));
+                    LOGGER.error(String.format("Error : Unexpected column '%s'\n",
+                            m_columnStrBuild.toString()));
                     break;
             }
 
-            columnString.setLength(0);
-            columnCount++;
+            m_columnStrBuild.setLength(0);
+            m_columnCount++;
         }
-        else if(currentLogEntry != null
-                && logRowEndPattern != null
-                && logRowEndPattern.matcher(currLineStr).matches())
+        else if( (m_currentLogEntry != null)
+                && (m_logRowEndPattern != null)
+                && m_logRowEndPattern.matcher(currLineStr).matches() )
         {
-            if(columnString.length() > 0)
+            if( m_columnStrBuild.length() > 0)
             {
                 // We end the final column with the row marker only
-                switch(columnCount)
+                switch( m_columnCount )
                 {
                     case 0:
-                        currentLogEntry.setMessage(columnString.toString());
+                        m_currentLogEntry.setMessage(m_columnStrBuild.toString());
                         break;
 
                     case 1:
-                        currentLogEntry.setException(columnString.toString());
+                        m_currentLogEntry.setException(m_columnStrBuild.toString());
                         break;
 
                     default:
-                        log.error(String.format("Error : Unexpected column '%s'\n",
-                                columnString.toString()));
+                        LOGGER.error(String.format("Error : Unexpected column '%s'\n",
+                                m_columnStrBuild.toString()));
                         break;
                 }
             }
 
-            log.debug(String.format("Completed log\n====\n%s\n====\n",
-                    LogEntryVO.toJSON(
-                            LogEntry.toValueObject(currentLogEntry))));
-
-            // Marks a row end
-            if(completionCallback != null)
+            if( LOGGER.isDebugEnabled() )
             {
-                completionCallback.put(currentLogEntry);
+                String msg = "";
+                if( StringUtils.isNoneBlank(m_currentLogEntry.getMessage()) )
+                {
+                    msg = m_currentLogEntry.getMessage().replaceAll("[\\s]+", " ");
+                    msg = StringUtils.substring(msg, 0, 50);
+                }
+
+                LOGGER.debug(String.format("Completed log : TimeStamp [[%s][%s]]",
+                        m_currentLogEntry.getTimeStamp(), msg));
             }
 
-            currentLogEntry = null;
+//            LOGGER.debug(String.format("Completed log\n====\n%s\n====\n",
+//                    LogEntryVO.toJSON(
+//                            LogEntry.toValueObject(m_currentLogEntry))));
+
+            // Marks a row end
+            if( m_completionCallback != null)
+            {
+                m_completionCallback.put(m_currentLogEntry);
+            }
+
+            m_currentLogEntry = null;
         }
         else
         {
             // Store as column data
-            columnString.append(currLineStr);
-            columnString.append("\n");
+            m_columnStrBuild.append(currLineStr);
+            m_columnStrBuild.append("\n");
         }
     }
 }

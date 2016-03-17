@@ -18,6 +18,7 @@
 package com.sludev.logs.logcheck.log.impl;
 
 import java.util.concurrent.BlockingDeque;
+import java.util.concurrent.TimeUnit;
 
 import com.sludev.logs.logcheck.log.ILogEntrySource;
 import com.sludev.logs.logcheck.log.LogEntry;
@@ -30,14 +31,14 @@ import org.apache.logging.log4j.Logger;
  */
 public final class LogEntryQueueSource implements ILogEntrySource
 {
-    private static final Logger log 
+    private static final Logger LOGGER
                              = LogManager.getLogger(LogEntryQueueSource.class);
     
-    private final BlockingDeque<LogEntry> completedLogEntries;
+    private final BlockingDeque<LogEntry> m_completedLogEntries;
 
     private LogEntryQueueSource(final BlockingDeque<LogEntry> completedLogEntries)
     {
-        this.completedLogEntries = completedLogEntries;
+        this.m_completedLogEntries = completedLogEntries;
     }
 
     public static LogEntryQueueSource from(final BlockingDeque<LogEntry> completedLogEntries)
@@ -57,12 +58,23 @@ public final class LogEntryQueueSource implements ILogEntrySource
     public LogEntry next() throws InterruptedException
     {
         LogEntry currLE = null;
-        
+
         while( currLE == null )
         {
-            currLE = completedLogEntries.take();
+            currLE = next(1, TimeUnit.MINUTES);
         }
         
+        return currLE;
+    }
+
+    @Override
+    public LogEntry next( final long timeout,
+                          final TimeUnit unit ) throws InterruptedException
+    {
+        LogEntry currLE = null;
+
+        currLE = m_completedLogEntries.poll(timeout, unit);
+
         return currLE;
     }
     

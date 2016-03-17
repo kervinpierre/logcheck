@@ -227,6 +227,37 @@ NOTICE:  All information contained herein is, and remains
                     </xs:annotation>
                 </xs:element>
 
+                <xs:element name="deDuplicationIgnoreUntilCount" type="xs:integer" minOccurs="0" maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>The number of records that can be duplicate records and also ignored.</xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+
+                <xs:element name="deDuplicationSkipUntilCount" type="xs:integer" minOccurs="0" maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>The number of records that can be duplicate records and also skipped.</xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+
+                <xs:element name="deDuplicationIgnoreUntilPercent" type="xs:integer" minOccurs="0" maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>The percent of records that can be duplicate records and also ignored.</xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+
+                <xs:element name="deDuplicationSkipUntilPercent" type="xs:integer" minOccurs="0" maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>The percent of records that can be duplicate records and also skipped.</xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+
+                <xs:element name="deDuplicationDefaultAction" type="DeDuplicationActionType" minOccurs="0" maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>The default action after a duplicate record is detected.
+                            Actions include 'ignore', 'skip', or 'break'.</xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+
                 <xs:element name="deDuplicationMaxLogFiles" type="xs:integer" minOccurs="0" maxOccurs="1">
                     <xs:annotation>
                         <xs:documentation>The number of log files to keep on disk.</xs:documentation>
@@ -293,6 +324,14 @@ NOTICE:  All information contained herein is, and remains
                     </xs:annotation>
                 </xs:element>
 
+                <xs:element name="tailerBackupReadLogReverse" type="xs:boolean" minOccurs="0" maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>Are backup files ordered oldest to newest?  Or newest to oldest?
+                            True if new logs are in lower ordered backup files.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+
                 <xs:element name="continue" type="xs:boolean" minOccurs="0" maxOccurs="1">
                     <xs:annotation>
                         <xs:documentation>Continue with the state files from from a previous run</xs:documentation>
@@ -321,6 +360,15 @@ NOTICE:  All information contained herein is, and remains
             <xs:element name="nameComponent" type="TailerBackupLogNameCompsType" minOccurs="0" maxOccurs="unbounded" />
         </xs:choice>
     </xs:complexType>
+
+    <xs:simpleType name="DeDuplicationActionType">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="none"/>
+            <xs:enumeration value="ignore"/>
+            <xs:enumeration value="skip"/>
+            <xs:enumeration value="break"/>
+        </xs:restriction>
+    </xs:simpleType>
 
     <xs:simpleType name="TailerBackupLogNameCompsType">
         <xs:restriction base="xs:string">

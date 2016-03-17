@@ -49,12 +49,12 @@ public final class LogEntryConsole implements ILogEntryStore
     }
 
     @Override
-    public LogCheckResult put(LogEntryVO le) throws InterruptedException, LogCheckException
+    public LogCheckResult putValueObj(LogEntryVO entryVO) throws InterruptedException, LogCheckException
     {
         LogCheckResult res
                 = LogCheckResult.from(LCResultStatus.SUCCESS);
 
-        System.out.println(LogEntryVO.toJSON(le));
+        System.out.println(LogEntryVO.toJSON(entryVO));
 
         return res;
     }

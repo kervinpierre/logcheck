@@ -80,6 +80,7 @@ public class LogCheckInitialize
         Boolean currStartPositionIgnoreError = null;
         Boolean currValidateTailerStats = null;
         Boolean currTailerBackupReadLogs = null;
+        Boolean currTailerBackupReadLogsReverse = null;
         Boolean currTailerBackupReadPriorLogs = null;
         Boolean currStopOnEOF = null;
         Boolean currReadOnlyFileMode = null;
@@ -107,6 +108,11 @@ public class LogCheckInitialize
         String currDeDupeMaxLogsPerFile = null;
         String currDeDupeMaxLogFiles = null;
         String currDeDupeMaxLogsBeforeWrite = null;
+        String currDeDupeDefaultAction = null;
+        String currDeDupeIgnoreUntilPercent = null;
+        String currDeDupeIgnoreUntilCount = null;
+        String currDeDupeSkipUntilPercent = null;
+        String currDeDupeSkipUntilCount = null;
         String currStopAfter = null;
         String currReadLogFileCount = null;
         String currReadMaxDeDupeEntries = null;
@@ -143,24 +149,24 @@ public class LogCheckInitialize
             //
             // NB: You can't use command line arguments AND argfile at the same
             //     time
-            if ( lines.size() > 0 && lines.get(0).hasOption("argfile"))
+            if( (lines.size() > 0) && lines.get(0).hasOption("argfile"))
             {
                 String argfile = lines.get(0).getOptionValue("argfile");
 
-                String[] argArray = FSSArgFile.getArgArray( Paths.get(argfile) );
+                String[] argArray = FSSArgFile.getArgArray(Paths.get(argfile));
 
-                LOGGER.debug( String.format("LogCheckMain main() : Argfile parsed : %s\n",
-                        Arrays.toString(argArray)) );
+                LOGGER.debug(String.format("LogCheckMain main() : Argfile parsed : %s\n",
+                        Arrays.toString(argArray)));
 
                 try
                 {
                     lines.add(parser.parse(options, argArray));
                 }
-                catch (ParseException ex)
+                catch( ParseException ex )
                 {
                     throw new LogCheckException(
-                        String.format("Error parsing command line.'%s'",
-                            ex.getMessage()), ex);
+                            String.format("Error parsing command line.'%s'",
+                                    ex.getMessage()), ex);
                 }
             }
 
@@ -359,6 +365,31 @@ public class LogCheckInitialize
                             currDeDupeMaxLogsBeforeWrite = currOpt.getValue();
                             break;
 
+                        case "dedupe-default-action":
+                            //
+                            currDeDupeDefaultAction = currOpt.getValue();
+                            break;
+
+                        case "dedupe-ignore-percent":
+                            //
+                            currDeDupeIgnoreUntilPercent = currOpt.getValue();
+                            break;
+
+                        case "dedupe-ignore-count":
+                            //
+                            currDeDupeIgnoreUntilCount = currOpt.getValue();
+                            break;
+
+                        case "dedupe-skip-percent":
+                            //
+                            currDeDupeSkipUntilPercent = currOpt.getValue();
+                            break;
+
+                        case "dedupe-skip-count":
+                            //
+                            currDeDupeSkipUntilCount = currOpt.getValue();
+                            break;
+
                         case "log-entry-builder-type":
                             // Specify the log entry builder type to use
                             currLEBuilderType = currOpt.getValues();
@@ -466,6 +497,11 @@ public class LogCheckInitialize
                             currStopOnEOF = true;
                             break;
 
+                        case "tailer-read-backup-reverse-order":
+                            // Read backup logs in reverse order
+                            currTailerBackupReadLogsReverse = true;
+                            break;
+
                         case "tailer-read-only-file":
                             // Read Only File
                             currReadOnlyFileMode = true;
@@ -501,10 +537,19 @@ public class LogCheckInitialize
                it sets the logger's verbosity from the "java/jre" start, you should set it so
                that you do not lose any messages
             */
-            FSSVerbosityEnum currVerbose = FSSVerbosityEnum.from(currVerbosity);
-            if( StringUtils.isNoneBlank(currVerbosity) && (currVerbose != null) )
+            FSSVerbosityEnum currVerbose;
+            if( StringUtils.isBlank(currVerbosity) && (config != null) && (config.getVerbosity() != null) )
             {
-                FSSLog4JConfiguration.setVerbosity( currVerbose );
+                currVerbose = config.getVerbosity();
+            }
+            else
+            {
+                currVerbose = FSSVerbosityEnum.from(currVerbosity);
+            }
+
+            if( currVerbose != null )
+            {
+                FSSLog4JConfiguration.setVerbosity(currVerbose);
             }
 
             /*
@@ -539,6 +584,7 @@ public class LogCheckInitialize
                     currStartPositionIgnoreError,
                     currValidateTailerStats,
                     currTailerBackupReadLogs,
+                    currTailerBackupReadLogsReverse,
                     currTailerBackupReadPriorLogs,
                     currStopOnEOF,
                     currReadOnlyFileMode,
@@ -563,13 +609,18 @@ public class LogCheckInitialize
                     currLogDeduplicationDuration, // logDeduplicationDuration,
                     currPollIntervalSeconds,
                     currStopAfter,
+                    currDeDupeIgnoreUntilCount,
+                    currDeDupeSkipUntilCount,
                     currReadLogFileCount,
                     currReadMaxDeDupeEntries,
                     currIdBlockSize,
                     currDeDupeMaxLogsBeforeWrite,
                     currDeDupeMaxLogsPerFile,
                     currDeDupeMaxLogFiles,
+                    currDeDupeIgnoreUntilPercent,
+                    currDeDupeSkipUntilPercent,
                     currVerbosity,
+                    currDeDupeDefaultAction,
                     currLEBuilderType,
                     currLEStoreType,
                     currTailerBackupLogNameComps,
@@ -795,6 +846,32 @@ public class LogCheckInitialize
                 .hasArg()
                 .build() );
 
+        options.addOption( Option.builder().longOpt( "dedupe-default-action" )
+                .desc( "The default action after a duplicate record is detected. "
+                        + "Actions include IGNORE, SKIP, or BREAK." )
+                .hasArg()
+                .build() );
+
+        options.addOption( Option.builder().longOpt( "dedupe-ignore-percent" )
+                .desc( "The percentage of records that can be duplicate records and also ignored. " )
+                .hasArg()
+                .build() );
+
+        options.addOption( Option.builder().longOpt( "dedupe-ignore-count" )
+                .desc( "The number of records that can be duplicate records and also ignored. " )
+                .hasArg()
+                .build() );
+
+        options.addOption( Option.builder().longOpt( "dedupe-skip-percent" )
+                .desc( "The percentage of records that can be duplicate records and also skipped. " )
+                .hasArg()
+                .build() );
+
+        options.addOption( Option.builder().longOpt( "dedupe-skip-count" )
+                .desc( "The number of records that can be duplicate records and also skipped. " )
+                .hasArg()
+                .build() );
+
         options.addOption( Option.builder().longOpt( "stop-after" )
                 .desc( "The number of seconds to run before stopping." )
                 .hasArg()
@@ -834,6 +911,11 @@ public class LogCheckInitialize
 
         options.addOption( Option.builder().longOpt( "tailer-read-backup-log" )
                 .desc( "Find the backup log files AFTER they've been rotated.  Read those backups before continuing." )
+                .build() );
+
+        options.addOption( Option.builder().longOpt( "tailer-read-backup-reverse-order" )
+                .desc( "Are backup files ordered oldest to newest?  Or newest to oldest? "
+                        + "True if new logs are in lower ordered backup files." )
                 .build() );
 
         options.addOption( Option.builder().longOpt( "tailer-read-prior-backup-log" )

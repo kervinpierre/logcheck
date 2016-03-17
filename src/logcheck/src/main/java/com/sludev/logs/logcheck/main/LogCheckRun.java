@@ -97,6 +97,8 @@ public class LogCheckRun implements Callable<LogCheckResult>
     @Override
     public LogCheckResult call() throws LogCheckException, ExecutionException
     {
+        LOGGER.debug(String.format("call(): config :\n%s\n", m_config));
+
         UUID currRunUUID = UUID.randomUUID();
 
         // Use a thread-safe queue.  We enqueue/dequeue on different threads
@@ -213,6 +215,7 @@ public class LogCheckRun implements Callable<LogCheckResult>
                 m_config.willCollectState(),
                 true, // watch backup directory
                 m_config.willTailerBackupReadLog(),
+                m_config.willTailerBackupReadLogReverse(),
                 m_config.willTailerBackupReadPriorLog(),
                 m_config.willStopOnEOF(),
                 m_config.isReadOnlyFileMode(),
@@ -293,7 +296,12 @@ public class LogCheckRun implements Callable<LogCheckResult>
                 currRunUUID,
                 m_config.getDeDupeMaxLogsBeforeWrite(),
                 m_config.getDeDupeMaxLogsPerFile(),
-                m_config.getDeDupeMaxLogFiles());
+                m_config.getDeDupeMaxLogFiles(),
+                m_config.getDeDupeIgnorePercent(),
+                m_config.getDeDupeSkipPercent(),
+                m_config.getDeDupeIgnoreCount(),
+                m_config.getDeDupeSkipCount(),
+                m_config.getDeDupeDefaultAction());
 
         // Start the relevant threads
         BasicThreadFactory logCheckTailerFactory = new BasicThreadFactory.Builder()

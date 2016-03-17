@@ -18,6 +18,7 @@
 
 package com.sludev.logs.logcheck.store;
 
+import com.sludev.logs.logcheck.enums.LCDeDupeAction;
 import com.sludev.logs.logcheck.enums.LCResultStatus;
 import com.sludev.logs.logcheck.log.ILogEntrySource;
 import com.sludev.logs.logcheck.utils.LogCheckConstants;
@@ -42,16 +43,21 @@ import java.util.concurrent.Callable;
  */
 public final class LogEntryStore implements Callable<LogCheckResult>
 {
-    private static final Logger log = LogManager.getLogger(LogEntryStore.class);
+    private static final Logger LOGGER = LogManager.getLogger(LogEntryStore.class);
 
-    private final ILogEntrySource mainLogEntrySource;
-    private final List<ILogEntryStore> entryStores;
-    private final Path deDupeLogOutputPath;
-    private final String jobName;
-    private final UUID runUUID;
-    private final Integer deDupeMaxLogsBeforeWrite;
-    private final Integer deDupeMaxLogsPerFile;
-    private final Integer deDupeMaxLogFiles;
+    private final ILogEntrySource m_mainLogEntrySource;
+    private final List<ILogEntryStore> m_entryStores;
+    private final Path m_deDupeLogOutputPath;
+    private final String m_jobName;
+    private final UUID m_runUUID;
+    private final Integer m_deDupeMaxLogsBeforeWrite;
+    private final Integer m_deDupeMaxLogsPerFile;
+    private final Integer m_deDupeMaxLogFiles;
+    private final Integer m_deDupeIgnorePercent;
+    private final Integer m_deDupeSkipPercent;
+    private final Long m_deDupeIgnoreCount;
+    private final Long m_deDupeSkipCount;
+    private final LCDeDupeAction m_deDupeDefaultAction;
 
     // MUTABLE
     public volatile boolean m_run = true;
@@ -68,16 +74,26 @@ public final class LogEntryStore implements Callable<LogCheckResult>
                           final UUID runUUID,
                           final Integer deDupeMaxLogsBeforeWrite,
                           final Integer deDupeMaxLogsPerFile,
-                          final Integer deDupeMaxLogFiles)
+                          final Integer deDupeMaxLogFiles,
+                          final Integer deDupeIgnorePercent,
+                          final Integer deDupeSkipPercent,
+                          final Long deDupeIgnoreCount,
+                          final Long deDupeSkipCount,
+                          final LCDeDupeAction deDupeDefaultAction)
     {
-        this.mainLogEntrySource = mainLogEntrySource;
-        this.entryStores = entryStores;
-        this.deDupeLogOutputPath = deDupeLogOutputPath;
-        this.jobName = jobName;
-        this.runUUID = runUUID;
-        this.deDupeMaxLogsBeforeWrite = deDupeMaxLogsBeforeWrite;
-        this.deDupeMaxLogsPerFile = deDupeMaxLogsPerFile;
-        this.deDupeMaxLogFiles = deDupeMaxLogFiles;
+        this.m_mainLogEntrySource = mainLogEntrySource;
+        this.m_entryStores = entryStores;
+        this.m_deDupeLogOutputPath = deDupeLogOutputPath;
+        this.m_jobName = jobName;
+        this.m_runUUID = runUUID;
+        this.m_deDupeMaxLogsBeforeWrite = deDupeMaxLogsBeforeWrite;
+        this.m_deDupeMaxLogsPerFile = deDupeMaxLogsPerFile;
+        this.m_deDupeMaxLogFiles = deDupeMaxLogFiles;
+        this.m_deDupeIgnorePercent = deDupeIgnorePercent;
+        this.m_deDupeSkipPercent = deDupeSkipPercent;
+        this.m_deDupeIgnoreCount = deDupeIgnoreCount;
+        this.m_deDupeSkipCount = deDupeSkipCount;
+        this.m_deDupeDefaultAction = deDupeDefaultAction;
     }
 
     public static LogEntryStore from(final ILogEntrySource mainLogEntrySource,
@@ -87,7 +103,12 @@ public final class LogEntryStore implements Callable<LogCheckResult>
                                      final UUID runUUID,
                                      final Integer deDupeMaxLogsBeforeWrite,
                                      final Integer deDupeMaxLogsPerFile,
-                                     final Integer deDupeMaxLogFiles)
+                                     final Integer deDupeMaxLogFiles,
+                                     final Integer deDupeIgnorePercent,
+                                     final Integer deDupeSkipPercent,
+                                     final Long deDupeIgnoreCount,
+                                     final Long deDupeSkipCount,
+                                     final LCDeDupeAction deDupeDefaultAction)
     {
         LogEntryStore store = new LogEntryStore(mainLogEntrySource,
                 entryStore,
@@ -95,7 +116,13 @@ public final class LogEntryStore implements Callable<LogCheckResult>
                 jobName,
                 runUUID,
                 deDupeMaxLogsBeforeWrite,
-                deDupeMaxLogsPerFile, deDupeMaxLogFiles);
+                deDupeMaxLogsPerFile,
+                deDupeMaxLogFiles,
+                deDupeIgnorePercent,
+                deDupeSkipPercent,
+                deDupeIgnoreCount,
+                deDupeSkipCount,
+                deDupeDefaultAction);
 
         return store;
     }
@@ -105,7 +132,7 @@ public final class LogEntryStore implements Callable<LogCheckResult>
     {
         LogCheckResult res = LogCheckResult.from(LCResultStatus.NONE);
 
-        String currJobName = jobName;
+        String currJobName = m_jobName;
         if( StringUtils.isBlank(currJobName) )
         {
             currJobName = LogCheckConstants.DEFAULT_SET_NAME;
@@ -115,9 +142,9 @@ public final class LogEntryStore implements Callable<LogCheckResult>
 
         Path currDeDupePath = null;
 
-        if( deDupeLogOutputPath != null )
+        if( m_deDupeLogOutputPath != null )
         {
-            currDeDupePath = deDupeLogOutputPath.resolve(currJobName);
+            currDeDupePath = m_deDupeLogOutputPath.resolve(currJobName);
             if( Files.exists(currDeDupePath) )
             {
                 throw new LogCheckException(String.format("Deduplication log directory should not exist yet '%s'",
@@ -139,17 +166,24 @@ public final class LogEntryStore implements Callable<LogCheckResult>
         {
             try
             {
-                res = ILogEntryStore.process(mainLogEntrySource,
-                        entryStores,
+                res = ILogEntryStore.process(m_mainLogEntrySource,
+                        m_entryStores,
                         currDeDupePath,
-                        runUUID,
-                        deDupeMaxLogsBeforeWrite,
-                        deDupeMaxLogsPerFile,
-                        deDupeMaxLogFiles);
+                        m_runUUID,
+                        m_deDupeMaxLogsBeforeWrite,
+                        m_deDupeMaxLogsPerFile,
+                        m_deDupeMaxLogFiles,
+                        m_deDupeIgnorePercent,
+                        m_deDupeSkipPercent,
+                        m_deDupeIgnoreCount,
+                        m_deDupeSkipCount,
+                        m_deDupeDefaultAction,
+                        null,
+                        null);
             }
             catch( InterruptedException ex )
             {
-                log.debug(
+                LOGGER.debug(
                         String.format("ILogEntryStore.process() interrupted. m_run is %b",
                                 m_run), ex);
 

@@ -19,7 +19,6 @@ package com.sludev.logs.logcheck.store;
 
 import com.sludev.logs.logcheck.LogCheckProperties;
 import com.sludev.logs.logcheck.LogCheckTestWatcher;
-import com.sludev.logs.logcheck.config.entities.LogEntryVO;
 import com.sludev.logs.logcheck.enums.LCLogLevel;
 import com.sludev.logs.logcheck.enums.LCResultStatus;
 import com.sludev.logs.logcheck.log.LogEntry;
@@ -37,7 +36,6 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.Rule;
 import org.junit.rules.TestWatcher;
@@ -89,7 +87,7 @@ public class LogEntryElasticSearchTest
     }
 
     /**
-     * Test of put method, of class LogEntryElasticSearch.
+     * Test of putValueObj method, of class LogEntryElasticSearch.
      *
      * To clean/delete all indices use...
      *
@@ -100,7 +98,7 @@ public class LogEntryElasticSearchTest
     @Test
     public void A001_testPut() throws Exception
     {
-        log.debug("testing put()");
+        log.debug("testing putValueObj()");
         
         String elasticsearchURL = testProperties.getProperty("logcheck.test0001.elasticsearchurl");
         
@@ -115,7 +113,7 @@ public class LogEntryElasticSearchTest
         LogEntryElasticSearch instance = LogEntryElasticSearch.from(elasticsearchURL, null);
         instance.init();
         
-        LogCheckResult result = instance.put(LogEntry.toValueObject(le));
+        LogCheckResult result = instance.putValueObj(LogEntry.toValueObject(le));
         Assert.assertNotNull(result);
         Assert.assertTrue(result.getStatus()== LCResultStatus.SUCCESS);
     }

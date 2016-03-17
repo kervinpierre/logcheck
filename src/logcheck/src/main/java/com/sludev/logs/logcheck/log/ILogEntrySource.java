@@ -17,6 +17,8 @@
  */
 package com.sludev.logs.logcheck.log;
 
+import java.util.concurrent.TimeUnit;
+
 /**
  * An class that provides log entries.
  * 
@@ -25,4 +27,7 @@ package com.sludev.logs.logcheck.log;
 public interface ILogEntrySource
 {
     public LogEntry next() throws InterruptedException;
+
+    public LogEntry next( final long timeout,
+                          final TimeUnit unit ) throws InterruptedException;
 }

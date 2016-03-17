@@ -756,7 +756,7 @@ public final class FileTailer implements Callable<FileTailerResult>
                 {
                     String ts = new String(lineBuf.toByteArray(), m_cset);
 
-                    LOGGER.debug(String.format("readLines() : doHandle : '%s'", ts));
+                   // LOGGER.debug(String.format("readLines() : doHandle : '%s'", ts));
 
                     if( LOGGER.isDebugEnabled() )
                     {

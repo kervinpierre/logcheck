@@ -21,6 +21,7 @@ import com.sludev.logs.logcheck.config.entities.LogCheckDeDupeLog;
 import com.sludev.logs.logcheck.config.entities.LogEntryDeDupe;
 import com.sludev.logs.logcheck.config.entities.LogEntryVO;
 import com.sludev.logs.logcheck.config.writers.LogCheckDeDupeLogWriter;
+import com.sludev.logs.logcheck.enums.LCDeDupeAction;
 import com.sludev.logs.logcheck.enums.LCResultStatus;
 import com.sludev.logs.logcheck.log.ILogEntrySource;
 import com.sludev.logs.logcheck.log.LogEntry;
@@ -38,6 +39,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 /**
  *
@@ -51,15 +53,22 @@ public interface ILogEntryStore
     public void destroy() throws LogCheckException;
     public LCResultStatus testConnection() throws LogCheckException;
 
-    public LogCheckResult put(LogEntryVO le) throws InterruptedException, LogCheckException;
+    public LogCheckResult putValueObj(LogEntryVO entryVO) throws InterruptedException, LogCheckException;
 
-    public static LogCheckResult process( final ILogEntrySource src,
-                                          final List<ILogEntryStore> dstStores,
-                                          final Path deDupeDirPath,
-                                          final UUID runUUID,
-                                          final Integer deDupeMaxLogsBeforeWrite,
-                                          final Integer deDupeMaxLogsPerFile,
-                                          final Integer deDupeMaxLogFiles) throws InterruptedException, LogCheckException
+    public static LogCheckResult process(final ILogEntrySource src,
+                                         final List<ILogEntryStore> dstStores,
+                                         final Path deDupeDirPath,
+                                         final UUID runUUID,
+                                         final Integer deDupeMaxLogsBeforeWrite,
+                                         final Integer deDupeMaxLogsPerFile,
+                                         final Integer deDupeMaxLogFiles,
+                                         final Integer deDupeIgnorePercent,
+                                         final Integer deDupeSkipPercent,
+                                         final Long deDupeIgnoreCount,
+                                         final Long deDupeSkipCount,
+                                         final LCDeDupeAction deDupeDefaultAction,
+                                         final Long timeout,
+                                         final TimeUnit timeoutUnits) throws InterruptedException, LogCheckException
     {
         LogCheckResult res = LogCheckResult.from(LCResultStatus.SUCCESS);
         LogEntry currEntry;
@@ -82,6 +91,7 @@ public interface ILogEntryStore
         }
 
         Set<LogEntryDeDupe> currentProcessedEntries = new HashSet<>(10);
+        Long duplicateCount = 0L;
         boolean shouldWrite = false;
         do
         {
@@ -111,17 +121,30 @@ public interface ILogEntryStore
             }
 
             // Block until the next log entry
-            currEntry = src.next();
+            if( (timeout == null) || (timeout < 1) || (timeoutUnits == null) )
+            {
+                currEntry = src.next();
+            }
+            else
+            {
+                currEntry = src.next(timeout, timeoutUnits);
+                if( currEntry == null )
+                {
+                    return LogCheckResult.from(LCResultStatus.TIMEDOUT);
+                }
+            }
+
             currEntryVO = LogEntry.toValueObject(currEntry);
 
             if( LOGGER.isDebugEnabled() )
             {
-                LOGGER.debug(String.format("doProcess : '%s'",
-                                    LogEntryVO.toJSON(currEntryVO)));
+           //     LOGGER.debug(String.format("doProcess : '%s'",
+            //                        LogEntryVO.toJSON(currEntryVO)));
             }
 
-            // Check the deduplication list before put
+            // Check the deduplication list before putValueObj
             LogEntryDeDupe currLEDD = null;
+            LCDeDupeAction currAction = LCDeDupeAction.NONE;
             if( md != null )
             {
                 md.update(LogEntryVO.toJSON(currEntryVO).getBytes());
@@ -134,26 +157,60 @@ public interface ILogEntryStore
 
                 if( currentProcessedEntries.contains(currLEDD) )
                 {
-                    String errMsg = String.format("This Log Entry has already been added in this process() call '%s'\n%s\n",
+                    duplicateCount++;
+
+                    String errMsg = String.format("This Log Entry has already been added in this process() call\n"
+                                + "DUPLICATE COUNT : %d\nHASH : '%s'\nJSON : %s\n",
+                            duplicateCount,
                             Hex.encodeHexString(currLEDD.getLogHashCode()),
                             LogEntryVO.toJSON(currEntryVO));
 
                     LOGGER.info(errMsg);
 
-                    // TODO : Define duplication rules E.g. skip or quit
+                    // Define duplication rules E.g. skip or quit
+                    if(deDupeDefaultAction != null)
+                    {
+                        currAction = deDupeDefaultAction;
+                    }
+
+                    if( (deDupeIgnoreCount != null) && (duplicateCount <= deDupeIgnoreCount) )
+                    {
+                        currAction = LCDeDupeAction.IGNORE;
+                    }
+                    else if( (deDupeSkipCount != null) && (duplicateCount <= deDupeSkipCount) )
+                    {
+                        currAction = LCDeDupeAction.SKIP;
+                    }
 
                     // TODO : Check the deduplication logs on disk as well
                 }
-                else
-                {
-                    currentProcessedEntries.add(currLEDD);
-                }
+
+                // Register as processed
+                currentProcessedEntries.add(currLEDD);
+            }
+
+            switch( currAction )
+            {
+                case SKIP:
+                    // Skip storing the current log entry
+                    LOGGER.debug("process() : SKIPPING current duplicate log entry...");
+                    continue;
+
+                case BREAK:
+                    // Stop processing all together
+                    LOGGER.debug("process() : BREAKING after current duplicate log entry...");
+                    return LogCheckResult.from(LCResultStatus.BREAK);
+
+                case IGNORE:
+                    // Continue with updating the log stores
+                    LOGGER.debug("process() : IGNORING the fact that the current log entry is a duplicate...");
+                    break;
             }
 
             LogCheckResult putRes = null;
             for( ILogEntryStore dst : dstStores )
             {
-                putRes = dst.put(currEntryVO);
+                putRes = dst.putValueObj(currEntryVO);
             }
 
             logCount++;
@@ -161,17 +218,17 @@ public interface ILogEntryStore
             try
             {
                 // Update deduplication statistics
-                if( currDeDupeLog != null
-                        && currLEDD != null )
+                if( (currDeDupeLog != null)
+                        && (currLEDD != null) )
                 {
                     currDeDupeLog.getLogEntryDeDupes().add(currLEDD);
                     shouldWrite = true;
 
                     boolean doWrite = true;
-                    if( putRes != null
-                            && deDupeMaxLogsBeforeWrite != null
-                            && deDupeMaxLogsBeforeWrite > 0
-                            && logCount % deDupeMaxLogsBeforeWrite != 0 )
+                    if( (putRes != null)
+                            && (deDupeMaxLogsBeforeWrite != null)
+                            && (deDupeMaxLogsBeforeWrite > 0)
+                            && ((logCount % deDupeMaxLogsBeforeWrite) != 0) )
                     {
                         doWrite = false;
                     }
