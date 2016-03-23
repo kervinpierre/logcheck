@@ -227,7 +227,7 @@ public class LogCheckMain
                 }
                 finally
                 {
-                    ;
+                    LOGGER.debug("processStart() : Clean-up.");
                 }
             }
             while( s_run && BooleanUtils.isTrue(config.isService()) );

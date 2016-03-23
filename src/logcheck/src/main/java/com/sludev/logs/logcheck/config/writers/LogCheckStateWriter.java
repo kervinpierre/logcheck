@@ -1,7 +1,9 @@
 package com.sludev.logs.logcheck.config.writers;
 
 import com.sludev.logs.logcheck.config.entities.LogCheckState;
+import com.sludev.logs.logcheck.config.entities.LogFileBlock;
 import com.sludev.logs.logcheck.config.entities.LogFileState;
+import com.sludev.logs.logcheck.config.entities.LogFileStatus;
 import com.sludev.logs.logcheck.exceptions.LogCheckException;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
@@ -23,6 +25,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
+import java.util.Deque;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -103,7 +107,7 @@ public final class LogCheckStateWriter
             }
         }
 
-        if( js.getErrors() != null && js.getErrors().size() > 0  )
+        if( (js.getErrors() != null) && (js.getErrors().size() > 0) )
         {
             // We have errors, so we need to write them to an errors file
 
@@ -175,6 +179,83 @@ public final class LogCheckStateWriter
         if( currLog != null )
         {
             currElem = LogCheckFileWriter.toElement(doc, "logFile", currLog);
+            res.appendChild(currElem);
+        }
+
+        // completed log files
+        Deque<LogFileStatus> currStatuses = lcs.getCompletedLogFiles();
+        if( currStatuses != null )
+        {
+            Element statuses = doc.createElement("fileStatuses");
+            for( LogFileStatus status : currStatuses )
+            {
+                currElem = toElement(doc, "fileStatus", status);
+                statuses.appendChild(currElem);
+            }
+            res.appendChild(statuses);
+        }
+
+        return res;
+    }
+
+    public static Element toElement( Document doc, String elementName, LogFileStatus lfs ) throws LogCheckException
+    {
+        Element res = null;
+        Element currElem = null;
+
+        res = doc.createElement(elementName);
+
+        // processed timestamp
+        Instant currInst = lfs.getProcessedStamp();
+        if( currInst == null )
+        {
+            ; // throw new LogCheckException("Missing processed time stamp");
+        }
+        else
+        {
+            currElem = doc.createElement("processedStamp");
+            currElem.appendChild(doc.createTextNode(currInst.toString()));
+            res.appendChild(currElem);
+        }
+
+        // processed flag
+        Boolean currBool = lfs.isProcessed();
+        if( currBool == null )
+        {
+            ; // throw new LogCheckException("Missing processed flag");
+        }
+        else
+        {
+            currElem = doc.createElement("processed");
+            currElem.appendChild(doc.createTextNode(currBool.toString()));
+            res.appendChild(currElem);
+        }
+
+        // path
+        Path currPath = lfs.getPath();
+        if( currPath == null )
+        {
+            ; // throw new LogCheckException("Missing Path");
+        }
+        else
+        {
+            currElem = doc.createElement("path");
+            currElem.appendChild(doc.createTextNode(currPath.toString()));
+            res.appendChild(currElem);
+        }
+
+        // file block
+        LogFileBlock currBlock = lfs.getFullFileBlock();
+        if( currBlock == null )
+        {
+            ; //LOGGER.info("Missing first block. <fullFileBlock/>"); // throw new LogCheckException("Missing full block");
+        }
+        else
+        {
+            currElem = LogFileBlockWriter.toElement(doc, "firstBlock", currBlock);
+        }
+        if( currElem != null )
+        {
             res.appendChild(currElem);
         }
 

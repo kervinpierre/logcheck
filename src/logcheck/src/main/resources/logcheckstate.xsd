@@ -26,7 +26,8 @@ NOTICE:  All information contained herein is, and remains
     <xs:element name="logCheckState">
         <xs:complexType>
             <xs:choice minOccurs="0" maxOccurs="unbounded">
-                <xs:element name="logFile" type="LogFileStateType" minOccurs="1" maxOccurs="1" />
+                <xs:element name="logFile" type="LogFileStateType" minOccurs="0" maxOccurs="1" />
+                <xs:element name="fileStatuses" type="LogFileStatusListType" minOccurs="0" maxOccurs="1" />
                 <xs:element name="saveDate" type="xs:dateTime" minOccurs="1" maxOccurs="1" />
                 <xs:element name="id" type="xs:string" minOccurs="1" maxOccurs="1" />
                 <xs:element name="setName" type="xs:string" minOccurs="1" maxOccurs="1" />
@@ -44,6 +45,21 @@ NOTICE:  All information contained herein is, and remains
             <xs:element name="lastProcessedStart" type="xs:dateTime" minOccurs="0" maxOccurs="1" />
             <xs:element name="lastProcessedEnd" type="xs:dateTime" minOccurs="0" maxOccurs="1" />
             <xs:element name="firstBlock" type="BlockType" minOccurs="1" maxOccurs="1" />
+        </xs:choice>
+    </xs:complexType>
+
+    <xs:complexType name="LogFileStatusListType">
+        <xs:choice minOccurs="0" maxOccurs="unbounded">
+            <xs:element name="fileStatus" type="LogFileStatusType" minOccurs="0" maxOccurs="unbounded" />
+        </xs:choice>
+    </xs:complexType>
+
+    <xs:complexType name="LogFileStatusType">
+        <xs:choice minOccurs="0" maxOccurs="unbounded">
+            <xs:element name="path" type="xs:string" minOccurs="0" maxOccurs="1" />
+            <xs:element name="processedStamp" type="xs:dateTime" minOccurs="0" maxOccurs="1" />
+            <xs:element name="processed" type="xs:boolean" minOccurs="0" maxOccurs="1" />
+            <xs:element name="fullFileBlock" type="BlockType" minOccurs="1" maxOccurs="1" />
         </xs:choice>
     </xs:complexType>
 

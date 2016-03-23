@@ -16,7 +16,7 @@ import java.time.Instant;
  */
 public final class LogCheckFileWriter
 {
-    private static final Logger log = LogManager.getLogger(LogCheckFileWriter.class);
+    private static final Logger LOGGER = LogManager.getLogger(LogCheckFileWriter.class);
 
     public static Element toElement(Document doc, String elementName, LogFileState lcf) throws LogCheckException
     {
@@ -49,7 +49,7 @@ public final class LogCheckFileWriter
         currInst = lcf.getLastProcessedTimeEnd();
         if( currInst == null )
         {
-            log.debug("Missing 'lastProcessedEnd' tag."); // throw new LogCheckException("Missing End");
+            LOGGER.debug("Missing 'lastProcessedEnd' tag."); // throw new LogCheckException("Missing End");
         }
         else
         {
@@ -97,7 +97,7 @@ public final class LogCheckFileWriter
         LogFileBlock currBlock = lcf.getFirstBlock();
         if( currBlock == null )
         {
-            log.info("Missing first block. <firstBlock />");; // throw new LogCheckException("Missing first block");
+            LOGGER.info("Missing first block. <firstBlock />");; // throw new LogCheckException("Missing first block");
             currElem = doc.createElement("firstBlock");
         }
         else
@@ -112,7 +112,7 @@ public final class LogCheckFileWriter
         currBlock = lcf.getLastProcessedBlock();
         if( currBlock == null )
         {
-            log.info("Missing last processed block");
+            LOGGER.info("Missing last processed block");
         }
         else
         {

@@ -36,7 +36,7 @@ import javax.xml.xpath.XPathFactory;
  */
 public final class LogFileStateParser
 {
-    private static final Logger log = LogManager.getLogger(LogFileStateParser.class);
+    private static final Logger LOGGER = LogManager.getLogger(LogFileStateParser.class);
 
     public static LogFileState readConfig(Element rootElem)
             throws LogCheckException
@@ -63,7 +63,7 @@ public final class LogFileStateParser
         {
             String errMsg = "Configuration parsing error. <filePath> tag.";
 
-            log.debug(errMsg, ex);
+            LOGGER.debug(errMsg, ex);
 
             throw new LogCheckException(errMsg, ex);
         }
@@ -76,7 +76,7 @@ public final class LogFileStateParser
         {
             String errMsg = "Configuration parsing error. <lastProcessedLineNumber> tag.";
 
-            log.debug(errMsg, ex);
+            LOGGER.debug(errMsg, ex);
 
             throw new LogCheckException(errMsg, ex);
         }
@@ -89,7 +89,7 @@ public final class LogFileStateParser
         {
             String errMsg = "Configuration parsing error. <lastProcessedCharNumber> tag.";
 
-            log.debug(errMsg, ex);
+            LOGGER.debug(errMsg, ex);
 
             throw new LogCheckException(errMsg, ex);
         }
@@ -102,7 +102,7 @@ public final class LogFileStateParser
         {
             String errMsg = "Configuration parsing error. <lastProcessedBytePosition> tag.";
 
-            log.debug(errMsg, ex);
+            LOGGER.debug(errMsg, ex);
 
             throw new LogCheckException(errMsg, ex);
         }
@@ -115,7 +115,7 @@ public final class LogFileStateParser
         {
             String errMsg = "Configuration parsing error. <lastProcessedStart> tag.";
 
-            log.debug(errMsg, ex);
+            LOGGER.debug(errMsg, ex);
 
             throw new LogCheckException(errMsg, ex);
         }
@@ -126,7 +126,7 @@ public final class LogFileStateParser
         }
         catch (XPathExpressionException ex)
         {
-            log.debug("configuration parsing error.", ex);
+            LOGGER.debug("configuration parsing error.", ex);
         }
 
         try
@@ -144,7 +144,7 @@ public final class LogFileStateParser
         }
         catch (XPathExpressionException ex)
         {
-            log.debug("configuration parsing error retrieving <lastProcessedBlock>");
+            LOGGER.debug("configuration parsing error retrieving <lastProcessedBlock>");
         }
 
         try
@@ -156,7 +156,7 @@ public final class LogFileStateParser
         }
         catch (XPathExpressionException ex)
         {
-            log.debug("configuration parsing error.", ex);
+            LOGGER.debug("configuration parsing error.", ex);
         }
 
         res = LogFileState.from(filePathStr,
