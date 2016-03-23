@@ -56,7 +56,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingDeque;
 
 import org.apache.commons.lang3.BooleanUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.concurrent.BasicThreadFactory;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -229,6 +228,7 @@ public class LogCheckRun implements Callable<LogCheckResult>
                 m_config.getIdBlockSize(),
                 m_config.getSetName(),
                 m_config.getStateFilePath(),
+                m_config.getStateProcessedLogsFilePath(),
                 m_config.getErrorFilePath(),
                 m_config.getTailerLogBackupDir(),
                 m_config.getTailerBackupLogNameComps(),

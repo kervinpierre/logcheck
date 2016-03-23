@@ -756,13 +756,12 @@ public final class FileTailer implements Callable<FileTailerResult>
                 {
                     String ts = new String(lineBuf.toByteArray(), m_cset);
 
-                   // LOGGER.debug(String.format("readLines() : doHandle : '%s'", ts));
-
                     if( LOGGER.isDebugEnabled() )
                     {
                         if( (m_debugFlags != null) && m_debugFlags.contains(LCDebugFlag.LOG_SOURCE_LC_APP) )
                         {
                             // This is a debug mode.
+                            LOGGER.debug(String.format("readLines() : doHandle : '%s'", ts));
 
                             // This matches the output logged by the LogCheckApp for testing
 
@@ -908,6 +907,7 @@ public final class FileTailer implements Callable<FileTailerResult>
                 Instant.now(),
                 UUID.randomUUID(),
                 setName,
+                null,
                 null);
 
         return res;
@@ -978,10 +978,12 @@ public final class FileTailer implements Callable<FileTailerResult>
             LOGGER.debug(errMsg, ex);
         }
 
+        // FIXME : We're resetting the processed file list
         res = LogCheckState.from(currLogFile,
                 Instant.now(),
                 UUID.randomUUID(),
                 setName,
+                null,
                 null);
 
         return res;

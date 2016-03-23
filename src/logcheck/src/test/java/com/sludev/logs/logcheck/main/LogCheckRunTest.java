@@ -401,6 +401,8 @@ public class LogCheckRunTest
         Files.createDirectory(testDir);
 
         Path stateFile = testDir.resolve("current-state.xml");
+        Path stateFile2 = testDir.resolve("current-state2.xml");
+        Path stdOutFile = testDir.resolve("std-out.txt");
 
         FileTailer.DEBUG_LCAPP_LOG_SEQUENCE = 0;
 
@@ -449,6 +451,7 @@ public class LogCheckRunTest
         argsList.add(String.format("--store-log-file %s", storeLogFile ));
         argsList.add("--save-state");
         argsList.add(String.format("--state-file %s", stateFile));
+        argsList.add(String.format("--processed-logs-state-file %s", stateFile2));
         argsList.add("--set-name=\"test app\"");
         argsList.add(String.format("--dedupe-dir-path %s", dedupeDir));
         argsList.add("--dedupe-max-before-write=5");
@@ -466,6 +469,7 @@ public class LogCheckRunTest
         argsList.add("--debug-flags=LOG_SOURCE_LC_APP");
         argsList.add("--verbosity=all");
         argsList.add(String.format("--tailer-backup-log-dir %s", testDir));
+        argsList.add(String.format("--stdout-file %s", stdOutFile));
 
         args = FSSArgFile.getArgArray(argsList);
         LogCheckConfig config = LogCheckInitialize.initialize(args);

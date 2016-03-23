@@ -36,6 +36,7 @@ import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 
 /**
@@ -43,7 +44,7 @@ import java.nio.file.Path;
  */
 public final class ParserUtil
 {
-    private static final Logger log = LogManager.getLogger(ParserUtil.class);
+    private static final Logger LOGGER = LogManager.getLogger(ParserUtil.class);
 
     /**
      * Read and validate a configuration file.
@@ -55,6 +56,30 @@ public final class ParserUtil
     public static Document readConfig(Path confPath, LCFileFormat type)
             throws LogCheckException
     {
+        if( confPath == null )
+        {
+            String msg = "File / Document cannot be null.";
+
+            LOGGER.debug(msg);
+            throw new LogCheckException(msg);
+        }
+
+        if( type == null )
+        {
+            String msg = "File / Document Type cannot be null.";
+
+            LOGGER.debug(msg);
+            throw new LogCheckException(msg);
+        }
+
+        if( Files.notExists(confPath) )
+        {
+            String msg = String.format("File / Document must exist '%s'.", confPath);
+
+            LOGGER.debug(msg);
+            throw new LogCheckException(msg);
+        }
+
         FSSConfigurationFile conf = new FSSConfigurationFile();
         Document doc = conf.read(confPath);
 
@@ -83,14 +108,14 @@ public final class ParserUtil
             {
                 String errMsg = String.format("Error parsing configuration document.");
 
-                log.error(errMsg, ex);
+                LOGGER.error(errMsg, ex);
                 throw new LogCheckException(errMsg, ex);
             }
             catch( IOException ex )
             {
                 String errMsg = String.format("Error reading configuration document on disk.");
 
-                log.error(errMsg, ex);
+                LOGGER.error(errMsg, ex);
                 throw new LogCheckException(errMsg, ex);
             }
         }
@@ -98,7 +123,7 @@ public final class ParserUtil
         {
             String errMsg = String.format("Error parsing schema document.");
 
-            log.error(errMsg, ex);
+            LOGGER.error(errMsg, ex);
             throw new LogCheckException(errMsg, ex);
         }
 

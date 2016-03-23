@@ -284,12 +284,26 @@ public final class TailerStatistics
     }
 
     public synchronized LogCheckState restore(final Path deDupeDir,
+                                              final Integer logFileCount,
+                                              final Integer maxLogEntries) throws LogCheckException, InterruptedException
+    {
+        LogCheckState res;
+
+        res = restore(m_stateFile, deDupeDir, logFileCount, maxLogEntries);
+
+        m_restoredStates.putFirst(res);
+
+        return res;
+    }
+
+    public synchronized LogCheckState restore(final Path stateFile,
+                                              final Path deDupeDir,
                                  final Integer logFileCount,
                                  final Integer maxLogEntries) throws LogCheckException, InterruptedException
     {
         LogCheckState res;
 
-        res = restore(m_stateFile, deDupeDir, m_setName, logFileCount, maxLogEntries);
+        res = restore(stateFile, deDupeDir, m_setName, logFileCount, maxLogEntries);
 
         m_restoredStates.putFirst(res);
 
@@ -329,11 +343,13 @@ public final class TailerStatistics
                 LOGGER.debug("Error dumping State File", ex);
             }
 
-            if( lcConf.getLogFile() == null )
+            if( (lcConf.getLogFile() == null)
+                    && ((lcConf.getCompletedLogFiles() == null)
+                                    || lcConf.getCompletedLogFiles().isEmpty()) )
             {
-                LOGGER.debug("restore() : getLogFile() returned null.");
+                LOGGER.debug("restore() : getLogFile() returned null and getCompletedLogFiles() is also null.");
             }
-            else if( lcConf.getLogFile().getLastProcessedPosition() < 1 )
+            else if( (lcConf.getLogFile() != null) && (lcConf.getLogFile().getLastProcessedPosition() < 1) )
             {
                 LOGGER.debug(String.format("restore() : Last Processed Position is %d",
                         lcConf.getLogFile().getLastProcessedPosition()));

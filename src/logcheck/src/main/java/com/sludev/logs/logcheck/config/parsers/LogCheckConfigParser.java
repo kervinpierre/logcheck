@@ -83,6 +83,7 @@ public class LogCheckConfigParser
         String storeLogPathStr = null;
         String statusFileStr = null;
         String stateFileStr = null;
+        String stateProcessedLogFileStr = null;
         String errorFileStr = null;
         String idBlockSize = null;
         String idBlockHashType = null;
@@ -413,6 +414,19 @@ public class LogCheckConfigParser
             if( StringUtils.isNoneBlank(tempStr) )
             {
                 stateFileStr = tempStr;
+            }
+        }
+        catch (XPathExpressionException ex)
+        {
+            LOGGER.debug("configuration parsing error.", ex);
+        }
+
+        try
+        {
+            String tempStr  = currXPath.compile("./stateProcessedLogFilePath").evaluate(currEl);
+            if( StringUtils.isNoneBlank(tempStr) )
+            {
+                stateProcessedLogFileStr = tempStr;
             }
         }
         catch (XPathExpressionException ex)
@@ -892,6 +906,7 @@ public class LogCheckConfigParser
                 storeLogPathStr,
                 statusFileStr,
                 stateFileStr,
+                stateProcessedLogFileStr,
                 errorFileStr,
                 null, // configFilePath,
                 holdingDirStr,

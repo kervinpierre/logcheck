@@ -24,7 +24,9 @@ import org.apache.logging.log4j.Logger;
 
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.List;
 import java.util.UUID;
 
@@ -43,6 +45,25 @@ public class LogCheckState
     private final UUID id;
     private final String m_setName;
     private final List<LogCheckError> m_errors;
+    private final Deque<LogFileStatus> m_completedLogFiles;
+
+    // MUTABLE
+    private volatile boolean m_pendingSave = false;
+
+    public boolean isPendingSave()
+    {
+        return m_pendingSave;
+    }
+
+    public void setPendingSave(boolean save)
+    {
+        m_pendingSave = save;
+    }
+
+    public Deque<LogFileStatus> getCompletedLogFiles()
+    {
+        return m_completedLogFiles;
+    }
 
     public LogFileState getLogFile()
     {
@@ -73,7 +94,8 @@ public class LogCheckState
                            final Instant saveDate,
                            final UUID id,
                            final String setName,
-                           final List<LogCheckError> errors)
+                           final List<LogCheckError> errors,
+                           final Deque<LogFileStatus> completedLogFiles)
     {
         this.m_logFile = logFile;
         this.m_saveDate = saveDate;
@@ -88,19 +110,30 @@ public class LogCheckState
         {
             this.m_errors = errors;
         }
+
+        if( completedLogFiles == null )
+        {
+            this.m_completedLogFiles = new ArrayDeque<>(10);
+        }
+        else
+        {
+            this.m_completedLogFiles = completedLogFiles;
+        }
     }
 
     public static LogCheckState from( final LogFileState logFile,
-                                 final Instant saveDate,
-                                 final UUID id,
-                                 final String setName,
-                                 final List<LogCheckError> errors)
+                                         final Instant saveDate,
+                                         final UUID id,
+                                         final String setName,
+                                         final List<LogCheckError> errors,
+                                         final Deque<LogFileStatus> completedLogFiles )
     {
         LogCheckState res = new LogCheckState(logFile,
                 saveDate,
                 id,
                 setName,
-                errors);
+                errors,
+                completedLogFiles);
 
         return res;
     }
@@ -109,7 +142,8 @@ public class LogCheckState
                                       final String saveDateStr,
                                       final String idStr,
                                       final String setName,
-                                      final List<LogCheckError> errors) throws LogCheckException
+                                      final List<LogCheckError> errors,
+                                      final Deque<LogFileStatus> completedLogFiles) throws LogCheckException
     {
         Instant saveDate = null;
         UUID id = null;
@@ -148,7 +182,8 @@ public class LogCheckState
                 saveDate,
                 id,
                 setName,
-                errors);
+                errors,
+                completedLogFiles);
 
         return res;
     }

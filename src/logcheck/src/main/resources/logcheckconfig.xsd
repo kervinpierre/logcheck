@@ -186,7 +186,13 @@ NOTICE:  All information contained herein is, and remains
 
                 <xs:element name="stateFilePath" type="xs:string" minOccurs="0" maxOccurs="1">
                     <xs:annotation>
-                        <xs:documentation>State data file for complated jobs</xs:documentation>
+                        <xs:documentation>State data file for completed jobs</xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+
+                <xs:element name="stateProcessedLogFilePath" type="xs:string" minOccurs="0" maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>State data file for completed Log Files</xs:documentation>
                     </xs:annotation>
                 </xs:element>
 

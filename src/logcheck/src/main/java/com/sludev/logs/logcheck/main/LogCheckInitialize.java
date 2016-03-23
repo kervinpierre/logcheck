@@ -100,6 +100,7 @@ public class LogCheckInitialize
         String currElasticsearchUrl = null;
         String currStatusFile = null;
         String currStateFile = null;
+        String currProcessedLogsFile = null;
         String currErrorFile = null;
         String currIdBlockHashtype = null;
         String currIdBlockSize = null;
@@ -302,6 +303,11 @@ public class LogCheckInitialize
                             // Save the full state of a completed job for future
                             // continuation
                             currStateFile = currOpt.getValue();
+                            break;
+
+                        case "processed-logs-state-file":
+                            // Track already processed log files
+                            currProcessedLogsFile = currOpt.getValue();
                             break;
 
                         case "error-file":
@@ -594,6 +600,7 @@ public class LogCheckInitialize
                     currStoreLogFile,
                     currStatusFile,
                     currStateFile,
+                    currProcessedLogsFile,
                     currErrorFile,
                     null, // configFilePath,
                     null, // holdingDir
@@ -671,6 +678,11 @@ public class LogCheckInitialize
                         " continuation" )
                 .hasArg()
                 .argName("STATEFILE")
+                .build() );
+
+        options.addOption( Option.builder().longOpt("processed-logs-state-file")
+                .desc( "Application state file for tracking previously processed log files." )
+                .hasArg()
                 .build() );
 
         options.addOption( Option.builder().longOpt( "error-file" )

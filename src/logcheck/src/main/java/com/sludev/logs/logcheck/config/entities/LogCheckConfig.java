@@ -106,6 +106,7 @@ public final class LogCheckConfig
     private final Path m_storeLogPath;
     private final Path m_statusFilePath;
     private final Path m_stateFilePath;
+    private final Path m_stateProcessedLogsFilePath;
     private final Path m_errorFilePath;
     private final Path m_configFilePath;
     private final Path m_holdingDirPath;
@@ -125,6 +126,11 @@ public final class LogCheckConfig
     private final LCCompressionType m_tailerBackupLogCompression;
     private final Pattern m_tailerBackupLogNameRegex;
     private final FSSVerbosityEnum m_verbosity;
+
+    public Path getStateProcessedLogsFilePath()
+    {
+        return m_stateProcessedLogsFilePath;
+    }
 
     public Long getDeDupeIgnoreCount()
     {
@@ -477,6 +483,7 @@ public final class LogCheckConfig
                            final Path storeLogPath,
                            final Path statusFilePath,
                            final Path stateFilePath,
+                           final Path stateProcessedLogsFilePath,
                            final Path errorFilePath,
                            final Path configFilePath,
                            final Path holdingDirPath,
@@ -1150,6 +1157,19 @@ public final class LogCheckConfig
             this.m_stateFilePath = null;
         }
 
+        if( stateProcessedLogsFilePath != null )
+        {
+            this.m_stateProcessedLogsFilePath = stateProcessedLogsFilePath;
+        }
+        else if( (orig != null) && (orig.getStateProcessedLogsFilePath() != null) )
+        {
+            this.m_stateProcessedLogsFilePath = orig.getStateProcessedLogsFilePath();
+        }
+        else
+        {
+            this.m_stateProcessedLogsFilePath = null;
+        }
+
         if( errorFilePath != null )
         {
             this.m_errorFilePath = errorFilePath;
@@ -1405,6 +1425,7 @@ public final class LogCheckConfig
                                       final Path storeLogPath,
                                       final Path statusFilePath,
                                       final Path stateFilePath,
+                                      final Path stateProcessedLogsFilePath,
                                       final Path errorFilePath,
                                       final Path configFilePath,
                                       final Path holdingDirPath,
@@ -1471,6 +1492,7 @@ public final class LogCheckConfig
                 storeLogPath,
                 statusFilePath,
                 stateFilePath,
+                stateProcessedLogsFilePath,
                 errorFilePath,
                 configFilePath,
                 holdingDirPath,
@@ -1545,6 +1567,7 @@ public final class LogCheckConfig
                                         final String storeLogPathStr,
                                        final String statusFilePathStr,
                                        final String stateFilePathStr,
+                                       final String stateProcessedLogsFilePathStr,
                                        final String errorFilePathStr,
                                        final String configFilePathStr,
                                        final String holdingDirPathStr,
@@ -1585,6 +1608,7 @@ public final class LogCheckConfig
         Path storeLogPath = null;
         Path statusFilePath = null;
         Path stateFilePath = null;
+        Path stateProcessedLogsFilePath = null;
         Path errorFilePath = null;
         Path configFilePath = null;
         Path holdingDirPath = null;
@@ -1650,6 +1674,11 @@ public final class LogCheckConfig
         if(StringUtils.isNoneBlank(stateFilePathStr))
         {
             stateFilePath = Paths.get(stateFilePathStr);
+        }
+
+        if(StringUtils.isNoneBlank(stateProcessedLogsFilePathStr))
+        {
+            stateProcessedLogsFilePath = Paths.get(stateProcessedLogsFilePathStr);
         }
 
         if(StringUtils.isNoneBlank(errorFilePathStr))
@@ -2032,6 +2061,7 @@ public final class LogCheckConfig
                 storeLogPath,
                 statusFilePath,
                 stateFilePath,
+                stateProcessedLogsFilePath,
                 errorFilePath,
                 configFilePath,
                 holdingDirPath,
