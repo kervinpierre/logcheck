@@ -30,12 +30,18 @@ public final class LogCheckAppConfig
     private final Long maxBackups;
     private final Integer randomWaitMin;
     private final Integer randomWaitMax;
+    private final Integer startLineNumber;
     private final LCSAGeneratorType outputGeneratorType;
     private final Boolean truncate;
     private final Boolean append;
     private final Boolean deleteLogs;
     private final Boolean confirmDeletes;
     private final Boolean outputToScreen;
+
+    public Integer getStartLineNumber()
+    {
+        return startLineNumber;
+    }
 
     public Integer getRandomWaitMin()
     {
@@ -116,6 +122,7 @@ public final class LogCheckAppConfig
                               final Long maxBackups,
                               final Integer randomWaitMax,
                               final Integer randomWaitMin,
+                              final Integer startLineNumber,
                               final Boolean truncate,
                               final Boolean append,
                               final Boolean deleteLogs,
@@ -183,6 +190,15 @@ public final class LogCheckAppConfig
         else
         {
             this.randomWaitMin = null;
+        }
+
+        if( startLineNumber != null )
+        {
+            this.startLineNumber = startLineNumber;
+        }
+        else
+        {
+            this.startLineNumber = null;
         }
 
         if( deleteLogs != null )
@@ -255,6 +271,7 @@ public final class LogCheckAppConfig
                                          final Long maxBackups,
                                          final Integer randomWaitMin,
                                          final Integer randomWaitMax,
+                                         final Integer startLineNumber,
                                          final Boolean truncate,
                                          final Boolean append,
                                          final Boolean deleteLogs,
@@ -270,6 +287,7 @@ public final class LogCheckAppConfig
                                                         maxBackups,
                                                         randomWaitMin,
                                                         randomWaitMax,
+                                                        startLineNumber,
                                                         truncate,
                                                         append,
                                                         deleteLogs,
@@ -288,6 +306,7 @@ public final class LogCheckAppConfig
                                          final String maxBackups,
                                          final String randomWaitMin,
                                          final String randomWaitMax,
+                                         final String startLineNumber,
                                          final Boolean truncate,
                                          final Boolean append,
                                          final Boolean deleteLogs,
@@ -302,6 +321,7 @@ public final class LogCheckAppConfig
         Long mbu = null;
         Integer rwmin = null;
         Integer rwmax = null;
+        Integer sln = null;
         LCSAGeneratorType gt = null;
 
         if( StringUtils.isNoneBlank(outputType) )
@@ -354,7 +374,7 @@ public final class LogCheckAppConfig
             }
             catch( NumberFormatException ex )
             {
-                LOGGER.debug(String.format("Min Random Wait parse error '%s'", maxBackups));
+                LOGGER.debug(String.format("Min Random Wait parse error '%s'", randomWaitMin));
             }
         }
 
@@ -366,10 +386,23 @@ public final class LogCheckAppConfig
             }
             catch( NumberFormatException ex )
             {
-                LOGGER.debug(String.format("Max Random Wait parse error '%s'", maxBackups));
+                LOGGER.debug(String.format("Max Random Wait parse error '%s'", randomWaitMax));
             }
         }
-        LogCheckAppConfig res = from(ot, op, of, gt, rac, sac, mbu, rwmin, rwmax,
+
+        if( StringUtils.isNoneBlank(startLineNumber) )
+        {
+            try
+            {
+                sln = Integer.parseInt(startLineNumber);
+            }
+            catch( NumberFormatException ex )
+            {
+                LOGGER.debug(String.format("Max Random Wait parse error '%s'", startLineNumber));
+            }
+        }
+
+        LogCheckAppConfig res = from(ot, op, of, gt, rac, sac, mbu, rwmin, rwmax, sln,
                                         truncate, append, deleteLogs, confirmDeletes,
                                         outputToScreen);
 

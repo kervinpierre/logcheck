@@ -34,6 +34,7 @@ public final class LogCheckAppMainRun implements Callable<LCSAResult>
     private final LogCheckAppConfig config;
 
     private final AtomicLong runCount;
+    private final AtomicLong stopAfterCount;
 
     private LogCheckAppConfig getConfig()
     {
@@ -43,7 +44,17 @@ public final class LogCheckAppMainRun implements Callable<LCSAResult>
     public LogCheckAppMainRun(final LogCheckAppConfig config)
     {
         this.config = config;
-        this.runCount = new AtomicLong(0L);
+
+        stopAfterCount = new AtomicLong(0L);
+
+        if( config.getStartLineNumber() == null )
+        {
+            runCount = new AtomicLong(0L);
+        }
+        else
+        {
+            runCount = new AtomicLong(config.getStartLineNumber());
+        }
     }
 
     @Override
@@ -57,7 +68,23 @@ public final class LogCheckAppMainRun implements Callable<LCSAResult>
             deleteLogs(config.getOutputPath());
         }
 
-        IWriteFile wf = newWriteFile(config.getOutputPath());
+        // On first call make sure the file does not already
+        // contain lines
+        Long currRotateAfterCount = config.getRotateAfterCount();
+        if( currRotateAfterCount != null )
+        {
+            if( Files.exists(config.getOutputPath()) )
+            {
+                long lineCount = Files.lines(config.getOutputPath()).count();
+                if( lineCount > 0 && currRotateAfterCount > lineCount )
+                {
+                    currRotateAfterCount = currRotateAfterCount - lineCount;
+                }
+            }
+        }
+
+        IWriteFile wf = newWriteFile(config.getOutputPath(),
+                                        currRotateAfterCount);
 
         do
         {
@@ -69,7 +96,7 @@ public final class LogCheckAppMainRun implements Callable<LCSAResult>
                         config.getMaxBackups(),
                         config.getConfirmDeletes());
 
-                wf = newWriteFile(config.getOutputPath());
+                wf = newWriteFile(config.getOutputPath(), config.getRotateAfterCount());
             }
         }
         while(res == LCSAResult.COMPLETED_ROTATE_PENDING);
@@ -77,7 +104,8 @@ public final class LogCheckAppMainRun implements Callable<LCSAResult>
         return res;
     }
 
-    private IWriteFile newWriteFile(Path output)
+    private IWriteFile newWriteFile(final Path output,
+                                    final Long rotateAfterCount)
     {
         LOGGER.debug(String.format("newWriteFile() called on '%s'", output));
 
@@ -90,7 +118,7 @@ public final class LogCheckAppMainRun implements Callable<LCSAResult>
                         true,
                         config.getAppend(),
                         config.getTruncate(),
-                        config.getRotateAfterCount());
+                        rotateAfterCount);
                 break;
 
             default:
@@ -197,7 +225,6 @@ public final class LogCheckAppMainRun implements Callable<LCSAResult>
 
         final AtomicReference<LCSAResult> threadRes = new AtomicReference<>();
         final AtomicLong callCount = new AtomicLong(0L);
-
         final Long stopAfter = config.getStopAfterCount();
         final Integer randomWaitMin = config.getRandomWaitMin();
         final Integer randomWaitMax = config.getRandomWaitMax();
@@ -244,10 +271,11 @@ public final class LogCheckAppMainRun implements Callable<LCSAResult>
 
             long currCallCount = callCount.incrementAndGet();
             long currRunCount = runCount.incrementAndGet();
+            long currStopAfterCount = stopAfterCount.incrementAndGet();
 
             if( stopAfter != null
                     && stopAfter > 0
-                    && stopAfter < currRunCount )
+                    && stopAfter < currStopAfterCount )
             {
                 threadRes.set(LCSAResult.SUCCESS);
                 schedulerExe.shutdown();
