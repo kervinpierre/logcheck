@@ -46,6 +46,7 @@ public final class LogCheckAppInitialize
         String currStopAfter = null;
         String currMaxBackups = null;
         String currRandomWaitMin = null;
+        String currStartLineNumber = null;
         String currRandomWaitMax = null;
 
         Boolean currAppend = null;
@@ -206,6 +207,10 @@ public final class LogCheckAppInitialize
                         currRandomWaitMin = currOpt.getValue();
                         break;
 
+                    case "start-line-number":
+                        currStartLineNumber = currOpt.getValue();
+                        break;
+
                     case "random-wait-max":
                         currRandomWaitMax = currOpt.getValue();
                         break;
@@ -228,6 +233,7 @@ public final class LogCheckAppInitialize
                     currMaxBackups,
                     currRandomWaitMin,
                     currRandomWaitMax,
+                    currStartLineNumber,
                     currAppend,
                     currTruncate,
                     currDeleteLogs,
@@ -316,6 +322,11 @@ public final class LogCheckAppInitialize
 
         options.addOption(Option.builder().longOpt("random-wait-max")
                 .desc("Wait random seconds between log writes.")
+                .hasArg()
+                .build());
+
+        options.addOption(Option.builder().longOpt("start-line-number")
+                .desc("Start counting log lines at this number.")
                 .hasArg()
                 .build());
 
