@@ -381,7 +381,6 @@ public class LogCheckRunTest
         Assert.assertArrayEquals(currDigest, lastDigest);
     }
 
-
     /**
      * Similar to the A002 test.  Except we also rotate the logs to test how the tailer
      * handles log rotation detection.
@@ -400,11 +399,17 @@ public class LogCheckRunTest
 
         Files.createDirectory(testDir);
 
+        FileTailer.DEBUG_LCAPP_LOG_SEQUENCE = 0;
+        logRotateThenTail_Internal(testDir, 0);
+    }
+
+    private void logRotateThenTail_Internal(final Path testDir,
+                                            final int lineCountStart) throws IOException, LogCheckException,
+            InterruptedException, ExecutionException, NoSuchAlgorithmException
+    {
         Path stateFile = testDir.resolve("current-state.xml");
         Path stateFile2 = testDir.resolve("current-state2.xml");
         Path stdOutFile = testDir.resolve("std-out.txt");
-
-        FileTailer.DEBUG_LCAPP_LOG_SEQUENCE = 0;
 
         String[] args;
         List<String> argsList = new ArrayList<>(20);
@@ -412,8 +417,10 @@ public class LogCheckRunTest
         Path logFile = testDir.resolve("logcheck-sample-app-output.txt");
 
         argsList.add(String.format("--output-file %s", logFile));
-        argsList.add("--delete-logs");
+        // argsList.add("--delete-logs");
         argsList.add("--stop-after-count 1K");
+
+        argsList.add(String.format("--start-line-number %d", lineCountStart));
 
         //Output the logs to the screen as they are generated
         // argsList.add("--output-to-screen");
@@ -442,9 +449,14 @@ public class LogCheckRunTest
         Path storeLogFile = testDir.resolve("store-log.txt");
 
         Path dedupeDir = testDir.resolve("dedupe");
-        Files.createDirectory(dedupeDir);
 
-        argsList.add("--stop-after=30s");
+        if( Files.notExists(dedupeDir) )
+        {
+            Files.createDirectory(dedupeDir);
+        }
+
+        argsList.add("--stop-after=1m");
+        argsList.add("--continue");
         argsList.add(String.format("--log-file %s", logFile));
         argsList.add("--log-entry-builder-type=singleline ");
         argsList.add("--log-entry-store-type=console,simplefile");
@@ -756,5 +768,35 @@ public class LogCheckRunTest
         byte[] lastDigest = currState.getLogFile().getLastProcessedBlock().getHashDigest();
 
         Assert.assertArrayEquals(currDigest, lastDigest);
+    }
+
+
+    /**
+     * Similar to the A002 test.  Except we also rotate the logs to test how the tailer
+     * handles log rotation detection.
+     *
+     */
+    @Test
+    public void A005_logRotateThenTailTwice() throws IOException, LogCheckException,
+            InterruptedException, ExecutionException, NoSuchAlgorithmException
+    {
+        Path testDir = Paths.get("/tmp/A005_logRotateThenTailTwice");
+
+        if( Files.exists(testDir) )
+        {
+            FileUtils.deleteDirectory(testDir.toFile());
+        }
+
+        Files.createDirectory(testDir);
+
+        // Reset the internal debug counter
+        FileTailer.DEBUG_LCAPP_LOG_SEQUENCE = 0;
+
+        // First test to generate the folder and data
+        logRotateThenTail_Internal(testDir, 0);
+
+        // Second test that should skip all processed
+        // data and continue where left off
+        logRotateThenTail_Internal(testDir, 1024);
     }
 }

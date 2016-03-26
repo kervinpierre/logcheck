@@ -77,8 +77,9 @@ public final class LogCheckFileRotate
                 throw ex;
             }
 
-            LOGGER.debug(String.format("prevName() : \n    parentDir : '%s'\n    currentName : '%s'\n\n%s",
-                    parentDir, currentName, dirList));
+            // MAX_NOISE
+         //   LOGGER.debug(String.format("prevName() : \n    parentDir : '%s'\n    currentName : '%s'\n\n%s",
+         //           parentDir, currentName, dirList));
         }
 
         if( parentDir == null )

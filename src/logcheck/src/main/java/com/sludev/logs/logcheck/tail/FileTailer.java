@@ -23,7 +23,6 @@ import com.sludev.logs.logcheck.config.entities.LogFileState;
 import com.sludev.logs.logcheck.enums.LCDebugFlag;
 import com.sludev.logs.logcheck.enums.LCFileBlockType;
 import com.sludev.logs.logcheck.enums.LCHashType;
-import com.sludev.logs.logcheck.enums.LCResultStatus;
 import com.sludev.logs.logcheck.enums.LCTailerResult;
 import com.sludev.logs.logcheck.exceptions.LogCheckException;
 import com.sludev.logs.logcheck.log.ILogEntryBuilder;
@@ -666,6 +665,11 @@ public final class FileTailer implements Callable<FileTailerResult>
         return res;
     }
 
+    /**
+     * Print out the current object.
+     *
+     * @return
+     */
     @Override
     public String toString()
     {
