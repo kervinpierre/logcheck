@@ -84,7 +84,9 @@ public class LogCheckMain
         catch (LogCheckException ex)
         {
             LOGGER.error("Error running application.", ex);
-        }   
+        }
+
+        LOGGER.info("Exiting running application.");
     }
     
     public static void commonStop(String[] args)
@@ -195,7 +197,7 @@ public class LogCheckMain
         LogCheckRun currRun = new LogCheckRun(config);
 
         BasicThreadFactory thFactory = new BasicThreadFactory.Builder()
-            .namingPattern("mainLogCheckThread-%d")
+            .namingPattern("runThread-%d")
             .build();
 
         s_mainThreadExe = Executors.newSingleThreadExecutor(thFactory);
@@ -214,6 +216,15 @@ public class LogCheckMain
                 try
                 {
                     resp = currTask.get();
+                    if( (resp != null) && (resp.getStatus() == LCResultStatus.FAIL) )
+                    {
+                        String msg = String.format("Run task returned an error status '%s'",
+                                resp.getStatus());
+
+                        LOGGER.debug(msg);
+
+                        s_run = false;
+                    }
                 }
                 catch( InterruptedException ex )
                 {
