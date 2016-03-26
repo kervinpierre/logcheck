@@ -22,6 +22,7 @@ import com.sludev.logs.logcheck.LogCheckProperties;
 import com.sludev.logs.logcheck.LogCheckTestWatcher;
 import com.sludev.logs.logcheck.config.entities.LogCheckConfig;
 import com.sludev.logs.logcheck.config.entities.LogCheckState;
+import com.sludev.logs.logcheck.config.entities.LogFileBlock;
 import com.sludev.logs.logcheck.config.parsers.LogCheckStateParser;
 import com.sludev.logs.logcheck.config.parsers.ParserUtil;
 import com.sludev.logs.logcheck.enums.LCFileFormat;
@@ -400,12 +401,48 @@ public class LogCheckRunTest
         Files.createDirectory(testDir);
 
         FileTailer.DEBUG_LCAPP_LOG_SEQUENCE = 0;
-        logRotateThenTail_Internal(testDir, 0);
+        logRotateThenTail_Internal(testDir, 0, 24, 1024);
     }
 
+    /**
+     * Internal method for testing rotating logs then tailing.
+     *
+     * This simple SEQUENTIAL rotate THEN tail helps test the simple case of an application
+     * being run for a long time then having LogCheck process all the past logs and come up
+     * to speed.
+     *
+     * LogCheck is then responsible for...
+     *   1. Detecting unprocessed backup files are present.  Currently this is done using a STATE file.
+     *   2. Processing backup files
+     *   3. Continue with tailing the log file
+     *
+     * If we ran this method twice against the same directory/data.  LogCheck should then
+     *   1. Detect the unprocessed backup files SINCE the last run
+     *   2. Process all unprocessed backup files
+     *   3. Continue with tailing the log file
+     *
+     * Overall objectives include
+     *   1. No logs should be skipped
+     *   2. No logs should be processed twice
+     *   3. No logs should be processed out-of-order
+     *   4. Logs should be processed completely ( identical to the log source's value )
+     *
+     * @param testDir The directory where all test data is stored
+     * @param lineCountStart The line number of the first log file.  Useful when continuing with previous data '--continue'
+     * @param logFileCount The number of log lines remaining in the final log file after all rotation is completed
+     * @param storeFileCount The total number of log lines in the store file '--store-log-file'
+     * @throws IOException
+     * @throws LogCheckException
+     * @throws InterruptedException
+     * @throws ExecutionException
+     * @throws NoSuchAlgorithmException
+     */
     private void logRotateThenTail_Internal(final Path testDir,
-                                            final int lineCountStart) throws IOException, LogCheckException,
-            InterruptedException, ExecutionException, NoSuchAlgorithmException
+                                            final int lineCountStart,
+                                            final long logFileCount,
+                                            final long storeFileCount)
+            throws IOException, LogCheckException, InterruptedException,
+                    ExecutionException, NoSuchAlgorithmException
     {
         Path stateFile = testDir.resolve("current-state.xml");
         Path stateFile2 = testDir.resolve("current-state2.xml");
@@ -525,16 +562,16 @@ public class LogCheckRunTest
         Assert.assertNotNull(lcResult);
         Assert.assertTrue(lcResult.getStatus() == LCResultStatus.SUCCESS);
 
-        long logFileCount = Files.lines(logFile).count();
-        long storeFileCount = Files.lines(storeLogFile).count();
+        long curLogFileCount = Files.lines(logFile).count();
+        long currStoreFileCount = Files.lines(storeLogFile).count();
 
         LOGGER.debug(String.format("\nLog File Count : %d\nStore File Count: %d\n",
-                logFileCount, storeFileCount));
+                curLogFileCount, currStoreFileCount));
 
         // Total lines is 1024, but across 26 files, last containing 24 lines
-        Assert.assertTrue(logFileCount == 24);
+        Assert.assertTrue(curLogFileCount == logFileCount);
 
-        Assert.assertTrue(storeFileCount == 1024);
+        Assert.assertTrue(currStoreFileCount == storeFileCount);
 
         LogCheckState currState
                 = LogCheckStateParser.readConfig(
@@ -566,11 +603,23 @@ public class LogCheckRunTest
 
         Assert.assertArrayEquals(currDigest, firstDigest);
 
+        LogFileBlock currTestBlock = null;
+
         currByteBuffer.clear();
         try( FileChannel logFC = FileChannel.open(logFile) )
         {
-            // Read the last block from file.
-            logFC.position(logFC.size()-1000);
+            if( logFC.size() < 1000 )
+            {
+                logFC.position(0);
+                currTestBlock = currState.getLogFile().getFirstBlock();
+            }
+            else
+            {
+                // Read the last block from file.
+                logFC.position(logFC.size() - 1000);
+                currTestBlock = currState.getLogFile().getLastProcessedBlock();
+            }
+
             logFC.read(currByteBuffer);
         }
 
@@ -578,7 +627,7 @@ public class LogCheckRunTest
         md.update(currByteBuffer);
 
         currDigest = md.digest();
-        byte[] lastDigest = currState.getLogFile().getLastProcessedBlock().getHashDigest();
+        byte[] lastDigest = currTestBlock.getHashDigest();
 
         Assert.assertArrayEquals(currDigest, lastDigest);
     }
@@ -714,14 +763,14 @@ public class LogCheckRunTest
         Assert.assertNotNull(lcResult);
         Assert.assertTrue(lcResult.getStatus() == LCResultStatus.SUCCESS);
 
-        long logFileCount = Files.lines(logFile).count();
-        long storeFileCount = Files.lines(storeLogFile).count();
+        long currLogFileCount = Files.lines(logFile).count();
+        long currStoreFileCount = Files.lines(storeLogFile).count();
 
         LOGGER.debug(String.format("\nLog File Count : %d\nStore File Count: %d\n",
-                logFileCount, storeFileCount));
+                currLogFileCount, currStoreFileCount));
 
-        Assert.assertTrue(logFileCount == 24);
-        Assert.assertTrue(storeFileCount == 1024);
+        Assert.assertTrue(currLogFileCount == 24);
+        Assert.assertTrue(currStoreFileCount == 1024);
 
         LogCheckState currState
                 = LogCheckStateParser.readConfig(
@@ -793,10 +842,10 @@ public class LogCheckRunTest
         FileTailer.DEBUG_LCAPP_LOG_SEQUENCE = 0;
 
         // First test to generate the folder and data
-        logRotateThenTail_Internal(testDir, 0);
+        logRotateThenTail_Internal(testDir, 0, 24, 1024);
 
         // Second test that should skip all processed
         // data and continue where left off
-        logRotateThenTail_Internal(testDir, 1024);
+        logRotateThenTail_Internal(testDir, 1024, 8, 2048);
     }
 }
