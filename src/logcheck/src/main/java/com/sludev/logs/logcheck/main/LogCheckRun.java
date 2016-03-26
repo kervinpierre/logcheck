@@ -326,10 +326,23 @@ public class LogCheckRun implements Callable<LogCheckResult>
         
         try
         {
-            while( (fileTailRes == null) || (logStoreRes == null) )
+            boolean run = true;
+            boolean storeIsRunning = true;
+
+            //while( (fileTailRes == null) || (logStoreRes == null) )
+            while( run )
             {
-                if( fileTailFuture.isDone() )
+                if( storeIsRunning == false )
                 {
+                    // The Log Store stopped so we should stop the tailer as well
+                    fileTailFuture.cancel(true);
+                    fileTailRes = LogCheckResult.from(LCResultStatus.CANCELLED);
+                    run = false;
+                }
+                else if( fileTailFuture.isDone() )
+                {
+                    run = false;
+
                     // Log polling thread has completed.  Generally this should
                     // not happen until we're shutting down.
                     fileTailRes = fileTailFuture.get();
@@ -345,37 +358,72 @@ public class LogCheckRun implements Callable<LogCheckResult>
                         logStoreFuture.cancel(true);
                     }
                 }
-                
-                if( logStoreFuture.isCancelled() )
+
+                // Check on the Log Store Thread
+                if( storeIsRunning )
                 {
-                    logStoreRes = LogCheckResult.from(LCResultStatus.CANCELLED);
-                }
-                else
-                {
-                    if( logStoreFuture.isDone() )
+                    if( logStoreFuture.isCancelled() )
                     {
-                        // Log storage thread has completed.  Generally this should
-                        // not happen until we're shutting down.
-                        logStoreRes = logStoreFuture.get();
+                        storeIsRunning = false;
+
+                        logStoreRes = LogCheckResult.from(LCResultStatus.CANCELLED);
+                    }
+                    else
+                    {
+                        if( logStoreFuture.isDone() )
+                        {
+                            storeIsRunning = false;
+
+                            // Log storage thread has completed.  Generally this should
+                            // not happen until we're shutting down.
+                            try
+                            {
+                                logStoreRes = logStoreFuture.get();
+                            }
+                            catch( InterruptedException ex )
+                            {
+                                LOGGER.error("Log Store Thread interrupted.", ex);
+
+                                logStoreRes = LogCheckResult.from(LCResultStatus.INTERRUPTED);
+                            }
+                            catch( ExecutionException ex )
+                            {
+                                LOGGER.error("Log Store Thread failed.", ex);
+
+                                logStoreRes = LogCheckResult.from(LCResultStatus.FAIL);
+                            }
+                        }
                     }
                 }
                 
                 // At this point we can block/wait on all threads but I'll
                 // sleep for now until there's some processing to be done on
                 // the main thread.
-                Thread.sleep(2000);
+                if( run )
+                {
+                    Thread.sleep(2000);
+                }
             }
 
-            if( (logStoreRes.getStatus() == LCResultStatus.INTERRUPTED)
+            if( ((logStoreRes != null) && (logStoreRes.getStatus() == LCResultStatus.INTERRUPTED))
                     || (fileTailRes.getStatus() == LCResultStatus.INTERRUPTED) )
             {
                 // If either of the threads were interrupted, then mark as interrupted.
                 res = LogCheckResult.from(LCResultStatus.INTERRUPTED);
             }
-            else if( fileTailRes.getStatus() == LCResultStatus.SUCCESS )
+            else
             {
-                // if Tailer thread succeed, ignore the Log Store result
-                res = LogCheckResult.from(LCResultStatus.SUCCESS);
+                if( ((logStoreRes != null) && (logStoreRes.getStatus() == LCResultStatus.FAIL))
+                        || (fileTailRes.getStatus() == LCResultStatus.FAIL) )
+                {
+                    // If either of the threads failed, then mark as failed
+                    res = LogCheckResult.from(LCResultStatus.FAIL);
+                }
+                else if( fileTailRes.getStatus() == LCResultStatus.SUCCESS )
+                {
+                    // if Tailer thread succeed, ignore the Log Store result
+                    res = LogCheckResult.from(LCResultStatus.SUCCESS);
+                }
             }
         }
         catch (InterruptedException ex)

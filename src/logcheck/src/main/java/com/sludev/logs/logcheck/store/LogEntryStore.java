@@ -144,6 +144,16 @@ public final class LogEntryStore implements Callable<LogCheckResult>
 
         if( m_deDupeLogOutputPath != null )
         {
+            if( Files.notExists(m_deDupeLogOutputPath) )
+            {
+                String msg = String.format("Error 'Deduplication Directory' does not exist '%s'",
+                                            m_deDupeLogOutputPath);
+
+                LOGGER.debug(msg);
+
+                throw new LogCheckException(msg);
+            }
+
             currDeDupePath = m_deDupeLogOutputPath.resolve(currJobName);
             if( Files.exists(currDeDupePath) )
             {
