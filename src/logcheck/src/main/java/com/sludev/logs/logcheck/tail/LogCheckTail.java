@@ -21,9 +21,12 @@ import com.sludev.logs.logcheck.config.entities.LogCheckState;
 import com.sludev.logs.logcheck.config.entities.LogFileBlock;
 import com.sludev.logs.logcheck.config.entities.LogFileState;
 import com.sludev.logs.logcheck.config.entities.LogFileStatus;
+import com.sludev.logs.logcheck.config.parsers.LogCheckStateParser;
+import com.sludev.logs.logcheck.config.parsers.ParserUtil;
 import com.sludev.logs.logcheck.enums.LCCompressionType;
 import com.sludev.logs.logcheck.enums.LCDebugFlag;
 import com.sludev.logs.logcheck.enums.LCFileBlockType;
+import com.sludev.logs.logcheck.enums.LCFileFormat;
 import com.sludev.logs.logcheck.enums.LCFileRegexComponent;
 import com.sludev.logs.logcheck.enums.LCHashType;
 import com.sludev.logs.logcheck.enums.LCResultStatus;
@@ -456,6 +459,7 @@ public final class LogCheckTail implements Callable<LogCheckResult>
         final AtomicReference<TailerStatistics> stats;
         final AtomicReference<TailerStatistics> statsProcessedLogFiles;
 
+        // Check to see if we're allowed to collect stats at all
         if( currStatsCollect )
         {
             stats = new AtomicReference<>(TailerStatistics.from(m_stateFile,
@@ -546,6 +550,8 @@ public final class LogCheckTail implements Callable<LogCheckResult>
         final AtomicBoolean exitNow = new AtomicBoolean(false);
 
         final ScheduledExecutorService stopSchedulerExe;
+
+        // Setup "Stop After"/Termination thread
         if( (m_stopAfter != null)
                 && (m_stopAfter > 0) )
         {
@@ -787,7 +793,17 @@ public final class LogCheckTail implements Callable<LogCheckResult>
 
                         if( (tailerRes == null) || (tailerRes.getState() == null) )
                         {
-                            LOGGER.debug("File Tailer Result : Log Check State is null.");
+                            LOGGER.debug("File Tailer Result : Log Check State is null. Restoring from disk.");
+
+                            // Use the Log File State on disk
+                            if( Files.exists(m_stateFile) )
+                            {
+                                LogCheckState lcs = LogCheckStateParser.readConfig(
+                                        ParserUtil.readConfig(m_stateFile,
+                                                LCFileFormat.LCSTATE));
+
+                                currFileState = lcs.getLogFile();
+                            }
                         }
                         else
                         {

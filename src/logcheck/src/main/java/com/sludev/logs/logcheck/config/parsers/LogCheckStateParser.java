@@ -193,9 +193,10 @@ public final class LogCheckStateParser
             String processedStr = StringUtils.trim(currXPath.compile("./processed").evaluate(currEl));
 
             if( (StringUtils.equalsIgnoreCase(processedStr, "true") == false)
-                    || (StringUtils.equalsIgnoreCase(processedStr, "false") == false) )
+                    && (StringUtils.equalsIgnoreCase(processedStr, "false") == false) )
             {
-                LOGGER.warn("Tag <processed> does not have a true/false value");
+                LOGGER.warn(String.format("Tag <processed> does not have a true/false value '%s'",
+                                            processedStr));
             }
 
             processed = Boolean.parseBoolean(processedStr);
