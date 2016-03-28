@@ -31,6 +31,11 @@ public enum LCTailerResult
     FAIL,
 
     /**
+     * Validate was skipped
+     */
+    VALIDATION_SKIPPED,
+
+    /**
      * Validation was possible, but not successful
      */
     VALIDATION_FAIL,

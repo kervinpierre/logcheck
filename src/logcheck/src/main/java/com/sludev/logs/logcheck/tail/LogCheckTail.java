@@ -18,7 +18,6 @@
 package com.sludev.logs.logcheck.tail;
 
 import com.sludev.logs.logcheck.config.entities.LogCheckState;
-import com.sludev.logs.logcheck.config.entities.LogFileBlock;
 import com.sludev.logs.logcheck.config.entities.LogFileState;
 import com.sludev.logs.logcheck.config.entities.LogFileStatus;
 import com.sludev.logs.logcheck.config.parsers.LogCheckStateParser;
@@ -39,6 +38,7 @@ import com.sludev.logs.logcheck.utils.LogCheckFileRotate;
 import com.sludev.logs.logcheck.utils.LogCheckResult;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.concurrent.BasicThreadFactory;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -621,17 +621,9 @@ public final class LogCheckTail implements Callable<LogCheckResult>
                         "Main Logcheck Tail Loop Start. PassCount %d start.",
                         passCount));
 
-                boolean skipMainLog = false;
-                if( (passCount.compareTo(BigInteger.ZERO) <= 0)
-                        && m_tailerBackupReadPriorLog )
-                {
-                    // Read the backups *before* starting with the main log
-                    skipMainLog = true;
-                }
-
-                if( BooleanUtils.isTrue(m_continueState) ||
+               if( BooleanUtils.isTrue(m_continueState) ||
                         ((passCount.compareTo(BigInteger.ZERO) > 0) && currReOpen) )
-                {
+               {
                     // Reopen implies continue.  Because we use the logs to serialize state.
 
                     // We don't read the state on the first pass of the loop, unless --continue is present
@@ -665,19 +657,39 @@ public final class LogCheckTail implements Callable<LogCheckResult>
                     }
                 }
 
+                // Skips the main Log Tailer completely.  No making up.  Stats on disk are reset.
+                boolean skipMainLog = false;
+                // Skips the main Log Tailer for a single loop cycle.  The main Log Tailer is run again
+                // next loop cycle.
+                boolean delayMainLog = false;
+
+                if( (passCount.compareTo(BigInteger.ZERO) <= 0)
+                        && m_tailerBackupReadPriorLog )
+                {
+                    // Read the backups *before* starting with the main log,
+                    // TODO : But *only* if there are unprocessed backups.  This means we should figure this out first.
+                    LOGGER.debug("Delaying Main Log Tailer because passCount <= 0 and 'Backup Read Prior Log' is true."
+                                    + "  Attempt to process backup logs first.");
+                    delayMainLog = true;
+                }
+
                 // Check if any new backup file have been created since we last
                 // processed all backup files
                 if( (currBackupFileWatch != null)
                         && (currBackupFileWatch.getDetectedCreatePathCount() != currCreateFileEventCount) )
                 {
                     // New files were created, so skip to the
-                    // VALIDATION_FAIL processing
+                    // VALIDATION_SKIPPED/FAILED processing
+                    LOGGER.debug(String.format("Skipping Main Log Tailer because. currCreateFileEventCount==%d"
+                            + "!= currBackupFileWatch.getDetectedCreatePathCount()== %d .",
+                            currCreateFileEventCount, currBackupFileWatch.getDetectedCreatePathCount()));
+
                     skipMainLog = true;
                 }
 
-                if( skipMainLog )
+                if( skipMainLog || delayMainLog )
                 {
-                    LOGGER.debug("Skipping the main FileTailer thread.");
+                    LOGGER.debug("Skipping/Delaying the main FileTailer thread.");
                 }
                 else
                 {
@@ -770,23 +782,34 @@ public final class LogCheckTail implements Callable<LogCheckResult>
                         currTailerResults.add(LCTailerResult.REOPEN);
                     }
 
-                    if( skipMainLog )
+                    if( skipMainLog || delayMainLog )
                     {
                         // Needed to process backup logs
-                        currTailerResults.add(LCTailerResult.VALIDATION_FAIL);
+                        currTailerResults.add(LCTailerResult.VALIDATION_SKIPPED);
                     }
                 }
 
                 if( currTailerResults.contains(LCTailerResult.VALIDATION_FAIL)
+                        // Validation skipped for some reason, e.g. if the main tailer was skipped
+                        || currTailerResults.contains(LCTailerResult.VALIDATION_SKIPPED)
                         // FIXME : Below is a bit presumptuous. VALIDATION_ERROR isn't synonymous with VALIDATION_FAIL
                         //         but we treat it as such here.
                         || currTailerResults.contains(LCTailerResult.VALIDATION_ERROR)
                         // Possibly interrupted by a new backup detected
                         || currTailerResults.contains(LCTailerResult.INTERRUPTED))
                 {
-                    // Log rotation detected?
-                    LOGGER.debug("Log validation failed. We may need to check the old log file here.");
+                    if( LOGGER.isDebugEnabled() )
+                    {
+                        String resSet = currTailerResults.stream()
+                                .map(Enum::toString)
+                                .collect(Collectors.joining(", "));
 
+                        // Log rotation detected?
+                        LOGGER.debug(String.format("Log validation failed. We may need to check the old log file here. [%s]",
+                                resSet));
+                    }
+
+                    // Read the log backup files on disk
                     if( m_tailerBackupReadLog )
                     {
                         LogFileState currFileState = null;
@@ -1280,8 +1303,12 @@ public final class LogCheckTail implements Callable<LogCheckResult>
 
                         // TODO : At this point VALIDATION_FAILED should now be fixed.
 
-                        // TODO : Signal a statistics reset the last read position on disk
-                        nextStatsReset = true;
+                        // Signal a statistics reset the last read position on disk
+                        if( skipMainLog )
+                        {
+                            // FYI : We don't reset for delayMainLog
+                            nextStatsReset = true;
+                        }
                     }
 
                     LOGGER.debug("Validation fail fix branch completed.");
