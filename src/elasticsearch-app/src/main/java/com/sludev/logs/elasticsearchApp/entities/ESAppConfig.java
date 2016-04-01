@@ -23,6 +23,7 @@ public final class ESAppConfig
 
     private final URL m_elasticsearchURL;
     private final Deque<String> m_elasticsearchIndexes;
+    private final Deque<String> m_elasticsearchDeleteIndexes;
     private final Deque<EACmdAction> m_elasticsearchActions;
     private final Path m_outputFile;
     private final Boolean m_logOutput;
@@ -35,6 +36,11 @@ public final class ESAppConfig
     public URL getElasticsearchURL()
     {
         return m_elasticsearchURL;
+    }
+
+    public Deque<String> getElasticsearchDeleteIndexes()
+    {
+        return m_elasticsearchDeleteIndexes;
     }
 
     public Deque<String> getElasticsearchIndexes()
@@ -54,6 +60,7 @@ public final class ESAppConfig
 
     private ESAppConfig(final URL elasticsearchURL,
                         final Deque<String> elasticsearchIndexes,
+                        final Deque<String> elasticsearchDeleteIndexes,
                         final Deque<EACmdAction> elasticsearchActions,
                         final Path outputFile,
                         final Boolean logOutput)
@@ -87,6 +94,15 @@ public final class ESAppConfig
             this.m_elasticsearchIndexes = new ArrayDeque<>();
         }
 
+        if( elasticsearchDeleteIndexes != null )
+        {
+            this.m_elasticsearchDeleteIndexes = elasticsearchDeleteIndexes;
+        }
+        else
+        {
+            this.m_elasticsearchDeleteIndexes = new ArrayDeque<>();
+        }
+
         if( elasticsearchActions != null )
         {
             this.m_elasticsearchActions = elasticsearchActions;
@@ -102,12 +118,14 @@ public final class ESAppConfig
 
     public static ESAppConfig from(final URL elasticsearchURL,
                 final Deque<String> elasticsearchIndexes,
+                final Deque<String> elasticsearchDeleteIndexes,
                 final Deque<EACmdAction> elasticsearchActions,
                 final Path outputFile,
                 final Boolean logOutput)
     {
         ESAppConfig res = new ESAppConfig(elasticsearchURL,
                 elasticsearchIndexes,
+                elasticsearchDeleteIndexes,
                 elasticsearchActions,
                 outputFile,
                 logOutput);
@@ -117,6 +135,7 @@ public final class ESAppConfig
 
     public static ESAppConfig from(final String elasticsearchURLStr,
                                    final String[] elasticsearchIndexesStr,
+                                   final String[] elasticsearchDeleteIndexesStr,
                                    final String[] elasticsearchActionsStr,
                                    final String outputFileStr,
                                    final Boolean logOutput) throws ESAException
@@ -126,6 +145,7 @@ public final class ESAppConfig
         URL elasticsearchURL = null;
         Deque<EACmdAction> elasticsearchActions = null;
         Deque<String> elasticsearchIndexes = null;
+        Deque<String> elasticsearchDeleteIndexes = null;
         Path outputFile = null;
 
         if( StringUtils.isNoneBlank(elasticsearchURLStr) )
@@ -171,6 +191,19 @@ public final class ESAppConfig
             }
         }
 
+        if( elasticsearchDeleteIndexesStr != null )
+        {
+            elasticsearchDeleteIndexes = new ArrayDeque<>();
+            for( String currIndexStr : elasticsearchDeleteIndexesStr )
+            {
+                if( StringUtils.isNoneBlank(currIndexStr) )
+                {
+                    elasticsearchDeleteIndexes.addLast(
+                            StringUtils.trim(currIndexStr));
+                }
+            }
+        }
+
         if( StringUtils.isNoneBlank(outputFileStr) )
         {
             outputFile = Paths.get(outputFileStr);
@@ -178,6 +211,7 @@ public final class ESAppConfig
 
         res = from(elasticsearchURL,
                         elasticsearchIndexes,
+                        elasticsearchDeleteIndexes,
                         elasticsearchActions,
                         outputFile,
                         logOutput);

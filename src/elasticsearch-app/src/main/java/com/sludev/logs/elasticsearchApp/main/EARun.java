@@ -1,5 +1,6 @@
 package com.sludev.logs.elasticsearchApp.main;
 
+import com.sludev.logs.elasticsearchApp.elasticsearch.EADelete;
 import com.sludev.logs.elasticsearchApp.elasticsearch.EAScroll;
 import com.sludev.logs.elasticsearchApp.entities.ESAppConfig;
 import com.sludev.logs.elasticsearchApp.enums.EACmdAction;
@@ -86,14 +87,21 @@ public final class EARun implements Callable<ESAResult>
         {
             switch( currAction )
             {
+                case DELETE:
+                {
+                    EADelete.doDeleteIndex(m_config.getElasticsearchURL(),
+                            currIndexes);
+                }
+                break;
+
                 case SCROLL:
-                    {
-                        EAScroll.doScroll(m_config.getElasticsearchURL(),
-                                currIndexes,
-                                m_config.getOutputFile(),
-                                BooleanUtils.isTrue(m_config.getLogOutput()));
-                    }
-                    break;
+                {
+                    EAScroll.doScroll(m_config.getElasticsearchURL(),
+                            currIndexes,
+                            m_config.getOutputFile(),
+                            BooleanUtils.isTrue(m_config.getLogOutput()));
+                }
+                break;
             }
         }
 

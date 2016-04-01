@@ -38,6 +38,7 @@ public final class EAInitialize
         Boolean currLogOuput = null;
         String[] currElasticsearchIndexStr = null;
         String[] currActionStr = null;
+        String[] currDeleteIndexes= null;
 
         Options options = ConfigureOptions();
 
@@ -87,6 +88,10 @@ public final class EAInitialize
                         currActionStr = currOpt.getValues();
                         break;
 
+                    case "delete-indexes":
+                        currDeleteIndexes = currOpt.getValues();
+                        break;
+
                     case "log-output":
                         currLogOuput = true;
                         break;
@@ -95,6 +100,7 @@ public final class EAInitialize
 
             resOpts = ESAppConfig.from(currElasticsearchURLStr,
                     currElasticsearchIndexStr,
+                    currDeleteIndexes,
                     currActionStr,
                     currOutputFilePathStr,
                     currLogOuput);
@@ -141,7 +147,12 @@ public final class EAInitialize
                 .build());
 
         options.addOption(Option.builder().longOpt("action")
-                .desc("The Elasticsearch action including 'scroll'.")
+                .desc("The Elasticsearch action including 'scroll', 'delete'.")
+                .hasArgs()
+                .build());
+
+        options.addOption(Option.builder().longOpt("delete-indexes")
+                .desc("Delete the listed indexes.")
                 .hasArgs()
                 .build());
 

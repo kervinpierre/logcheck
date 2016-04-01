@@ -10,6 +10,7 @@ import org.apache.logging.log4j.Logger;
 public enum EACmdAction
 {
     NONE,
+    DELETE,
     SCROLL;
 
     private static final Logger LOGGER = LogManager.getLogger( EACmdAction.class );

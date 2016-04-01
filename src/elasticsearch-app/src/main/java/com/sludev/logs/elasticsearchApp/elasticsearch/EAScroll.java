@@ -22,7 +22,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Created by kervin on 2016-03-29.
@@ -38,7 +37,7 @@ public final class EAScroll
     {
         if( outFile != null && Files.exists(outFile) )
         {
-            Files.write(outFile, new byte[0], StandardOpenOption.TRUNCATE_EXISTING);
+            Files.write(outFile, "[".getBytes(), StandardOpenOption.TRUNCATE_EXISTING);
         }
 
         JestClientFactory factory = new JestClientFactory();
@@ -67,7 +66,7 @@ public final class EAScroll
         LOGGER.info(String.format("Search : '%s'\n%s",
                             search.getURI(), search.getData(null)));
 
-        JestResult result = handleResult(client, search, outFile, logOutput);
+        JestResult result = handleResult(client, search, null, logOutput);
 
         String scrollId = result.getJsonObject()
                                     .get("_scroll_id").getAsString();
@@ -86,12 +85,20 @@ public final class EAScroll
         int currentResultSize = 0;
         int pageNumber = 1;
         int totalRecs = 0;
+        boolean firstLoop = true;
+
         do
         {
             SearchScroll scroll = new SearchScroll.Builder(scrollId, "5m")
                     .setParameter("pretty", 1)
                     .setParameter(Parameters.SIZE, currSize)
                     .build();
+
+            if( (firstLoop == false) && (outFile != null) && Files.exists(outFile) )
+            {
+                Files.write(outFile, ",".getBytes(), StandardOpenOption.APPEND);
+            }
+            firstLoop = false;
 
             result = handleResult(client, scroll, outFile, logOutput);
 
@@ -108,6 +115,11 @@ public final class EAScroll
                     pageNumber++, currentResultSize, totalRecs));
         }
         while( currentResultSize > 0);
+
+        if( outFile != null && Files.exists(outFile) )
+        {
+            Files.write(outFile, "]".getBytes(), StandardOpenOption.APPEND);
+        }
 
         LOGGER.debug(String.format("doScroll() : Completed %d Records.", totalRecs));
     }
@@ -126,7 +138,7 @@ public final class EAScroll
 
             if( outFile != null )
             {
-                Files.write(outFile, currJSON.getBytes(), StandardOpenOption.CREATE);
+                Files.write(outFile, currJSON.getBytes(), StandardOpenOption.APPEND);
             }
 
             if( logOutput )
