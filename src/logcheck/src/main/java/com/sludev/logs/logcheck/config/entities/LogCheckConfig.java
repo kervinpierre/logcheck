@@ -112,6 +112,7 @@ public final class LogCheckConfig
     private final Path m_holdingDirPath;
     private final Path m_deDupeDirPath;
     private final Path m_tailerLogBackupDir;
+    private final Path m_preferredDir;
     private final URL m_elasticsearchURL;
     private final LocalTime m_logCutoffDate;
     private final Duration m_logCutoffDuration;
@@ -126,6 +127,11 @@ public final class LogCheckConfig
     private final LCCompressionType m_tailerBackupLogCompression;
     private final Pattern m_tailerBackupLogNameRegex;
     private final FSSVerbosityEnum m_verbosity;
+
+    public Path getPreferredDir()
+    {
+        return m_preferredDir;
+    }
 
     public Path getStateProcessedLogsFilePath()
     {
@@ -489,6 +495,7 @@ public final class LogCheckConfig
                            final Path holdingDirPath,
                            final Path deDupeDirPath,
                            final Path tailerLogBackupDir,
+                           final Path preferredDir,
                            final URL elasticsearchURL,
                            final String elasticsearchIndexName,
                            final String elasticsearchIndexPrefix,
@@ -608,6 +615,19 @@ public final class LogCheckConfig
         else
         {
             this.m_verbosity = null;
+        }
+
+        if( preferredDir != null )
+        {
+            this.m_preferredDir = preferredDir;
+        }
+        else if( (orig != null) && (orig.getPreferredDir() != null) )
+        {
+            this.m_preferredDir = orig.getPreferredDir();
+        }
+        else
+        {
+            this.m_preferredDir = null;
         }
 
         if( createMissingDirs != null )
@@ -1431,6 +1451,7 @@ public final class LogCheckConfig
                                       final Path holdingDirPath,
                                       final Path deDupeDirPath,
                                       final Path tailerLogBackupDir,
+                                      final Path preferredDir,
                                       final URL elasticsearchURL,
                                       final String elasticsearchIndexName,
                                       final String elasticsearchIndexPrefix,
@@ -1498,6 +1519,7 @@ public final class LogCheckConfig
                 holdingDirPath,
                 deDupeDirPath,
                 tailerLogBackupDir,
+                preferredDir,
                 elasticsearchURL,
                 elasticsearchIndexName,
                 elasticsearchIndexPrefix,
@@ -1573,6 +1595,7 @@ public final class LogCheckConfig
                                        final String holdingDirPathStr,
                                        final String deDupeDirPathStr,
                                         final String tailerLogBackupDirStr,
+                                        final String preferredDirStr,
                                        final String elasticsearchURLStr,
                                        final String elasticsearchIndexName,
                                        final String elasticsearchIndexPrefix,
@@ -1614,6 +1637,7 @@ public final class LogCheckConfig
         Path holdingDirPath = null;
         Path deDupeDirPath = null;
         Path tailerLogBackupDir = null;
+        Path preferredDir = null;
         URL elasticsearchURL = null;
         LCIndexNameFormat elasticsearchIndexNameFormat = null;
         LocalTime logCutoffDate = null;
@@ -1649,6 +1673,11 @@ public final class LogCheckConfig
         if(StringUtils.isNoneBlank(tailBackupLogNameRegexStr))
         {
             tailerBackupLogNameRegex = Pattern.compile(tailBackupLogNameRegexStr);
+        }
+
+        if(StringUtils.isNoneBlank(preferredDirStr))
+        {
+            preferredDir = Paths.get(preferredDirStr);
         }
 
         if(StringUtils.isNoneBlank(lockFilePathStr))
@@ -2067,6 +2096,7 @@ public final class LogCheckConfig
                 holdingDirPath,
                 deDupeDirPath,
                 tailerLogBackupDir,
+                preferredDir,
                 elasticsearchURL,
                 elasticsearchIndexName,
                 elasticsearchIndexPrefix,
@@ -2096,6 +2126,19 @@ public final class LogCheckConfig
                 tailerBackupLogCompression,
                 tailerBackupLogNameRegex,
                 debugFlags);
+
+        return res;
+    }
+
+    public Path fixPathWithPreferred(Path path)
+    {
+        Path res = path;
+        if( ( res != null)
+                && (res.isAbsolute() == false)
+                && ( getPreferredDir() != null ))
+        {
+            res = getPreferredDir().resolve(res).normalize();
+        }
 
         return res;
     }

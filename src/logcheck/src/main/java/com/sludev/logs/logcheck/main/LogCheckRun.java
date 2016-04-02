@@ -201,8 +201,8 @@ public class LogCheckRun implements Callable<LogCheckResult>
         // Create the main Tailer.
         // And pass into it the previously selected Log Entry Builder.
         LogCheckTail lct = LogCheckTail.from(currLogEntryBuilders,
-                m_config.getLogPath(),
-                m_config.getDeDupeDirPath(),
+                m_config.fixPathWithPreferred(m_config.getLogPath()),
+                m_config.fixPathWithPreferred(m_config.getDeDupeDirPath()),
                 null, // startPosition
                 m_config.getPollIntervalSeconds(),
                 m_config.willContinueState(),
@@ -227,10 +227,11 @@ public class LogCheckRun implements Callable<LogCheckResult>
                 m_config.getIdBlockHashType(),
                 m_config.getIdBlockSize(),
                 m_config.getSetName(),
-                m_config.getStateFilePath(),
-                m_config.getStateProcessedLogsFilePath(),
-                m_config.getErrorFilePath(),
-                m_config.getTailerLogBackupDir(),
+                m_config.fixPathWithPreferred(m_config.getStateFilePath()),
+                m_config.fixPathWithPreferred(m_config.getStateProcessedLogsFilePath()),
+                m_config.fixPathWithPreferred(m_config.getErrorFilePath()),
+                m_config.fixPathWithPreferred(m_config.getTailerLogBackupDir()),
+                m_config.getPreferredDir(),
                 m_config.getTailerBackupLogNameComps(),
                 m_config.getTailerBackupLogCompression(),
                 m_config.getTailerBackupLogNameRegex(),
