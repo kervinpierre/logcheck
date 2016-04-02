@@ -18,10 +18,16 @@
 
 package com.sludev.logs.logcheck.main;
 
+import com.fasterxml.jackson.databind.DeserializationConfig;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.sludev.logs.elasticsearchApp.elasticsearch.EADelete;
+import com.sludev.logs.elasticsearchApp.elasticsearch.EAScroll;
+import com.sludev.logs.elasticsearchApp.utils.ESAException;
 import com.sludev.logs.logcheck.LogCheckProperties;
 import com.sludev.logs.logcheck.LogCheckTestWatcher;
 import com.sludev.logs.logcheck.config.entities.LogCheckConfig;
 import com.sludev.logs.logcheck.config.entities.LogCheckState;
+import com.sludev.logs.logcheck.config.entities.LogEntryVO;
 import com.sludev.logs.logcheck.config.entities.LogFileBlock;
 import com.sludev.logs.logcheck.config.parsers.LogCheckStateParser;
 import com.sludev.logs.logcheck.config.parsers.ParserUtil;
@@ -30,13 +36,17 @@ import com.sludev.logs.logcheck.enums.LCResultStatus;
 import com.sludev.logs.logcheck.exceptions.LogCheckException;
 import com.sludev.logs.logcheck.tail.FileTailer;
 import com.sludev.logs.logcheck.utils.FSSArgFile;
+import com.sludev.logs.logcheck.utils.LogCheckConstants;
+import com.sludev.logs.logcheck.utils.LogCheckPOSIX;
 import com.sludev.logs.logcheck.utils.LogCheckResult;
 import com.sludev.logs.logcheck.utils.LogCheckTestFileUtils;
 import com.sludev.logs.logcheckSampleApp.entities.LogCheckAppConfig;
 import com.sludev.logs.logcheckSampleApp.enums.LCSAResult;
 import com.sludev.logs.logcheckSampleApp.main.LogCheckAppInitialize;
 import com.sludev.logs.logcheckSampleApp.main.LogCheckAppMainRun;
+import jnr.posix.POSIX;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.concurrent.BasicThreadFactory;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -51,9 +61,15 @@ import org.junit.Test;
 import org.junit.rules.TestWatcher;
 import org.junit.runners.MethodSorters;
 
+import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.nio.charset.Charset;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -67,7 +83,12 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.ThreadFactory;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Created by kervin on 2015-11-28.
@@ -847,5 +868,310 @@ public class LogCheckRunTest
         // Second test that should skip all processed
         // data and continue where left off
         logRotateThenTail_Internal(testDir, 1024, 8, 2048);
+    }
+
+    /**
+     * Scenario with lots of files.
+     *
+     * Count on the command line...
+     * grep -n --binary-files=text "^[[:upper:]]\{4,6\}" app.log* | wc -l
+     *
+     * @throws IOException
+     * @throws LogCheckException
+     * @throws InterruptedException
+     * @throws ExecutionException
+     * @throws NoSuchAlgorithmException
+     * @throws ESAException
+     */
+    @Test
+    public void A006_ACScenario_catchupLogsThenTail()
+            throws IOException, LogCheckException, InterruptedException, ExecutionException,
+                    NoSuchAlgorithmException, ESAException
+    {
+        Path testDir = Paths.get("tmp/A006_ACScenario_catchupLogsThenTail")
+                                .toAbsolutePath();
+
+        if( Files.exists(testDir) )
+        {
+            FileUtils.deleteDirectory(testDir.toFile());
+        }
+
+        Files.createDirectory(testDir);
+
+        // Set the CWD
+        String testDirStr = testDir.toAbsolutePath().toString();
+        System.setProperty("user.dir", testDirStr);
+
+        String[] args;
+        List<String> argsList = new ArrayList<>(20);
+
+        Path dataDir = testDir.resolve("../../test-data/web01-test-20160311-01").normalize();
+
+        argsList.add(String.format("--config-file %s",
+                dataDir.resolve("conf/logcheck-service-01.config.xml")));
+
+        argsList.add("--service");
+
+        Path stdOutFile = dataDir.resolve("stdOut.txt");
+        Files.write(stdOutFile, new byte[0], StandardOpenOption.TRUNCATE_EXISTING);
+        argsList.add(String.format("--stdout-file=%s", stdOutFile));
+
+        argsList.add("--stop-after=5m");
+
+        Path dedupeDir = testDir.resolve("dedupeDir");
+
+        if( Files.notExists(dedupeDir) )
+        {
+            Files.createDirectory(dedupeDir);
+        }
+
+        Path outFile = testDir.resolve("elasticsearch-out.txt");
+
+        args = FSSArgFile.getArgArray(argsList);
+        LogCheckConfig config = LogCheckInitialize.initialize(args);
+        LogCheckRun currRun = new LogCheckRun(config);
+
+        List<String> indexes = new ArrayList<>();
+        indexes.add("logstash-*");
+
+        URL eaURL = new URL("http://127.0.0.1:9200");
+
+        // INFO : Deletes all logstash indexes on the server
+        EADelete.doDeleteIndex(eaURL, indexes);
+
+        ThreadFactory thFactory = new BasicThreadFactory.Builder()
+                .namingPattern("testLCRunThread-%d")
+                .build();
+        ExecutorService lcThreadExe = Executors.newSingleThreadExecutor(thFactory);
+        Future<LogCheckResult> lcFuture = lcThreadExe.submit(currRun);
+        lcThreadExe.shutdown();
+
+        LogCheckResult lcResult;
+
+        try
+        {
+            // Wait for the logging to be completed
+            lcResult = lcFuture.get();
+        }
+        finally
+        {
+            ;
+        }
+
+        Assert.assertNotNull(lcResult);
+        Assert.assertTrue(lcResult.getStatus() == LCResultStatus.SUCCESS);
+
+        // Now download all data to a file
+        EAScroll.doScroll(eaURL, indexes, outFile, false);
+
+        // Parse the outfile
+        ObjectMapper jsonMapper = new ObjectMapper();
+
+        JsonNode rootArray = jsonMapper.readTree(outFile.toFile());
+
+        List<LogEntryVO> esLogEntries = new ArrayList<>();
+
+        String lastIndex = null;
+
+        for( JsonNode root : rootArray )
+        {
+            JsonNode hits = root.get("hits")
+                .get("hits");
+
+            for( JsonNode currHit : hits )
+            {
+                String currIndex = currHit.get("_index").textValue();
+                if( StringUtils.equalsIgnoreCase(currIndex, lastIndex) == false )
+                {
+                    LOGGER.debug(String.format("Index changed to '%s'", currIndex));
+                    lastIndex = currIndex;
+                }
+
+                String currTimestamp = currHit.get("_source")
+                                            .get("@timestamp")
+                                            .textValue();
+                String currLevel = currHit.get("_source")
+                        .get("level")
+                        .textValue();
+                String currType = currHit.get("_source")
+                        .get("type")
+                        .textValue();
+                String currLogger = currHit.get("_source")
+                        .get("logger")
+                        .textValue();
+                String currHost = currHit.get("_source")
+                        .get("host")
+                        .textValue();
+                String currMessage = currHit.get("_source")
+                        .get("message")
+                        .textValue();
+                String currException = currHit.get("_source")
+                        .get("exception")
+                        .textValue();
+
+                LogEntryVO currVO
+                        = LogEntryVO.from( currLevel,
+                                            currLogger,
+                                            currMessage,
+                                            currException,
+                                            currTimestamp,
+                                            currType,
+                                            currHost );
+                esLogEntries.add(currVO);
+            }
+        }
+
+        Assert.assertTrue(esLogEntries.size() > 0);
+        LOGGER.debug(String.format("Elastic returned %d log objects", esLogEntries.size()));
+
+        List<LogEntryVO> fsLogEntries = new ArrayList<>();
+        List<Path> logPaths = Files.list(dataDir.resolve("logs"))
+                                    .collect(Collectors.toList());
+        for( Path currLogPath: logPaths )
+        {
+            LOGGER.debug(String.format("Processing '%s'", currLogPath));
+
+            Pattern linePat = Pattern.compile(LogCheckConstants.DEFAULT_MULTILINE_ROW_START_PATTERN);
+
+            ByteBuffer buffer = ByteBuffer.allocate(1024);
+            ByteArrayOutputStream lineBuf = new ByteArrayOutputStream(1024);
+            int bytesRead = 0;
+            int lineCount = 0;
+            boolean seenCR = false;
+
+            try( FileChannel rdr = FileChannel.open(currLogPath, StandardOpenOption.READ) )
+            {
+                while( (bytesRead  = rdr.read(buffer))!= -1 )
+                {
+                    buffer.flip();
+
+                    for(int i = 0; i<buffer.limit(); i++)
+                    {
+                        final byte currBuff = buffer.get();
+                        boolean doHandle = false;
+                        switch (currBuff)
+                        {
+                            case '\n':
+                                seenCR = false; // swallow CR before LF
+                                doHandle = true;
+                                break;
+
+                            case '\r':
+                                if (seenCR)
+                                {
+                                    lineBuf.write('\r');
+                                }
+                                seenCR = true;
+                                break;
+
+                            default:
+                                if (seenCR)
+                                {
+                                    seenCR = false; // swallow final CR
+                                    doHandle = true;
+                                }
+                                lineBuf.write(currBuff);
+                        }
+
+                        if( doHandle )
+                        {
+                            lineCount++;
+
+                            String line = new String(lineBuf.toByteArray(),
+                                    Charset.defaultCharset());
+
+                            Matcher matcher = linePat.matcher(line);
+                            if( matcher.matches() == false )
+                            {
+                                lineBuf.reset();
+                                continue;
+                            }
+
+                            int currGC = matcher.groupCount();
+                            if( currGC > 0 )
+                            {
+                                // Use the row start pattern for the first columns
+                                String currLevel = matcher.group(1);
+                                String currTimestamp = matcher.group(2);
+                                String currLogger = matcher.group(3);
+                                String currHost = matcher.group(4);
+
+                                LogEntryVO currVO = LogEntryVO.from(currLevel, currLogger, null, null,
+                                        currTimestamp, null, currHost);
+                                fsLogEntries.add(currVO);
+
+                                if( (fsLogEntries.size() > 0) && ((fsLogEntries.size() % 1000) == 0) )
+                                {
+                                    LOGGER.debug(String.format("FS Log Entries count : %d\nLines seen : %d",
+                                            fsLogEntries.size(), lineCount));
+                                }
+                            }
+
+                            lineBuf.reset();
+                        }
+                    }
+
+                    buffer.clear();
+                }
+            }
+        }
+
+        Assert.assertTrue(fsLogEntries.size() > 0);
+        Assert.assertEquals(esLogEntries.size(), fsLogEntries.size());
+
+//        long currLogFileCount = Files.lines(logFile).count();
+//        long currStoreFileCount = Files.lines(storeLogFile).count();
+//
+//        LOGGER.debug(String.format("\nLog File Count : %d\nStore File Count: %d\n",
+//                currLogFileCount, currStoreFileCount));
+//
+//        Assert.assertTrue(currLogFileCount == 24);
+//        Assert.assertTrue(currStoreFileCount == 1024);
+//
+//        LogCheckState currState
+//                = LogCheckStateParser.readConfig(
+//                ParserUtil.readConfig(stateFile,
+//                        LCFileFormat.LCSTATE));
+//
+//        long logSize = Files.size(logFile);
+//        long currPos = currState.getLogFile().getLastProcessedPosition();
+//
+//        Assert.assertTrue(logSize==currPos);
+//
+//        LogCheckTestFileUtils.checkAllLinesInFile(storeLogFile,
+//                Pattern.compile(".*?:\\s+\\[(\\d+)\\].*"));
+//
+//        ByteBuffer currByteBuffer = ByteBuffer.allocate(1000);
+//        try( FileChannel logFC = FileChannel.open(logFile) )
+//        {
+//            // Read the first block from file
+//            logFC.read(currByteBuffer);
+//        }
+//
+//        MessageDigest md =MessageDigest.getInstance("SHA-256");
+//
+//        currByteBuffer.flip();
+//        md.update(currByteBuffer);
+//
+//        byte[] currDigest = md.digest();
+//        byte[] firstDigest = currState.getLogFile().getFirstBlock().getHashDigest();
+//
+//        Assert.assertArrayEquals(currDigest, firstDigest);
+//
+//        currByteBuffer.clear();
+//        try( FileChannel logFC = FileChannel.open(logFile) )
+//        {
+//            // Read the last block from file.
+//            logFC.position(logFC.size()-1000);
+//            logFC.read(currByteBuffer);
+//        }
+//
+//        currByteBuffer.flip();
+//        md.update(currByteBuffer);
+//
+//        currDigest = md.digest();
+//        byte[] lastDigest = currState.getLogFile().getLastProcessedBlock().getHashDigest();
+//
+//        Assert.assertArrayEquals(currDigest, lastDigest);
     }
 }

@@ -171,7 +171,13 @@ NOTICE:  All information contained herein is, and remains
                         <xs:documentation>Log file to be monitored</xs:documentation>
                     </xs:annotation>
                 </xs:element>
-                
+
+                <xs:element name="preferredDir" type="xs:string" minOccurs="0" maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>Use this directory for creating File-System items with relative paths.</xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+
                 <xs:element name="statusFilePath" type="xs:string" minOccurs="0" maxOccurs="1">
                     <xs:annotation>
                         <xs:documentation>Session data file for running jobs</xs:documentation>

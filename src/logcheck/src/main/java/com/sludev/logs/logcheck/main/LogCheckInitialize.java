@@ -123,6 +123,7 @@ public class LogCheckInitialize
         String currTailerBackupLogDir = null;
         String currVerbosity = null;
         String currStdOutFile = null;
+        String currPreferredDir = null;
         String[] currLEBuilderType = null;
         String[] currLEStoreType = null;
         String[] currTailerBackupLogNameComps = null;
@@ -527,6 +528,11 @@ public class LogCheckInitialize
                             // Standard Output
                             currStdOutFile = currOpt.getValue();
                             break;
+
+                        case "preferred-dir":
+                            // Preferred directory
+                            currPreferredDir = currOpt.getValue();
+                            break;
                     }
                 }
             }
@@ -606,6 +612,7 @@ public class LogCheckInitialize
                     null, // holdingDir
                     currDeDupeDirPath,
                     currTailerBackupLogDir,
+                    currPreferredDir,
                     currElasticsearchUrl,
                     null, // elasticsearchIndexName,
                     null, // elasticsearchIndexPrefix,
@@ -977,7 +984,13 @@ public class LogCheckInitialize
 
         options.addOption( Option.builder().longOpt( "stdout-file" )
                 .desc( "Send out standard output to the specified file.")
-                .hasArgs()
+                .hasArg()
+                .build() );
+
+        options.addOption( Option.builder().longOpt( "preferred-dir" )
+                .desc( "Use this directory for creating File-System items with relative paths."
+                        + "  Also attempt to change the current working directory to this path.")
+                .hasArg()
                 .build() );
 
         options.addOption( Option.builder().longOpt( "create-missing-dirs" )

@@ -87,6 +87,11 @@ public final class LogCheckTail implements Callable<LogCheckResult>
 
     private final Path m_logFile;
     private final Path m_deDupeDir;
+    private final Path m_stateFile;
+    private final Path m_stateProcessedLogsFilePath;
+    private final Path m_errorFile;
+    private final Path m_tailerLogBackupDir;
+    private final Path m_preferredDir;
     private final Long m_startPosition;
     private final Long m_delay;
     private final Boolean m_tailFromEnd;
@@ -111,10 +116,6 @@ public final class LogCheckTail implements Callable<LogCheckResult>
     private final LCHashType m_idBlockHash;
     private final Integer m_idBlockSize;
     private final String m_setName;
-    private final Path m_stateFile;
-    private final Path m_stateProcessedLogsFilePath;
-    private final Path m_errorFile;
-    private final Path m_tailerLogBackupDir;
     private final List<LCFileRegexComponent> m_tailerBackupLogNameComps;
     private final LCCompressionType m_tailerBackupLogCompression;
     private final Pattern m_tailerBackupLogNameRegex;
@@ -151,6 +152,7 @@ public final class LogCheckTail implements Callable<LogCheckResult>
                          final Path stateProcessedLogsFilePath,
                          final Path errorFile,
                          final Path tailerLogBackupDir,
+                         final Path preferredDir,
                          final List<LCFileRegexComponent> tailerBackupLogNameComps,
                          final LCCompressionType tailerBackupLogCompression,
                          final Pattern tailerBackupLogNameRegex,
@@ -174,6 +176,7 @@ public final class LogCheckTail implements Callable<LogCheckResult>
         this.m_startPosition = startPosition;
         this.m_debugFlags = debugFlags;
         this.m_statsReset = statsReset;
+        this.m_preferredDir = preferredDir;
 
         // Don't bother with logs we missed earlier
 
@@ -362,6 +365,7 @@ public final class LogCheckTail implements Callable<LogCheckResult>
                                     final Path stateProcessedLogsFilePath,
                                     final Path errorFile,
                                     final Path tailerLogBackupDir,
+                                    final Path preferredDir,
                                     final List<LCFileRegexComponent> tailerBackupLogNameComps,
                                     final LCCompressionType tailerBackupLogCompression,
                                     final Pattern tailerBackupLogNameRegex,
@@ -398,6 +402,7 @@ public final class LogCheckTail implements Callable<LogCheckResult>
                 stateProcessedLogsFilePath,
                 errorFile,
                 tailerLogBackupDir,
+                preferredDir,
                 tailerBackupLogNameComps,
                 tailerBackupLogCompression,
                 tailerBackupLogNameRegex,
@@ -1169,6 +1174,7 @@ public final class LogCheckTail implements Callable<LogCheckResult>
                                                     m_stateProcessedLogsFilePath,
                                                     m_errorFile,
                                                     m_tailerLogBackupDir,
+                                                    m_preferredDir,
                                                     m_tailerBackupLogNameComps,
                                                     m_tailerBackupLogCompression,
                                                     m_tailerBackupLogNameRegex,

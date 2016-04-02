@@ -139,7 +139,21 @@
         <dependency>
             <groupId>io.searchbox</groupId>
             <artifactId>jest</artifactId>
-            <version>2.0.0</version>
+            <version>2.0.2</version>
+        </dependency>
+
+        <!-- Keep in sync with what Jest is pulling in -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
+            <version>2.6.2</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>2.6.2</version>
+            <scope>test</scope>
         </dependency>
 
         <dependency>
@@ -151,6 +165,13 @@
         <dependency>
             <groupId>com.sludev.logs</groupId>
             <artifactId>logcheck-sample-app</artifactId>
+            <version>0.9</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.sludev.logs</groupId>
+            <artifactId>elasticsearch-app</artifactId>
             <version>0.9</version>
             <scope>test</scope>
         </dependency>
