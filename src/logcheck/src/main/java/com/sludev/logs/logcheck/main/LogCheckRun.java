@@ -113,6 +113,24 @@ public class LogCheckRun implements Callable<LogCheckResult>
             return res;
         }
 
+        if( m_config.getPreferredDir() != null )
+        {
+            // This doesn't do much, but less set user.dir for CWD hint
+            if( Files.notExists(m_config.getPreferredDir() ) )
+            {
+                String msg = String.format("Preferred Directory supplied does not exist. '%s'",
+                        m_config.getPreferredDir());
+
+                LOGGER.debug(msg);
+
+                throw new LogCheckException(msg);
+            }
+
+            // FIXME : Though this doesn't *actually* modify the CWD
+            String prefDirStr = m_config.getPreferredDir().toAbsolutePath().toString();
+            System.setProperty("user.dir", prefDirStr);
+        }
+
         m_lockFile = m_config.getLockFilePath();
 
         // Setup the acquiring and release of the lock file
@@ -176,20 +194,23 @@ public class LogCheckRun implements Callable<LogCheckResult>
             }
         }
 
+        Path currDeDupeDirPath = m_config.fixPathWithPreferred(
+                                            m_config.getDeDupeDirPath());
+
         // Create missing directories if necessary
         if( BooleanUtils.isTrue(m_config.willCreateMissingDirs()) )
         {
-            if( (m_config.getDeDupeDirPath() != null)
-                    && Files.notExists(m_config.getDeDupeDirPath()) )
+            if( (currDeDupeDirPath != null)
+                    && Files.notExists(currDeDupeDirPath) )
             {
                 try
                 {
-                    Files.createDirectory(m_config.getDeDupeDirPath());
+                    Files.createDirectory(currDeDupeDirPath);
                 }
                 catch( IOException ex )
                 {
                     String msg = String.format("Failed creating De-duplication directory '%s'",
-                            m_config.getDeDupeDirPath());
+                            currDeDupeDirPath);
 
                     LOGGER.debug(msg, ex);
 
@@ -268,7 +289,8 @@ public class LogCheckRun implements Callable<LogCheckResult>
                     break;
 
                 case SIMPLEFILE:
-                    LogEntrySimpleFile lesf = LogEntrySimpleFile.from(m_config.getStoreLogPath(),
+                    LogEntrySimpleFile lesf = LogEntrySimpleFile.from(
+                            m_config.fixPathWithPreferred(m_config.getStoreLogPath()),
                             m_config.willStoreReOpenLogFile());
 
                     currStores.add(lesf);
@@ -292,7 +314,7 @@ public class LogCheckRun implements Callable<LogCheckResult>
 
         LogEntryStore storeWrapper = LogEntryStore.from(logEntrySource,
                 currStores,
-                m_config.getDeDupeDirPath(),
+                m_config.fixPathWithPreferred(m_config.getDeDupeDirPath()),
                 m_config.getSetName(),
                 currRunUUID,
                 m_config.getDeDupeMaxLogsBeforeWrite(),
@@ -453,7 +475,7 @@ public class LogCheckRun implements Callable<LogCheckResult>
         return res;
     }
 
-    private void acquireLockFile(final Path lk) throws LogCheckException
+    public static void acquireLockFile(final Path lk) throws LogCheckException
     {
         if( lk != null )
         {
@@ -487,7 +509,7 @@ public class LogCheckRun implements Callable<LogCheckResult>
         }
     }
     
-    private void setupLockFileShutdownHook(final Path lk)
+    public static void setupLockFileShutdownHook(final Path lk)
     {
         Runtime.getRuntime().addShutdownHook(new Thread() 
         {

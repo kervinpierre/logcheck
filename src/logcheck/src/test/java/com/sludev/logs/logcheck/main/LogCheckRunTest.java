@@ -18,7 +18,6 @@
 
 package com.sludev.logs.logcheck.main;
 
-import com.fasterxml.jackson.databind.DeserializationConfig;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.sludev.logs.elasticsearchApp.elasticsearch.EADelete;
 import com.sludev.logs.elasticsearchApp.elasticsearch.EAScroll;
@@ -37,14 +36,12 @@ import com.sludev.logs.logcheck.exceptions.LogCheckException;
 import com.sludev.logs.logcheck.tail.FileTailer;
 import com.sludev.logs.logcheck.utils.FSSArgFile;
 import com.sludev.logs.logcheck.utils.LogCheckConstants;
-import com.sludev.logs.logcheck.utils.LogCheckPOSIX;
 import com.sludev.logs.logcheck.utils.LogCheckResult;
 import com.sludev.logs.logcheck.utils.LogCheckTestFileUtils;
 import com.sludev.logs.logcheckSampleApp.entities.LogCheckAppConfig;
 import com.sludev.logs.logcheckSampleApp.enums.LCSAResult;
 import com.sludev.logs.logcheckSampleApp.main.LogCheckAppInitialize;
 import com.sludev.logs.logcheckSampleApp.main.LogCheckAppMainRun;
-import jnr.posix.POSIX;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.concurrent.BasicThreadFactory;
@@ -61,15 +58,12 @@ import org.junit.Test;
 import org.junit.rules.TestWatcher;
 import org.junit.runners.MethodSorters;
 
-import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
-import java.nio.file.FileSystem;
-import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -422,7 +416,7 @@ public class LogCheckRunTest
         Files.createDirectory(testDir);
 
         FileTailer.DEBUG_LCAPP_LOG_SEQUENCE = 0;
-        logRotateThenTail_Internal(testDir, 0, 24, 1024);
+        internal_logRotateThenTail(testDir, 0, 24, 1024);
     }
 
     /**
@@ -458,7 +452,7 @@ public class LogCheckRunTest
      * @throws ExecutionException
      * @throws NoSuchAlgorithmException
      */
-    private void logRotateThenTail_Internal(final Path testDir,
+    private void internal_logRotateThenTail(final Path testDir,
                                             final int lineCountStart,
                                             final long logFileCount,
                                             final long storeFileCount)
@@ -863,11 +857,11 @@ public class LogCheckRunTest
         FileTailer.DEBUG_LCAPP_LOG_SEQUENCE = 0;
 
         // First test to generate the folder and data
-        logRotateThenTail_Internal(testDir, 0, 24, 1024);
+        internal_logRotateThenTail(testDir, 0, 24, 1024);
 
         // Second test that should skip all processed
         // data and continue where left off
-        logRotateThenTail_Internal(testDir, 1024, 8, 2048);
+        internal_logRotateThenTail(testDir, 1024, 8, 2048);
     }
 
     /**
@@ -889,41 +883,58 @@ public class LogCheckRunTest
                     NoSuchAlgorithmException, ESAException
     {
         Path testDir = Paths.get("tmp/A006_ACScenario_catchupLogsThenTail")
-                                .toAbsolutePath();
+                .toAbsolutePath();
 
         if( Files.exists(testDir) )
         {
             FileUtils.deleteDirectory(testDir.toFile());
         }
-
         Files.createDirectory(testDir);
 
-        // Set the CWD
-        String testDirStr = testDir.toAbsolutePath().toString();
-        System.setProperty("user.dir", testDirStr);
+        internal_ACScenario_catchupLogsThenTail(testDir, "25m");
+    }
 
+    @Test
+    public void A007_ACScenario_catchupLogsThenTail_twice()
+            throws IOException, LogCheckException, InterruptedException, ExecutionException,
+            NoSuchAlgorithmException, ESAException
+    {
+        Path testDir = Paths.get("A007_ACScenario_catchupLogsThenTail_twice")
+                .toAbsolutePath();
+
+        if( Files.exists(testDir) )
+        {
+            FileUtils.deleteDirectory(testDir.toFile());
+        }
+        Files.createDirectory(testDir);
+
+        internal_ACScenario_catchupLogsThenTail(testDir, "25m");
+
+        // Run again without clearing the directory before hand
+        // The result should be no extra files processed
+        internal_ACScenario_catchupLogsThenTail(testDir, "1m");
+    }
+
+    private void internal_ACScenario_catchupLogsThenTail(final Path testDir,
+                                                         final String stopAfter) throws IOException, LogCheckException, ExecutionException, InterruptedException, ESAException
+    {
         String[] args;
         List<String> argsList = new ArrayList<>(20);
 
         Path dataDir = testDir.resolve("../../test-data/web01-test-20160311-01").normalize();
 
+        Path stdOutFile = testDir.resolve("stdOut.txt");
+        Files.write(stdOutFile, new byte[0],
+                StandardOpenOption.TRUNCATE_EXISTING,
+                StandardOpenOption.CREATE );
+
         argsList.add(String.format("--config-file %s",
                 dataDir.resolve("conf/logcheck-service-01.config.xml")));
-
         argsList.add("--service");
-
-        Path stdOutFile = dataDir.resolve("stdOut.txt");
-        Files.write(stdOutFile, new byte[0], StandardOpenOption.TRUNCATE_EXISTING);
         argsList.add(String.format("--stdout-file=%s", stdOutFile));
-
-        argsList.add("--stop-after=5m");
-
-        Path dedupeDir = testDir.resolve("dedupeDir");
-
-        if( Files.notExists(dedupeDir) )
-        {
-            Files.createDirectory(dedupeDir);
-        }
+        argsList.add(String.format("--stop-after=%s", stopAfter));
+        argsList.add(String.format("--preferred-dir %s", testDir));
+        argsList.add("--create-missing-dirs");
 
         Path outFile = testDir.resolve("elasticsearch-out.txt");
 
