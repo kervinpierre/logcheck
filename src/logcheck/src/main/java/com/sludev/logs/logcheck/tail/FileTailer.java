@@ -26,6 +26,7 @@ import com.sludev.logs.logcheck.enums.LCHashType;
 import com.sludev.logs.logcheck.enums.LCTailerResult;
 import com.sludev.logs.logcheck.exceptions.LogCheckException;
 import com.sludev.logs.logcheck.log.ILogEntryBuilder;
+import com.sludev.logs.logcheck.utils.LogCheckConstants;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.concurrent.BasicThreadFactory;
@@ -301,14 +302,16 @@ public final class FileTailer implements Callable<FileTailerResult>
             res.getResultSet().add(LCTailerResult.REOPEN);
         }
 
+        ScheduledExecutorService statsSchedulerExe = null;
         if( m_saveTimerSeconds > 0 )
         {
             // Signals to the reader when to collect statistics
             BasicThreadFactory tailerSaveFactory = new BasicThreadFactory.Builder()
                     .namingPattern("tailerCollectThread-%d")
+                    .daemon(true)
                     .build();
 
-            final ScheduledExecutorService statsSchedulerExe
+            statsSchedulerExe
                     = Executors.newScheduledThreadPool(1, tailerSaveFactory);
 
             statsSchedulerExe.scheduleWithFixedDelay(() ->
@@ -581,7 +584,7 @@ public final class FileTailer implements Callable<FileTailerResult>
                     // Delay without interrupts
                     final FileTailer objInstance = this;
                     final AtomicBoolean delayCompleted = new AtomicBoolean(false);
-                    Thread delayThread = new Thread( () ->
+                    final Thread delayThread = new Thread( () ->
                     {
                         try
                         {
@@ -596,12 +599,12 @@ public final class FileTailer implements Callable<FileTailerResult>
                         {
                             synchronized( objInstance )
                             {
+                                delayCompleted.set(true);
                                 objInstance.notifyAll();
                             }
-
-                            delayCompleted.set(true);
                         }
                     });
+                    delayThread.setName("fileTailerDelayThread");
                     delayThread.setDaemon(true);
                     delayThread.start();
 
@@ -611,7 +614,7 @@ public final class FileTailer implements Callable<FileTailerResult>
                         {
                             synchronized( this )
                             {
-                                wait();
+                                wait(Math.max(m_delayMillis, 1));
                             }
                         }
                         catch( InterruptedException ex )
@@ -622,6 +625,7 @@ public final class FileTailer implements Callable<FileTailerResult>
                         }
                     }
 
+                    res.getResultSet().add(LCTailerResult.DELAY_COMPLETED);
                     LOGGER.debug("End delay/sleep");
                 }
             }
@@ -648,6 +652,11 @@ public final class FileTailer implements Callable<FileTailerResult>
             if( reader != null )
             {
                 IOUtils.closeQuietly(reader);
+            }
+
+            if( statsSchedulerExe != null )
+            {
+                statsSchedulerExe.shutdown();
             }
         }
 

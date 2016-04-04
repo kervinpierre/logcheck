@@ -882,6 +882,8 @@ public class LogCheckRunTest
             throws IOException, LogCheckException, InterruptedException, ExecutionException,
                     NoSuchAlgorithmException, ESAException
     {
+        LOGGER.debug("A006_ACScenario_catchupLogsThenTail");
+
         Path testDir = Paths.get("tmp/A006_ACScenario_catchupLogsThenTail")
                 .toAbsolutePath();
 
@@ -891,7 +893,7 @@ public class LogCheckRunTest
         }
         Files.createDirectory(testDir);
 
-        internal_ACScenario_catchupLogsThenTail(testDir, "25m");
+        internal_ACScenario_catchupLogsThenTail(testDir, "25m", true);
     }
 
     @Test
@@ -899,7 +901,9 @@ public class LogCheckRunTest
             throws IOException, LogCheckException, InterruptedException, ExecutionException,
             NoSuchAlgorithmException, ESAException
     {
-        Path testDir = Paths.get("A007_ACScenario_catchupLogsThenTail_twice")
+        LOGGER.debug("A007_ACScenario_catchupLogsThenTail_twice started");
+
+        Path testDir = Paths.get("tmp/A007_ACScenario_catchupLogsThenTail_twice")
                 .toAbsolutePath();
 
         if( Files.exists(testDir) )
@@ -908,18 +912,23 @@ public class LogCheckRunTest
         }
         Files.createDirectory(testDir);
 
-        internal_ACScenario_catchupLogsThenTail(testDir, "25m");
+        internal_ACScenario_catchupLogsThenTail(testDir, "25m", true);
 
         // Run again without clearing the directory before hand
         // The result should be no extra files processed
-        internal_ACScenario_catchupLogsThenTail(testDir, "1m");
+        internal_ACScenario_catchupLogsThenTail(testDir, "1m", false);
+
+        LOGGER.debug("A007_ACScenario_catchupLogsThenTail_twice completed");
     }
 
     private void internal_ACScenario_catchupLogsThenTail(final Path testDir,
-                                                         final String stopAfter) throws IOException, LogCheckException, ExecutionException, InterruptedException, ESAException
+                                                         final String stopAfter,
+                                                         final boolean clearElasticSearch ) throws IOException, LogCheckException, ExecutionException, InterruptedException, ESAException
     {
         String[] args;
         List<String> argsList = new ArrayList<>(20);
+
+        LOGGER.debug("Starting internal_ACScenario_catchupLogsThenTail");
 
         Path dataDir = testDir.resolve("../../test-data/web01-test-20160311-01").normalize();
 
@@ -947,8 +956,11 @@ public class LogCheckRunTest
 
         URL eaURL = new URL("http://127.0.0.1:9200");
 
-        // INFO : Deletes all logstash indexes on the server
-        EADelete.doDeleteIndex(eaURL, indexes);
+        if( clearElasticSearch )
+        {
+            // INFO : Deletes all logstash indexes on the server
+            EADelete.doDeleteIndex(eaURL, indexes);
+        }
 
         ThreadFactory thFactory = new BasicThreadFactory.Builder()
                 .namingPattern("testLCRunThread-%d")
