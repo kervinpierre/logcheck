@@ -63,7 +63,9 @@ public enum LCTailerResult
     /**
      * The process was interrupted.  You may retry.
      */
-    INTERRUPTED;
+    INTERRUPTED,
+
+    DELAY_COMPLETED;
 
     private static final Logger log = LogManager.getLogger(LCTailerResult.class);
 }
