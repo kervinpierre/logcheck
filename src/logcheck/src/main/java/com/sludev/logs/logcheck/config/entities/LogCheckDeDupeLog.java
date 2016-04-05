@@ -33,6 +33,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Represents a log or list of all the Log Entry objects already sent
@@ -144,10 +146,10 @@ public final class LogCheckDeDupeLog
         {
             List<Path> files = null;
 
-            try
+            // BUG : This keeps directory handles open.  'Too many open files' Exception results.
+            try(Stream<Path> dirStream = Files.list(dirPath))
             {
-                files = new ArrayList<>();
-                files.addAll(Arrays.asList(Files.list(dirPath).toArray(Path[]::new)));
+                files = dirStream.collect(Collectors.toList());
                 Collections.sort(files);
             }
             catch( IOException ex )
@@ -214,7 +216,7 @@ public final class LogCheckDeDupeLog
             }
         }
 
-        if(newPath == null || Files.exists(newPath))
+        if( (newPath == null) || Files.exists(newPath) )
         {
             String errMsg = String.format("Invalid path '%s'\nNull or greater than %d?", newPath,
                     LogCheckConstants.MAX_DEDUPE_LOG_FILES);

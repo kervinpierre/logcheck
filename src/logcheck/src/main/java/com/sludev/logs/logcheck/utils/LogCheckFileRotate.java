@@ -110,12 +110,11 @@ public final class LogCheckFileRotate
             return null;
         }
 
-        List<Path> children = new ArrayList<>(10);
-        try
+        List<Path> children;
+        // FIXME : Files.list tends to keep file pointers open
+        try(Stream<Path> currPathStrm = Files.list(parentDir))
         {
-            Stream<Path> pathStrm = Files.list(parentDir);
-
-            pathStrm = pathStrm.filter( p ->
+            children = currPathStrm.filter( p ->
             {
                 boolean filterRes = matchPattern.matcher(p.getFileName().toString()).matches();
 
@@ -126,9 +125,7 @@ public final class LogCheckFileRotate
                 }
 
                 return filterRes;
-            } );
-
-            children.addAll(Arrays.asList(pathStrm.toArray(Path[]::new)));
+            } ).collect(Collectors.toList());
         }
         catch( IOException ex )
         {
@@ -309,7 +306,7 @@ public final class LogCheckFileRotate
         }
         else
         {
-            LOGGER.debug((String.format("prevName() returning '%s'", res)));
+   //         LOGGER.debug((String.format("prevName() returning '%s'", res)));
         }
 
         return res;

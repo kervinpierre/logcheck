@@ -19,6 +19,7 @@
 package com.sludev.logs.logcheck.main;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sludev.logs.elasticsearchApp.elasticsearch.EADelete;
 import com.sludev.logs.elasticsearchApp.elasticsearch.EAScroll;
 import com.sludev.logs.elasticsearchApp.utils.ESAException;
@@ -81,8 +82,6 @@ import java.util.concurrent.ThreadFactory;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Created by kervin on 2015-11-28.
@@ -416,7 +415,7 @@ public class LogCheckRunTest
         Files.createDirectory(testDir);
 
         FileTailer.DEBUG_LCAPP_LOG_SEQUENCE = 0;
-        internal_logRotateThenTail(testDir, 0, 24, 1024);
+        internal_logRotateThenTail(testDir, 0, 24, 1024, false);
     }
 
     /**
@@ -455,7 +454,8 @@ public class LogCheckRunTest
     private void internal_logRotateThenTail(final Path testDir,
                                             final int lineCountStart,
                                             final long logFileCount,
-                                            final long storeFileCount)
+                                            final long storeFileCount,
+                                            final boolean ignoreStartPosErr )
             throws IOException, LogCheckException, InterruptedException,
                     ExecutionException, NoSuchAlgorithmException
     {
@@ -534,6 +534,11 @@ public class LogCheckRunTest
         argsList.add("--verbosity=all");
         argsList.add(String.format("--tailer-backup-log-dir %s", testDir));
         argsList.add(String.format("--stdout-file %s", stdOutFile));
+
+        if( ignoreStartPosErr )
+        {
+            argsList.add("--start-position-ignore-error");
+        }
 
         args = FSSArgFile.getArgArray(argsList);
         LogCheckConfig config = LogCheckInitialize.initialize(args);
@@ -857,11 +862,11 @@ public class LogCheckRunTest
         FileTailer.DEBUG_LCAPP_LOG_SEQUENCE = 0;
 
         // First test to generate the folder and data
-        internal_logRotateThenTail(testDir, 0, 24, 1024);
+        internal_logRotateThenTail(testDir, 0, 24, 1024, false);
 
         // Second test that should skip all processed
         // data and continue where left off
-        internal_logRotateThenTail(testDir, 1024, 8, 2048);
+        internal_logRotateThenTail(testDir, 1024, 8, 2048, true);
     }
 
     /**

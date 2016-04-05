@@ -425,27 +425,43 @@ public final class FileTailer implements Callable<FileTailerResult>
                                         currStartPos));
                     }
 
-                    if( (currStartPos > reader.size())
-                            && (m_startPosIgnoreErr == false) )
+                    if( currStartPos > reader.size()  )
                     {
-                        String errMsg = String.format("File start position ( %d ) can not be further than the file's"
-                                        + " last position ( %d ).  Was the file truncated since last run?",
-                                currStartPos, reader.size());
-
-                        LOGGER.debug(errMsg);
-
-                        if( m_statsValidate )
+                        if( m_startPosIgnoreErr )
                         {
-                            // FIXME : Shouldn't we return the state?  So that backups can be processed?
+                            LOGGER.debug(String.format(" Current Start Pos %d is greater than reader position %d",
+                                    currStartPos, reader.size()));
 
-                            stop();
-                            res = FileTailerResult.from(res.getResultSet(), m_lastLCState);
-                            res.getResultSet().add(LCTailerResult.VALIDATION_FAIL);
+                            if( m_statsValidate )
+                            {
+                                stop();
+                                res = FileTailerResult.from(res.getResultSet(), m_lastLCState);
+                                res.getResultSet().add(LCTailerResult.VALIDATION_FAIL);
+                                res.getResultSet().add(LCTailerResult.STATISTICS_RESET);
+                            }
                         }
                         else
                         {
-                            // FIXME : Start from the beginning?
-                            ;
+                            String errMsg = String.format("File start position ( %d ) can not be further than the file's"
+                                            + " last position ( %d ).  Was the file truncated since last run?",
+                                    currStartPos, reader.size());
+
+                            LOGGER.debug(errMsg);
+
+                            if( m_statsValidate )
+                            {
+                                // FIXME : Shouldn't we return the state?  So that backups can be processed?
+
+                                stop();
+                                res = FileTailerResult.from(res.getResultSet(), m_lastLCState);
+                                res.getResultSet().add(LCTailerResult.VALIDATION_FAIL);
+                                res.getResultSet().add(LCTailerResult.FILE_TRUNCATED);
+                            }
+                            else
+                            {
+                                // FIXME : Start from the beginning?
+                                ;
+                            }
                         }
                     }
 
