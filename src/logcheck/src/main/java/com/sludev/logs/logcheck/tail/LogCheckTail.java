@@ -814,6 +814,25 @@ public final class LogCheckTail implements Callable<LogCheckResult>
                                 resSet));
                     }
 
+                    if( currTailerResults.contains(LCTailerResult.FILE_TRUNCATED) )
+                    {
+                        if( BooleanUtils.isNotTrue(m_startPositionIgnoreError) )
+                        {
+                            String msg = String.format("FILE_TRUNCATED but 'Ignore Start Position Error' is false. Quiting. '%s'",
+                                    m_logFile);
+
+                            // We really just end processing at this point to avoid an infinite loop
+                            LOGGER.debug(msg);
+
+                            throw new LogCheckException(msg);
+                        }
+                    }
+
+                    if( currTailerResults.contains(LCTailerResult.STATISTICS_RESET) )
+                    {
+                        nextStatsReset = true;
+                    }
+
                     // Read the log backup files on disk
                     if( m_tailerBackupReadLog )
                     {
@@ -895,7 +914,7 @@ public final class LogCheckTail implements Callable<LogCheckResult>
                                         msg = String.format("%s%s", msg, sb.toString());
                                     }
 
-                                    LOGGER.debug(msg);
+                                 //   LOGGER.debug(msg);
                                 }
 
                                 // Try to detect then read the backup logs

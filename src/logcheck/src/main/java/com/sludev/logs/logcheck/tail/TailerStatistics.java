@@ -334,14 +334,14 @@ public final class TailerStatistics
 
         if( LOGGER.isDebugEnabled() )
         {
-            try
-            {
-                LOGGER.debug(String.format("restore()'ed :\n%s\n", new String(Files.readAllBytes(stateFile))));
-            }
-            catch( IOException ex )
-            {
-                LOGGER.debug("Error dumping State File", ex);
-            }
+//            try
+//            {
+//                LOGGER.debug(String.format("restore()'ed :\n%s\n", new String(Files.readAllBytes(stateFile))));
+//            }
+//            catch( IOException ex )
+//            {
+//                LOGGER.debug("Error dumping State File", ex);
+//            }
 
             if( (lcConf.getLogFile() == null)
                     && ((lcConf.getCompletedLogFiles() == null)

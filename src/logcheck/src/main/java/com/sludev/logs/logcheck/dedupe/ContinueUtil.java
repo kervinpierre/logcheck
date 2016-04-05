@@ -33,6 +33,8 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Created by kervin on 2015-11-21.
@@ -57,13 +59,15 @@ public final class ContinueUtil
             currSetDirPrefix = setName.replaceAll("[^a-zA-Z0-9.-]", "_").trim();
         }
 
-        List<Path> allFiles = new ArrayList<>(10);
+        List<Path> allFiles;
         try
         {
             final String pre = currSetDirPrefix;
-            allFiles.addAll(Arrays.asList(Files.list(deDupeLogDir)
-                    .filter( p -> p.getFileName().startsWith(pre) )
-                     .toArray(Path[]::new)));
+            try( Stream<Path> currPathStream = Files.list(deDupeLogDir) )
+            {
+                allFiles = currPathStream.filter(p -> p.getFileName().startsWith(pre))
+                        .collect(Collectors.toList());
+            }
         }
         catch( IOException ex )
         {

@@ -49,10 +49,7 @@ public enum LCTailerResult
      * The file was deleted while we processed it
      */
     FILE_DELETED,
-
-    /**
-     * The file was truncated while we processed it
-     */
+    FILE_MODIFIED,
     FILE_TRUNCATED,
 
     /**
@@ -64,6 +61,8 @@ public enum LCTailerResult
      * The process was interrupted.  You may retry.
      */
     INTERRUPTED,
+
+    STATISTICS_RESET,
 
     DELAY_COMPLETED;
 
