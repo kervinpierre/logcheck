@@ -127,6 +127,16 @@ public final class LogCheckConfigMainController implements Initializable
             logStoreOutputFileTextField.setTooltip(new Tooltip(newValue));
         });
 
+        tailerGeneralStateProcessedLogsFileTextField.textProperty().addListener((observable, oldValue, newValue) ->
+        {
+            tailerGeneralStateProcessedLogsFileTextField.setTooltip(new Tooltip(newValue));
+        });
+
+        tailerGeneralPreferredDirTextField.textProperty().addListener((observable, oldValue, newValue) ->
+        {
+            tailerGeneralPreferredDirTextField.setTooltip(new Tooltip(newValue));
+        });
+
         generalTabSetNameTextField.focusedProperty().addListener((observable, oldValue, newValue) ->
             {
               if(generalTabSetNameTextField.isFocused() == false)
@@ -276,7 +286,13 @@ public final class LogCheckConfigMainController implements Initializable
     private TextField logFileCutoffDurationTextField;
 
     @FXML
+    private TextField tailerGeneralPreferredDirTextField;
+
+    @FXML
     private Button logFileCutoffDurationValidateButton;
+
+    @FXML
+    private Button tailerGeneralPreferredDirBrowseButton;
 
     @FXML
     private DatePicker logFileCutoffDate;
@@ -291,7 +307,16 @@ public final class LogCheckConfigMainController implements Initializable
     private Spinner<?> tailerGeneralPollIntervalSpinner;
 
     @FXML
+    private Spinner<?> dedupTabIgnoreUntilCountSpinner;
+
+    @FXML
+    private Spinner<?> dedupTabSkipUntilCountSpinner;
+
+    @FXML
     private ChoiceBox<?> tailerGeneralPollIntervalUnitsChoiceBox;
+
+    @FXML
+    private ChoiceBox<?> dedupTabDefaultActionChoicebox;
 
     @FXML
     private TextField tailerGeneralStateFileTextField;
@@ -313,6 +338,9 @@ public final class LogCheckConfigMainController implements Initializable
 
     @FXML
     private CheckBox tailerGeneralEOFStopCheckbox;
+
+    @FXML
+    private CheckBox rotateTabReadBackupLogsReverseCheckbox;
 
     @FXML
     private TextField tailerGeneralErrorFileTextField;
@@ -393,6 +421,9 @@ public final class LogCheckConfigMainController implements Initializable
     private TextField logStoreOutputFileTextField;
 
     @FXML
+    private TextField tailerGeneralStateProcessedLogsFileTextField;
+
+    @FXML
     private ChoiceBox<?> debugVerbosityChoiceBox;
 
     @FXML
@@ -400,6 +431,9 @@ public final class LogCheckConfigMainController implements Initializable
 
     @FXML
     private Button LogStoreOutputFileBrowseButton;
+
+    @FXML
+    private Button tailerGeneralStateProcessedLogsFileBrowseButton;
 
     @FXML
     private TextField logStoreElasticSearchTextField;
@@ -772,6 +806,15 @@ public final class LogCheckConfigMainController implements Initializable
     }
 
     @FXML
+    void onTailerGeneralPrefferedDirBrowseAction(ActionEvent event)
+    {
+        LOGGER.debug("Action for 'Tailer General > Preffered Directory Browse...'");
+
+        LCCBrowseHandler.doGenericDirBrowse(app, event, tailerGeneralPreferredDirTextField,
+                "Please choose the name or full path of the Preferred Directory");
+    }
+
+    @FXML
     public void onTailerGeneralErrorFileBrowseAction(ActionEvent event)
     {
         LOGGER.debug("Action for 'Tailer General Tab > Error File Browse...'");
@@ -786,6 +829,23 @@ public final class LogCheckConfigMainController implements Initializable
     void onTailerGeneralStateFileAction(ActionEvent event)
     {
 
+    }
+
+    @FXML
+    public void onTailerGeneralStateProcessedLogsFileTextFieldAction(ActionEvent event)
+    {
+        ;
+    }
+
+    @FXML
+    public void onTailerGeneralStateProcessedLogsFileBrowseAction(ActionEvent event)
+    {
+        LOGGER.debug("Action for 'Tailer General Tab > State Processed Logs File Browse...'");
+
+        LCCBrowseHandler.doGenericFileBrowse(app, event, tailerGeneralStateProcessedLogsFileTextField,
+                "Please choose the name or full path of the State Processed Logs File",
+                LCCConstants.LCC_DEFAULT_STATE_EXT_DESC,
+                LCCConstants.LCC_DEFAULT_STATE_EXT);
     }
 
     @FXML
@@ -882,6 +942,12 @@ public final class LogCheckConfigMainController implements Initializable
             tailerGeneralStateFileTextField.setText(lcc.getStateFilePath().toString());
         }
 
+        if( lcc.getStateProcessedLogsFilePath() != null )
+        {
+            tailerGeneralStateProcessedLogsFileTextField
+                    .setText(lcc.getStateProcessedLogsFilePath().toString());
+        }
+
         if( lcc.willSaveState() != null )
         {
             tailerGeneralSaveStateCheckbox.setSelected(lcc.willSaveState());
@@ -919,6 +985,11 @@ public final class LogCheckConfigMainController implements Initializable
             tailerGeneralErrorFileTextField.setText(lcc.getErrorFilePath().toString());
         }
 
+        if( lcc.getPreferredDir() != null )
+        {
+            tailerGeneralPreferredDirTextField.setText(lcc.getPreferredDir().toString());
+        }
+
         if( lcc.getTailerLogBackupDir() != null )
         {
             rotateTabLogBackupDirTextField.setText(lcc.getTailerLogBackupDir().toString());
@@ -928,6 +999,12 @@ public final class LogCheckConfigMainController implements Initializable
         {
             rotateTabReadBackupLogsCheckbox
                     .setSelected(lcc.willTailerBackupReadLog());
+        }
+
+        if( lcc.willTailerBackupReadLogReverse() != null )
+        {
+            rotateTabReadBackupLogsReverseCheckbox
+                    .setSelected(lcc.willTailerBackupReadLogReverse());
         }
 
         if( lcc.willTailerBackupReadPriorLog() != null )
@@ -966,6 +1043,18 @@ public final class LogCheckConfigMainController implements Initializable
                     .getEditor().setText(lcc.getDeDupeMaxLogsPerFile().toString());
         }
 
+        if( lcc.getDeDupeIgnoreCount() != null )
+        {
+            dedupTabIgnoreUntilCountSpinner
+                    .getEditor().setText(lcc.getDeDupeIgnoreCount().toString());
+        }
+
+        if( lcc.getDeDupeSkipCount() != null )
+        {
+            dedupTabSkipUntilCountSpinner
+                    .getEditor().setText(lcc.getDeDupeSkipCount().toString());
+        }
+
         if( lcc.getDeDupeMaxLogFiles() != null )
         {
             dedupTabMaxFilesSpinner
@@ -982,6 +1071,31 @@ public final class LogCheckConfigMainController implements Initializable
         {
             dedupTabMaxEntriesReadSpinner
                     .getEditor().setText(lcc.getReadMaxDeDupeEntries().toString());
+        }
+
+        if( lcc.getDeDupeDefaultAction() != null )
+        {
+            int currInt = 0;
+            switch( lcc.getDeDupeDefaultAction() )
+            {
+                case NONE:
+                    currInt = 0;
+                    break;
+
+                case IGNORE:
+                    currInt = 1;
+                    break;
+
+                case SKIP:
+                    currInt = 3;
+                    break;
+
+                case BREAK:
+                    currInt = 2;
+                    break;
+            }
+
+            dedupTabDefaultActionChoicebox.getSelectionModel().select(currInt);
         }
 
         if( lcc.getVerbosity() != null )
@@ -1164,6 +1278,7 @@ public final class LogCheckConfigMainController implements Initializable
         Boolean currTailerBackupReadPriorLogs = null;
         Boolean currStopOnEOF = null;
         Boolean currReadOnlyFileMode = null;
+        Boolean currTailerBackupReadLogReverse = null;
         String currPollIntervalSeconds = null;
         String currEmailOnError = null;
         String currSmtpServer = null;
@@ -1195,6 +1310,11 @@ public final class LogCheckConfigMainController implements Initializable
         String currTailerBackupLogCompression = null;
         String currTailerBackupLogDir = null;
         String currDebugVerbosity = null;
+        String currProcessedLogsFile = null;
+        String currPreferredDir = null;
+        String currDeDupeIgnoreCountStr = null;
+        String currDeDupeSkipCountStr = null;
+        String currDeDupeDefaultAction = null;
         String[] currLEBuilderType = null;
         String[] currLEStoreType = null;
         String[] currTailerBackupLogNameComps = null;
@@ -1232,6 +1352,7 @@ public final class LogCheckConfigMainController implements Initializable
         currTailerBackupLogDir = rotateTabLogBackupDirTextField.getText();
         currTailerBackupReadLogs = rotateTabReadBackupLogsCheckbox.isSelected();
         currTailerBackupReadPriorLogs = rotateTabReadPriorLogsCheckbox.isSelected();
+        currTailerBackupReadLogReverse = rotateTabReadBackupLogsReverseCheckbox.isSelected();
         currTailerBackupLogNameRegex = rotateTabLogFileRegexTextField.getText();
         currTailerBackupLogNameComps = StringUtils.split(rotateTabLogFileCompTextField.getText(), ", ");
         currDeDupeDirPath = dedupTabDirTextField.getText();
@@ -1242,6 +1363,10 @@ public final class LogCheckConfigMainController implements Initializable
         currLogDeduplicationDuration = dedupTabDurationTextField.getText();
         currLogPath = logFileTargetFileTextField.getText();
         currElasticsearchUrl = logStoreElasticSearchTextField.getText();
+        currProcessedLogsFile = tailerGeneralStateProcessedLogsFileTextField.getText();
+        currPreferredDir = tailerGeneralPreferredDirTextField.getText();
+        currDeDupeIgnoreCountStr = dedupTabIgnoreUntilCountSpinner.getEditor().getText();
+        currDeDupeSkipCountStr = dedupTabSkipUntilCountSpinner.getEditor().getText();
 
         currDebugVerbosity = debugVerbosityChoiceBox.getSelectionModel().getSelectedItem().toString();
 
@@ -1250,8 +1375,15 @@ public final class LogCheckConfigMainController implements Initializable
 
         if( logStoreTabLogStore01Choicebox.getSelectionModel().getSelectedItem() != null )
         {
-            currLEStoreTypeList.add(
+            currDeDupeDefaultAction =
                     logStoreTabLogStore01Choicebox
+                            .getSelectionModel().getSelectedItem().toString();
+        }
+
+        if( dedupTabDefaultActionChoicebox.getSelectionModel().getSelectedItem() != null )
+        {
+            currLEStoreTypeList.add(
+                    dedupTabDefaultActionChoicebox
                             .getSelectionModel().getSelectedItem().toString());
         }
 
@@ -1320,6 +1452,7 @@ public final class LogCheckConfigMainController implements Initializable
                     currStartPositionIgnoreError,
                     currValidateTailerStats,
                     currTailerBackupReadLogs,
+                    currTailerBackupReadLogReverse,
                     currTailerBackupReadPriorLogs,
                     currStopOnEOF,
                     currReadOnlyFileMode,
@@ -1329,11 +1462,13 @@ public final class LogCheckConfigMainController implements Initializable
                     currStoreLogFile,
                     currStatusFile,
                     currStateFile,
+                    currProcessedLogsFile,
                     currErrorFile,
                     null, // configFilePath,
                     null, // holdingDir
                     currDeDupeDirPath,
                     currTailerBackupLogDir,
+                    currPreferredDir,
                     currElasticsearchUrl,
                     null, // elasticsearchIndexName,
                     null, // elasticsearchIndexPrefix,
@@ -1344,13 +1479,18 @@ public final class LogCheckConfigMainController implements Initializable
                     currLogDeduplicationDuration, // logDeduplicationDuration,
                     currPollIntervalSeconds,
                     currStopAfter,
+                    currDeDupeIgnoreCountStr,
+                    currDeDupeSkipCountStr,
                     currReadLogFileCount,
                     currReadMaxDeDupeEntries,
                     currIdBlockSize,
                     currDeDupeMaxLogsBeforeWrite,
                     currDeDupeMaxLogsPerFile,
                     currDeDupeMaxLogFiles,
+                    null, // deDupeIgnorePercentStr
+                    null, // deDupeSkipPercentStr
                     currDebugVerbosity,
+                    currDeDupeDefaultAction,
                     currLEBuilderType,
                     currLEStoreType,
                     currTailerBackupLogNameComps,

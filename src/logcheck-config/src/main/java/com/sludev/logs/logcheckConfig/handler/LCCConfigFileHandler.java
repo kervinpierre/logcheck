@@ -188,7 +188,7 @@ public final class LCCConfigFileHandler
                                                 StandardOpenOption.WRITE,
                                                 StandardOpenOption.CREATE_NEW) )
         {
-            String outStr = String.format("--config-file %s", confFilePath);
+            String outStr = String.format("--config-file \"%s\"", confFilePath);
 
             bw.write(outStr);
         }

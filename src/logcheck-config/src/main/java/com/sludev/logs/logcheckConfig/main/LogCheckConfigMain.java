@@ -79,10 +79,10 @@ public class LogCheckConfigMain extends Application
         controller.setApp(this);
         controller.internalInit();
 
-        Scene scene = new Scene(pane, 900, 600);
+        Scene scene = new Scene(pane, 900, 700);
         primaryStage.setTitle("Log Check Configuration Application");
         primaryStage.setScene(scene);
-        primaryStage.setMinHeight(600);
+        primaryStage.setMinHeight(700);
         primaryStage.setMinWidth(900);
         primaryStage.show();
     }
