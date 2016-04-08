@@ -137,7 +137,7 @@ public class LogCheckAppMainRunTest
 
         Path[] files = Files.list(testDir).toArray(Path[]::new);
 
-        Assert.assertTrue(files.length==51);
+        Assert.assertTrue(files.length==52);
         Assert.assertTrue(Files.lines(logFile).count()==8);
 
         for( Path p : files )
