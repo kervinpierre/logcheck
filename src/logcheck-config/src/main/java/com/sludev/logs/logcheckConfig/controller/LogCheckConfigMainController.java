@@ -1373,17 +1373,24 @@ public final class LogCheckConfigMainController implements Initializable
         List<String> currLEStoreTypeList = new ArrayList<>();
         List<String> currLEBuilderList = new ArrayList<>();
 
-        if( logStoreTabLogStore01Choicebox.getSelectionModel().getSelectedItem() != null )
+        String stopAfterUnits = generalTabStopAfterUnitsChoice
+                .getSelectionModel().getSelectedItem().toString();
+        if( StringUtils.isNoneBlank(stopAfterUnits) )
         {
-            currDeDupeDefaultAction =
-                    logStoreTabLogStore01Choicebox
-                            .getSelectionModel().getSelectedItem().toString();
+            currStopAfter = String.format("%s%s", currStopAfter, stopAfterUnits);
         }
 
         if( dedupTabDefaultActionChoicebox.getSelectionModel().getSelectedItem() != null )
         {
-            currLEStoreTypeList.add(
+            currDeDupeDefaultAction =
                     dedupTabDefaultActionChoicebox
+                            .getSelectionModel().getSelectedItem().toString();
+        }
+
+        if( logStoreTabLogStore01Choicebox.getSelectionModel().getSelectedItem() != null )
+        {
+            currLEStoreTypeList.add(
+                    logStoreTabLogStore01Choicebox
                             .getSelectionModel().getSelectedItem().toString());
         }
 

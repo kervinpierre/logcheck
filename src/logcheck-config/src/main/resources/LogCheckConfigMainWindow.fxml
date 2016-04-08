@@ -350,7 +350,8 @@
                                                                   AnchorPane.topAnchor="0.0">
                                                                 <children>
                                                                     <Spinner fx:id="generalTabStopAfterSpinner"
-                                                                             initialValue="0" max="2147483647" min="0">
+                                                                             max="2147483647" min="-1"
+                                                                                initialValue="-1">
                                                                         <HBox.margin>
                                                                             <Insets bottom="5.0" left="5.0" right="5.0"
                                                                                     top="5.0"/>
@@ -367,7 +368,7 @@
                                                                             <FXCollections
                                                                                     fx:factory="observableArrayList">
                                                                                 <String fx:value="None"/>
-                                                                                <String fx:value="Milli-Seconds"/>
+                                                                                <String fx:value="MilliSeconds"/>
                                                                                 <String fx:value="Seconds"/>
                                                                                 <String fx:value="Minutes"/>
                                                                                 <String fx:value="Hours"/>
@@ -638,8 +639,8 @@
                                                                     <children>
                                                                         <Spinner
                                                                                 fx:id="tailerGeneralPollIntervalSpinner"
-                                                                                initialValue="0" max="2147483647"
-                                                                                min="0">
+                                                                                initialValue="-1" max="2147483647"
+                                                                                min="-1">
                                                                             <HBox.margin>
                                                                                 <Insets bottom="5.0" left="5.0"
                                                                                         right="5.0" top="5.0"/>
@@ -1170,8 +1171,8 @@
                                                                 <Insets bottom="5.0" left="5.0" right="5.0" top="5.0"/>
                                                             </GridPane.margin>
                                                         </Label>
-                                                        <Spinner fx:id="dedupTabLogsPerFileSpinner" initialValue="0"
-                                                                 max="2147483647" min="0" GridPane.columnIndex="1"
+                                                        <Spinner fx:id="dedupTabLogsPerFileSpinner" initialValue="-1"
+                                                                 max="2147483647" min="-1" GridPane.columnIndex="1"
                                                                  GridPane.rowIndex="2">
                                                             <editable>true</editable>
                                                         </Spinner>
@@ -1181,8 +1182,8 @@
                                                                 <Insets bottom="5.0" left="5.0" right="5.0" top="5.0"/>
                                                             </GridPane.margin>
                                                         </Label>
-                                                        <Spinner fx:id="dedupTabMaxFilesSpinner" initialValue="0"
-                                                                 max="2147483647" min="0" GridPane.columnIndex="1"
+                                                        <Spinner fx:id="dedupTabMaxFilesSpinner" initialValue="-1"
+                                                                 max="2147483647" min="-1" GridPane.columnIndex="1"
                                                                  GridPane.rowIndex="3">
                                                             <editable>true</editable>
                                                         </Spinner>
@@ -1193,7 +1194,7 @@
                                                             </GridPane.margin>
                                                         </Label>
                                                         <Spinner fx:id="dedupTabMaxLogsBeforeWriteSpinner"
-                                                                 initialValue="0" max="2147483647" min="0"
+                                                                 initialValue="-1" max="2147483647" min="-1"
                                                                  GridPane.columnIndex="1" GridPane.rowIndex="4">
                                                             <editable>true</editable>
                                                         </Spinner>
@@ -1203,8 +1204,8 @@
                                                                 <Insets bottom="5.0" left="5.0" right="5.0" top="5.0"/>
                                                             </GridPane.margin>
                                                         </Label>
-                                                        <Spinner fx:id="dedupTabMaxEntriesReadSpinner" initialValue="0"
-                                                                 max="2147483647" min="0" GridPane.columnIndex="1"
+                                                        <Spinner fx:id="dedupTabMaxEntriesReadSpinner" initialValue="-1"
+                                                                 max="2147483647" min="-1" GridPane.columnIndex="1"
                                                                  GridPane.rowIndex="5">
                                                             <editable>true</editable>
                                                         </Spinner>
@@ -1213,13 +1214,8 @@
                                                                 <Insets bottom="5.0" left="5.0" right="5.0" top="5.0"/>
                                                             </padding>
                                                         </Label>
-                                                        <Label text="Ignore Until Count" GridPane.rowIndex="7">
-                                                            <padding>
-                                                                <Insets bottom="5.0" left="5.0" right="5.0" top="5.0"/>
-                                                            </padding>
-                                                        </Label>
                                                         <ChoiceBox fx:id="dedupTabDefaultActionChoicebox"
-                                                                   prefWidth="150.0" value="Simple File"
+                                                                   prefWidth="150.0" value="None"
                                                                    GridPane.columnIndex="1" GridPane.rowIndex="6">
                                                             <items>
                                                                 <FXCollections fx:factory="observableArrayList">
@@ -1230,8 +1226,13 @@
                                                                 </FXCollections>
                                                             </items>
                                                         </ChoiceBox>
+                                                        <Label text="Ignore Until Count" GridPane.rowIndex="7">
+                                                            <padding>
+                                                                <Insets bottom="5.0" left="5.0" right="5.0" top="5.0"/>
+                                                            </padding>
+                                                        </Label>
                                                         <Spinner fx:id="dedupTabIgnoreUntilCountSpinner" editable="true"
-                                                                 initialValue="0" max="2147483647" min="0"
+                                                                 initialValue="-1" max="2147483647" min="-1"
                                                                  GridPane.columnIndex="1" GridPane.rowIndex="7"/>
                                                         <Label text="Skip Until Count" GridPane.rowIndex="8">
                                                             <padding>
@@ -1239,7 +1240,7 @@
                                                             </padding>
                                                         </Label>
                                                         <Spinner fx:id="dedupTabSkipUntilCountSpinner" editable="true"
-                                                                 initialValue="0" max="2147483647" min="0"
+                                                                 initialValue="-1" max="2147483647" min="-1"
                                                                  GridPane.columnIndex="1" GridPane.rowIndex="8"/>
                                                     </children>
                                                 </GridPane>
