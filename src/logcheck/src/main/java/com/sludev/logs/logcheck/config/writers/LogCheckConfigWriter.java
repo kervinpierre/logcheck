@@ -290,6 +290,19 @@ public final class LogCheckConfigWriter
             res.appendChild(currElem);
         }
 
+        // stdOutFile
+        currPath = lcc.getStdOutFile();
+        if( currPath == null )
+        {
+            ; // throw new LogCheckException("Missing <stdOutFile />");
+        }
+        else
+        {
+            currElem = doc.createElement("stdOutFile");
+            currElem.appendChild(doc.createTextNode(currPath.toString()));
+            res.appendChild(currElem);
+        }
+
         // deDuplicationDefaultAction
         LCDeDupeAction currDDAction = lcc.getDeDupeDefaultAction();
         if( currDDAction == null )
@@ -624,6 +637,19 @@ public final class LogCheckConfigWriter
         else
         {
             currElem = doc.createElement("tailerBackupReadLogReverse");
+            currElem.appendChild(doc.createTextNode(currBoolean.toString()));
+            res.appendChild(currElem);
+        }
+
+        // createMissingDirs
+        currBoolean = lcc.willCreateMissingDirs();
+        if( currBoolean == null )
+        {
+            ; // throw new LogCheckException("Missing <createMissingDirs />");
+        }
+        else
+        {
+            currElem = doc.createElement("createMissingDirs");
             currElem.appendChild(doc.createTextNode(currBoolean.toString()));
             res.appendChild(currElem);
         }

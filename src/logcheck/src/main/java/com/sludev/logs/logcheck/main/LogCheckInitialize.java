@@ -42,6 +42,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -567,12 +568,23 @@ public class LogCheckInitialize
             /*
               Or use -DFSSOUTREDIRECT=/path/to/file
              */
-            if( StringUtils.isNoneBlank(currStdOutFile) )
+            Path usedStdOut = null;
+            if( (config != null)
+                    && (config.getStdOutFile() != null) )
+            {
+                usedStdOut = config.getStdOutFile();
+            }
+            else if( StringUtils.isNoneBlank(currStdOutFile) )
+            {
+                usedStdOut = Paths.get(currStdOutFile);
+            }
+
+            if( usedStdOut != null )
             {
                 LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
                 FSSLog4JConfiguration logConf = (FSSLog4JConfiguration)ctx.getConfiguration();
 
-                FSSLog4JConfiguration.outputRedirect(Paths.get(currStdOutFile));
+                FSSLog4JConfiguration.outputRedirect(usedStdOut);
             }
 
             config = LogCheckConfig.from(config,
@@ -613,6 +625,7 @@ public class LogCheckInitialize
                     currDeDupeDirPath,
                     currTailerBackupLogDir,
                     currPreferredDir,
+                    currStdOutFile,
                     currElasticsearchUrl,
                     null, // elasticsearchIndexName,
                     null, // elasticsearchIndexPrefix,

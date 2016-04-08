@@ -76,7 +76,8 @@ public class LogCheckMain
         // Initialize only.  Don't actually run or do anything else
         LogCheckConfig res = LogCheckInitialize.initialize(args);
         LogCheckResult procRes;
-        
+
+
         try
         {
             procRes = processStart(res); 
