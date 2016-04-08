@@ -1,6 +1,8 @@
 package com.sludev.logs.logcheckConfig.main;
 
+import com.sludev.logs.logcheck.enums.FSSVerbosityEnum;
 import com.sludev.logs.logcheck.exceptions.LogCheckException;
+import com.sludev.logs.logcheck.utils.FSSLog4JConfiguration;
 import com.sludev.logs.logcheckConfig.controller.LogCheckConfigMainController;
 import com.sludev.logs.logcheckConfig.entity.LCCAppState;
 import javafx.fxml.FXMLLoader;
@@ -151,6 +153,10 @@ public class LogCheckConfigMain extends Application
                         break;
                 }
             }
+
+            // FIXME : Should be a CLI flag
+            FSSLog4JConfiguration.setVerbosity(FSSVerbosityEnum.DEBUG);
+
         }
         catch (LogCheckException ex)
         {
