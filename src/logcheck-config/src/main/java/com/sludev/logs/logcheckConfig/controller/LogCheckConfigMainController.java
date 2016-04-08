@@ -137,6 +137,11 @@ public final class LogCheckConfigMainController implements Initializable
             tailerGeneralPreferredDirTextField.setTooltip(new Tooltip(newValue));
         });
 
+        generalTabStdOutFileTextField.textProperty().addListener((observable, oldValue, newValue) ->
+        {
+            generalTabStdOutFileTextField.setTooltip(new Tooltip(newValue));
+        });
+
         generalTabSetNameTextField.focusedProperty().addListener((observable, oldValue, newValue) ->
             {
               if(generalTabSetNameTextField.isFocused() == false)
@@ -238,6 +243,12 @@ public final class LogCheckConfigMainController implements Initializable
     private TextField generalTabConfigFileTextField;
 
     @FXML
+    private TextField generalTabStdOutFileTextField;
+
+    @FXML
+    private Button generalTabStdOutFileBrowseButton;
+
+    @FXML
     private Button generalTabConfigFileBrowseButton;
 
     @FXML
@@ -251,6 +262,9 @@ public final class LogCheckConfigMainController implements Initializable
 
     @FXML
     private CheckBox generalTabServiceCheck;
+
+    @FXML
+    private CheckBox generalTabCreateMissingDirsCheck;
 
     @FXML
     private TextField generalTabArgFileTextField;
@@ -616,6 +630,17 @@ public final class LogCheckConfigMainController implements Initializable
                 "Please choose the name or full path of the Lock File",
                 LCCConstants.LCC_DEFAULT_LOCK_EXT_DESC,
                 LCCConstants.LCC_DEFAULT_LOCK_EXT);
+    }
+
+    @FXML
+    public void onGeneralTabStdOutFileBrowseAction(ActionEvent event)
+    {
+        LOGGER.debug("Action for 'General Tab > Standard Output File Browse...'");
+
+        LCCBrowseHandler.doGenericFileBrowse(app, event, generalTabStdOutFileTextField,
+                "Please choose the name or full path for the standard output",
+                LCCConstants.LCC_DEFAULT_ALLFILES_EXT_DESC,
+                LCCConstants.LCC_DEFAULT_ALLFILES_EXT);
     }
 
     @FXML
@@ -1279,6 +1304,7 @@ public final class LogCheckConfigMainController implements Initializable
         Boolean currStopOnEOF = null;
         Boolean currReadOnlyFileMode = null;
         Boolean currTailerBackupReadLogReverse = null;
+        Boolean currCreateMissingDirs = null;
         String currPollIntervalSeconds = null;
         String currEmailOnError = null;
         String currSmtpServer = null;
@@ -1315,6 +1341,7 @@ public final class LogCheckConfigMainController implements Initializable
         String currDeDupeIgnoreCountStr = null;
         String currDeDupeSkipCountStr = null;
         String currDeDupeDefaultAction = null;
+        String currStdOutFileStr = null;
         String[] currLEBuilderType = null;
         String[] currLEStoreType = null;
         String[] currTailerBackupLogNameComps = null;
@@ -1333,7 +1360,9 @@ public final class LogCheckConfigMainController implements Initializable
 
         currLockFile = generalTabLockFileTextField.getText();
         currService = generalTabServiceCheck.isSelected();
+        currCreateMissingDirs = generalTabCreateMissingDirsCheck.isSelected();
         currSetName = generalTabSetNameTextField.getText();
+        currStdOutFileStr = generalTabStdOutFileTextField.getText();
         currStopAfter = generalTabStopAfterSpinner.getEditor().getText();
         currStoreLogFile = logStoreOutputFileTextField.getText();
         currReadOnlyFileMode = logFileReadOnlyCheckbox.isSelected();
@@ -1463,7 +1492,7 @@ public final class LogCheckConfigMainController implements Initializable
                     currTailerBackupReadPriorLogs,
                     currStopOnEOF,
                     currReadOnlyFileMode,
-                    null, // createMissingDirs
+                    currCreateMissingDirs,
                     currLockFile,
                     currLogPath,
                     currStoreLogFile,
@@ -1476,6 +1505,7 @@ public final class LogCheckConfigMainController implements Initializable
                     currDeDupeDirPath,
                     currTailerBackupLogDir,
                     currPreferredDir,
+                    currStdOutFileStr,
                     currElasticsearchUrl,
                     null, // elasticsearchIndexName,
                     null, // elasticsearchIndexPrefix,
