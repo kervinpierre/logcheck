@@ -12,15 +12,13 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.FutureTask;
 
 /**
  * Created by kervin on 2015-10-13.
  */
 public final class LogCheckAppMain
 {
-    private static final Logger log = LogManager.getLogger(LogCheckAppMain.class);
-
+    private static final Logger LOGGER = LogManager.getLogger(LogCheckAppMain.class);
 
     private static String[] staticArgs = null;
     private static ExecutorService mainThreadExe = null;
@@ -30,7 +28,7 @@ public final class LogCheckAppMain
      */
     public static void main(String[] args)
     {
-        log.debug("Starting Backup Tool via its Command Line Interface.");
+        LOGGER.debug("Starting Backup Tool via its Command Line Interface.");
 
         commonStart(args);
     }
@@ -47,7 +45,7 @@ public final class LogCheckAppMain
      */
     public static void commonStart(String[] args)
     {
-        log.debug( String.format("LogCheckAppMain::commonStart() called [%s]",
+        LOGGER.debug( String.format("LogCheckAppMain::commonStart() called [%s]",
                 Arrays.toString(args)) );
 
         // Initialize only.  Don't actually run or do anything else
@@ -60,13 +58,13 @@ public final class LogCheckAppMain
         }
         catch (LogCheckAppException ex)
         {
-            log.error("Error running application.", ex);
+            LOGGER.error("Error running application.", ex);
         }
     }
 
     public static void commonStop(String[] args)
     {
-        log.debug( String.format("LogCheckAppMain::commonStop() called [%s]",
+        LOGGER.debug( String.format("LogCheckAppMain::commonStop() called [%s]",
                 Arrays.toString(args)) );
 
         // Initialize only.  Don't actually run or do anything else
@@ -79,14 +77,14 @@ public final class LogCheckAppMain
 
     public void destroy()
     {
-        log.info("Service destroy called.");
+        LOGGER.info("Service destroy called.");
 
         commonStop(LogCheckAppMain.staticArgs);
     }
 
     public void init(String[] args)
     {
-        log.info( String.format("Service init called.\n[[%s]]\n",
+        LOGGER.info( String.format("Service init called.\n[[%s]]\n",
                 Arrays.toString(args)) );
 
         LogCheckAppMain.staticArgs = args;
@@ -98,7 +96,7 @@ public final class LogCheckAppMain
      */
     public void start()
     {
-        log.info("Starting BackupTool via its Unix Service Interface.");
+        LOGGER.info("Starting BackupTool via its Unix Service Interface.");
 
         commonStart(LogCheckAppMain.staticArgs);
     }
@@ -109,7 +107,7 @@ public final class LogCheckAppMain
      */
     public void stop()
     {
-        log.info("Service stop called...");
+        LOGGER.info("Service stop called...");
 
         ;
     }
@@ -121,7 +119,7 @@ public final class LogCheckAppMain
      */
     public static void windowsStop(String args[])
     {
-        log.info("Windows service stop called...");
+        LOGGER.info("Windows service stop called...");
 
         commonStop(args);
     }
@@ -152,7 +150,7 @@ public final class LogCheckAppMain
      */
     public static void windowsStart(String args[])
     {
-        log.info("Starting BackupTool via its Windows Service Interface.");
+        LOGGER.info("Starting BackupTool via its Windows Service Interface.");
 
         commonStart(args);
     }
@@ -185,13 +183,13 @@ public final class LogCheckAppMain
         catch (InterruptedException ex)
         {
             String errMsg = "Application 'main' thread was interrupted";
-            log.debug(errMsg, ex);
+            LOGGER.debug(errMsg, ex);
             throw new LogCheckAppException(errMsg, ex);
         }
         catch (ExecutionException ex)
         {
             String errMsg = "Application 'main' thread execution error";
-            log.debug(errMsg, ex);
+            LOGGER.debug(errMsg, ex);
             throw new LogCheckAppException(errMsg, ex);
         }
         finally
@@ -199,7 +197,7 @@ public final class LogCheckAppMain
             // If main leaves for any reason, shutdown all threads
             mainThreadExe.shutdownNow();
 
-            log.debug("processStart() completed");
+            LOGGER.debug("processStart() completed");
         }
 
         return resp;
