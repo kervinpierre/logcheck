@@ -29,7 +29,7 @@ public final class ParseNumberWithSuffix
             return null;
         }
 
-        Pattern lp = Pattern.compile("(\\d+)(.*)");
+        Pattern lp = Pattern.compile("([-]?\\d+)(.*)");
 
         String currLong = StringUtils.upperCase(
                 StringUtils.deleteWhitespace(n));
@@ -58,7 +58,7 @@ public final class ParseNumberWithSuffix
         }
         catch(NumberFormatException ex)
         {
-            LOGGER.debug(String.format("Invalid number '%s'", n));
+            LOGGER.debug(String.format("Invalid number '%s'", n), ex);
             return null;
         }
 
@@ -68,9 +68,11 @@ public final class ParseNumberWithSuffix
             return null;
         }
 
+        lastChar = StringUtils.upperCase(
+                    StringUtils.trim(lastChar));
+
         switch(lastChar)
         {
-
             case "MS":
                 lastChar = "MILLISECONDS";
                 break;
@@ -89,13 +91,6 @@ public final class ParseNumberWithSuffix
 
             case "D":
                 lastChar = "DAYS";
-                break;
-
-            default:
-                LOGGER.warn(String.format(
-                        "Invalid or missing time units '%s'. Defaulting to 'S' for seconds",
-                        lastChar));
-                lastChar = "SECONDS";
                 break;
         }
 

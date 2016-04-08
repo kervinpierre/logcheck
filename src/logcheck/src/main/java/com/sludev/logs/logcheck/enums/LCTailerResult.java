@@ -66,5 +66,5 @@ public enum LCTailerResult
 
     DELAY_COMPLETED;
 
-    private static final Logger log = LogManager.getLogger(LCTailerResult.class);
+    private static final Logger LOGGER = LogManager.getLogger(LCTailerResult.class);
 }
