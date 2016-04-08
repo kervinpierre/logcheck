@@ -883,6 +883,7 @@ public class LogCheckRunTest
      * @throws ESAException
      */
     @Test
+    @Ignore
     public void A006_ACScenario_catchupLogsThenTail()
             throws IOException, LogCheckException, InterruptedException, ExecutionException,
                     NoSuchAlgorithmException, ESAException
@@ -902,6 +903,7 @@ public class LogCheckRunTest
     }
 
     @Test
+    @Ignore
     public void A007_ACScenario_catchupLogsThenTail_twice()
             throws IOException, LogCheckException, InterruptedException, ExecutionException,
             NoSuchAlgorithmException, ESAException
