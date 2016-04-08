@@ -72,6 +72,7 @@ public class LogCheckConfigParser
         Boolean validateTailerStats = null;
         Boolean tailerBackupReadLog = null;
         Boolean tailerBackupReadLogReverse = null;
+        Boolean createMissingDirs = null;
         Boolean currService = null;
         Boolean readOnlyFileMode = null;
         Boolean stopOnEOF = null;
@@ -90,6 +91,7 @@ public class LogCheckConfigParser
         String setName = null;
         String tailerLogBackupDir = null;
         String preferredDir = null;
+        String stdOutFile = null;
         String tailerBackupLogNameRegexStr = null;
         String deDupeDir = null;
         String deDupeMaxLogsPerFile = null;
@@ -826,6 +828,19 @@ public class LogCheckConfigParser
 
         try
         {
+            String tempStr = currXPath.compile("./stdOutFile").evaluate(currEl);
+            if( StringUtils.isNoneBlank(tempStr) )
+            {
+                stdOutFile = tempStr;
+            }
+        }
+        catch (XPathExpressionException ex)
+        {
+            LOGGER.debug("configuration parsing error.", ex);
+        }
+
+        try
+        {
             String tempStr = currXPath.compile("./stopOnEOF").evaluate(currEl);
             if( StringUtils.isNoneBlank(tempStr) )
             {
@@ -889,6 +904,19 @@ public class LogCheckConfigParser
             LOGGER.debug("configuration parsing error.", ex);
         }
 
+        try
+        {
+            String tempStr = currXPath.compile("./createMissingDirs").evaluate(currEl);
+            if( StringUtils.isNoneBlank(tempStr) )
+            {
+                createMissingDirs = Boolean.parseBoolean(tempStr);
+            }
+        }
+        catch (XPathExpressionException ex)
+        {
+            LOGGER.debug("configuration parsing error.", ex);
+        }
+
         res = LogCheckConfig.from(null,
                 currService,
                 emailOnError,
@@ -914,7 +942,7 @@ public class LogCheckConfigParser
                 tailerBackupReadPriorLog,
                 stopOnEOF,
                 readOnlyFileMode,
-                null, // createMissingDirs
+                createMissingDirs,
                 lockFileStr,
                 logFileStr,
                 storeLogPathStr,
@@ -927,6 +955,7 @@ public class LogCheckConfigParser
                 deDupeDir,
                 tailerLogBackupDir,
                 preferredDir,
+                stdOutFile,
                 elasticsearchURLStr,
                 null, // elasticsearchIndexName,
                 null, // elasticsearchIndexPrefix,

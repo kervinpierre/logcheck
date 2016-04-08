@@ -39,6 +39,12 @@ NOTICE:  All information contained herein is, and remains
                     </xs:annotation>
                 </xs:element>
 
+                <xs:element name="createMissingDirs" type="xs:boolean" minOccurs="0" maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>Create missing directories instead of throwing an error.</xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+
                 <xs:element name="ignoreStartPosError" type="xs:boolean" minOccurs="0" maxOccurs="1">
                     <xs:annotation>
                         <xs:documentation>If there is a discrepancy between the State File and the Log
@@ -175,6 +181,12 @@ NOTICE:  All information contained herein is, and remains
                 <xs:element name="preferredDir" type="xs:string" minOccurs="0" maxOccurs="1">
                     <xs:annotation>
                         <xs:documentation>Use this directory for creating File-System items with relative paths.</xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+
+                <xs:element name="stdOutFile" type="xs:string" minOccurs="0" maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>Use this file for Standard Output.</xs:documentation>
                     </xs:annotation>
                 </xs:element>
 

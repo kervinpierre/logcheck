@@ -113,6 +113,7 @@ public final class LogCheckConfig
     private final Path m_deDupeDirPath;
     private final Path m_tailerLogBackupDir;
     private final Path m_preferredDir;
+    private final Path m_stdOutFile;
     private final URL m_elasticsearchURL;
     private final LocalTime m_logCutoffDate;
     private final Duration m_logCutoffDuration;
@@ -127,6 +128,11 @@ public final class LogCheckConfig
     private final LCCompressionType m_tailerBackupLogCompression;
     private final Pattern m_tailerBackupLogNameRegex;
     private final FSSVerbosityEnum m_verbosity;
+
+    public Path getStdOutFile()
+    {
+        return m_stdOutFile;
+    }
 
     public Path getPreferredDir()
     {
@@ -496,6 +502,7 @@ public final class LogCheckConfig
                            final Path deDupeDirPath,
                            final Path tailerLogBackupDir,
                            final Path preferredDir,
+                           final Path stdOutFile,
                            final URL elasticsearchURL,
                            final String elasticsearchIndexName,
                            final String elasticsearchIndexPrefix,
@@ -640,6 +647,19 @@ public final class LogCheckConfig
         else
         {
             this.m_preferredDir = null;
+        }
+
+        if( stdOutFile != null )
+        {
+            this.m_stdOutFile = stdOutFile;
+        }
+        else if( (orig != null) && (orig.getStdOutFile() != null) )
+        {
+            this.m_stdOutFile = orig.getStdOutFile();
+        }
+        else
+        {
+            this.m_stdOutFile = null;
         }
 
         if( createMissingDirs != null )
@@ -1483,6 +1503,7 @@ public final class LogCheckConfig
                                       final Path deDupeDirPath,
                                       final Path tailerLogBackupDir,
                                       final Path preferredDir,
+                                      final Path stdOutFile,
                                       final URL elasticsearchURL,
                                       final String elasticsearchIndexName,
                                       final String elasticsearchIndexPrefix,
@@ -1551,6 +1572,7 @@ public final class LogCheckConfig
                 deDupeDirPath,
                 tailerLogBackupDir,
                 preferredDir,
+                stdOutFile,
                 elasticsearchURL,
                 elasticsearchIndexName,
                 elasticsearchIndexPrefix,
@@ -1627,6 +1649,7 @@ public final class LogCheckConfig
                                        final String deDupeDirPathStr,
                                         final String tailerLogBackupDirStr,
                                         final String preferredDirStr,
+                                        final String stdOutFileStr,
                                        final String elasticsearchURLStr,
                                        final String elasticsearchIndexName,
                                        final String elasticsearchIndexPrefix,
@@ -1669,6 +1692,7 @@ public final class LogCheckConfig
         Path deDupeDirPath = null;
         Path tailerLogBackupDir = null;
         Path preferredDir = null;
+        Path stdOutFile = null;
         URL elasticsearchURL = null;
         LCIndexNameFormat elasticsearchIndexNameFormat = null;
         LocalTime logCutoffDate = null;
@@ -1709,6 +1733,11 @@ public final class LogCheckConfig
         if(StringUtils.isNoneBlank(preferredDirStr))
         {
             preferredDir = Paths.get(preferredDirStr);
+        }
+
+        if(StringUtils.isNoneBlank(stdOutFileStr))
+        {
+            stdOutFile = Paths.get(stdOutFileStr);
         }
 
         if(StringUtils.isNoneBlank(lockFilePathStr))
@@ -2128,6 +2157,7 @@ public final class LogCheckConfig
                 deDupeDirPath,
                 tailerLogBackupDir,
                 preferredDir,
+                stdOutFile,
                 elasticsearchURL,
                 elasticsearchIndexName,
                 elasticsearchIndexPrefix,
