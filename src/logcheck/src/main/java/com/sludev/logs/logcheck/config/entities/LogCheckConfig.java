@@ -526,11 +526,14 @@ public final class LogCheckConfig
                            final Pattern tailerBackupLogNameRegex,
                            final Set<LCDebugFlag> debugFlags) throws LogCheckException
     {
-        if( deDupeIgnoreCount != null )
+        if( (deDupeIgnoreCount != null)
+                && (deDupeIgnoreCount > -1) )
         {
             this.m_deDupeIgnoreCount = deDupeIgnoreCount;
         }
-        else if( (orig != null) && (orig.getDeDupeIgnoreCount() != null) )
+        else if( (orig != null)
+                && (orig.getDeDupeIgnoreCount() != null)
+                && (orig.getDeDupeIgnoreCount() > -1 ))
         {
             this.m_deDupeIgnoreCount = orig.getDeDupeIgnoreCount();
         }
@@ -539,11 +542,14 @@ public final class LogCheckConfig
             this.m_deDupeIgnoreCount = null;
         }
 
-        if( deDupeIgnorePercent != null )
+        if( (deDupeIgnorePercent != null)
+                && (deDupeIgnorePercent > -1) )
         {
             this.m_deDupeIgnorePercent = deDupeIgnorePercent;
         }
-        else if( (orig != null) && (orig.getDeDupeIgnorePercent() != null) )
+        else if( (orig != null)
+                && (orig.getDeDupeIgnorePercent() != null)
+                && (orig.getDeDupeIgnorePercent() > -1))
         {
             this.m_deDupeIgnorePercent = orig.getDeDupeIgnorePercent();
         }
@@ -552,11 +558,14 @@ public final class LogCheckConfig
             this.m_deDupeIgnorePercent = null;
         }
 
-        if( deDupeSkipCount != null )
+        if( (deDupeSkipCount != null)
+                && (deDupeIgnoreCount > -1) )
         {
             this.m_deDupeSkipCount = deDupeSkipCount;
         }
-        else if( (orig != null) && (orig.getDeDupeSkipCount() != null) )
+        else if( (orig != null)
+                && (orig.getDeDupeSkipCount() != null)
+                && (orig.getDeDupeSkipCount() > -1 ) )
         {
             this.m_deDupeSkipCount = orig.getDeDupeSkipCount();
         }
@@ -565,11 +574,14 @@ public final class LogCheckConfig
             this.m_deDupeSkipCount = null;
         }
 
-        if( deDupeSkipPercent != null )
+        if( (deDupeSkipPercent != null)
+                && (deDupeSkipPercent > -1) )
         {
             this.m_deDupeSkipPercent = deDupeSkipPercent;
         }
-        else if( (orig != null) && (orig.getDeDupeSkipPercent() != null) )
+        else if( (orig != null)
+                && (orig.getDeDupeSkipPercent() != null)
+                && (orig.getDeDupeSkipPercent() > -1) )
         {
             this.m_deDupeSkipPercent = orig.getDeDupeSkipPercent();
         }
@@ -825,50 +837,61 @@ public final class LogCheckConfig
             this.m_validateTailerStats = false;
         }
         
-        if( deDupeMaxLogsBeforeWrite != null )
+        if( (deDupeMaxLogsBeforeWrite != null)
+                && (deDupeMaxLogsBeforeWrite > -1) )
         {
             this.m_deDupeMaxLogsBeforeWrite = deDupeMaxLogsBeforeWrite;
         }
-        else if( (orig != null) && (orig.getDeDupeMaxLogsBeforeWrite() != null) )
+        else if( (orig != null)
+                && (orig.getDeDupeMaxLogsBeforeWrite() != null)
+                && (orig.getDeDupeMaxLogsBeforeWrite() > -1 ) )
         {
             this.m_deDupeMaxLogsBeforeWrite = orig.getDeDupeMaxLogsBeforeWrite();
         }
         else
         {
-            this.m_deDupeMaxLogsBeforeWrite = LogCheckConstants.DEFAULT_DEDUPE_LOGS_BEFORE_WRITE;
+            this.m_deDupeMaxLogsBeforeWrite = null;
         }
 
-        if( deDupeMaxLogsPerFile != null )
+        if( (deDupeMaxLogsPerFile != null)
+                && (deDupeMaxLogsPerFile > -1) )
         {
             this.m_deDupeMaxLogsPerFile = deDupeMaxLogsPerFile;
         }
-        else if( (orig != null) && (orig.getDeDupeMaxLogsPerFile() != null) )
+        else if( (orig != null)
+                && (orig.getDeDupeMaxLogsPerFile() != null)
+                && (orig.getDeDupeMaxLogsPerFile() > -1) )
         {
             this.m_deDupeMaxLogsPerFile = orig.getDeDupeMaxLogsPerFile();
         }
         else
         {
-            this.m_deDupeMaxLogsPerFile = LogCheckConstants.MAX_DEDUPE_LOGS_PER_FILE;
+            this.m_deDupeMaxLogsPerFile = null;
         }
 
-        if( deDupeMaxLogFiles != null )
+        if( (deDupeMaxLogFiles != null)
+                && (deDupeMaxLogFiles > -1) )
         {
             this.m_deDupeMaxLogFiles = deDupeMaxLogFiles;
         }
-        else if( (orig != null) && (orig.getDeDupeMaxLogFiles() != null) )
+        else if( (orig != null)
+                && (orig.getDeDupeMaxLogFiles() != null)
+                && (orig.getDeDupeMaxLogFiles() > -1) )
         {
             this.m_deDupeMaxLogFiles = orig.getDeDupeMaxLogFiles();
         }
         else
         {
-            this.m_deDupeMaxLogFiles = LogCheckConstants.DEFAULT_DEDUPE_LOG_FILES_ROTATE;
+            this.m_deDupeMaxLogFiles = null;
         }
 
-        if( idBlockSize != null )
+        if( (idBlockSize != null) && (idBlockSize > -1) )
         {
             this.m_idBlockSize = idBlockSize;
         }
-        else if( (orig != null) && (orig.getIdBlockSize() != null) )
+        else if( (orig != null)
+                && (orig.getIdBlockSize() != null)
+                && (orig.getIdBlockSize() > -1) )
         {
             this.m_idBlockSize = orig.getIdBlockSize();
         }
@@ -1283,11 +1306,13 @@ public final class LogCheckConfig
             this.m_logDeduplicationDuration = null;
         }
 
-        if( stopAfter != null )
+        if( (stopAfter != null) && (stopAfter > -1))
         {
             this.m_stopAfter = stopAfter;
         }
-        else if( (orig != null) && (orig.getStopAfter() != null) )
+        else if( (orig != null)
+                && (orig.getStopAfter() != null)
+                && (orig.getStopAfter() > -1) )
         {
             this.m_stopAfter = orig.getStopAfter();
         }
@@ -1361,11 +1386,13 @@ public final class LogCheckConfig
             this.m_continueState = null;
         }
 
-        if( pollIntervalSeconds != null )
+        if( (pollIntervalSeconds != null) && (pollIntervalSeconds > -1) )
         {
             this.m_pollIntervalSeconds = pollIntervalSeconds;
         }
-        else if( (orig != null) && (orig.getPollIntervalSeconds() != null) )
+        else if( (orig != null)
+                && (orig.getPollIntervalSeconds() != null)
+                && (orig.getPollIntervalSeconds() > -1) )
         {
             this.m_pollIntervalSeconds = orig.getPollIntervalSeconds();
         }
@@ -1374,11 +1401,13 @@ public final class LogCheckConfig
             this.m_pollIntervalSeconds = null;
         }
 
-        if( readLogFileCount != null )
+        if( (readLogFileCount != null) && (readLogFileCount > -1) )
         {
             this.m_readLogFileCount = readLogFileCount;
         }
-        else if( (orig != null) && (orig.getReadLogFileCount() != null) )
+        else if( (orig != null)
+                && (orig.getReadLogFileCount() != null)
+                && (orig.getReadLogFileCount() > -1) )
         {
             this.m_readLogFileCount = orig.getReadLogFileCount();
         }
@@ -1387,11 +1416,13 @@ public final class LogCheckConfig
             this.m_readLogFileCount = null;
         }
 
-        if( readMaxDeDupeEntries != null )
+        if( (readMaxDeDupeEntries != null) && (readMaxDeDupeEntries > -1) )
         {
             this.m_readMaxDeDupeEntries = readMaxDeDupeEntries;
         }
-        else if( (orig != null) && (orig.getReadMaxDeDupeEntries() != null) )
+        else if( (orig != null)
+                && (orig.getReadMaxDeDupeEntries() != null)
+                && (orig.getReadMaxDeDupeEntries() > -1) )
         {
             this.m_readMaxDeDupeEntries = orig.getReadMaxDeDupeEntries();
         }
@@ -2037,7 +2068,7 @@ public final class LogCheckConfig
             }
             catch( LogCheckException ex )
             {
-                String errMsg = String.format("Error parsing ID Block Hash '%s'", deDupeDefaultActionStr);
+                String errMsg = String.format("Error parsing Deduplication Default Action '%s'", deDupeDefaultActionStr);
 
                 LOGGER.debug(errMsg, ex);
                 throw new LogCheckException(errMsg, ex);

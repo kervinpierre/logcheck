@@ -192,7 +192,7 @@ public final class LogCheckConfigWriter
         {
             ; // throw new LogCheckException("Missing <pollInterval />");
         }
-        else
+        else if( currLong > -1 )
         {
             currElem = doc.createElement("pollInterval");
             currElem.appendChild(doc.createTextNode(currLong.toString()));
@@ -261,6 +261,45 @@ public final class LogCheckConfigWriter
         {
             currElem = doc.createElement("stateFilePath");
             currElem.appendChild(doc.createTextNode(currPath.toString()));
+            res.appendChild(currElem);
+        }
+
+        // stateProcessedLogsFilePath
+        currPath = lcc.getStateProcessedLogsFilePath();
+        if( currPath == null )
+        {
+            ; // throw new LogCheckException("Missing <stateProcessedLogFilePath />");
+        }
+        else
+        {
+            currElem = doc.createElement("stateProcessedLogFilePath");
+            currElem.appendChild(doc.createTextNode(currPath.toString()));
+            res.appendChild(currElem);
+        }
+
+        // preferredDir
+        currPath = lcc.getPreferredDir();
+        if( currPath == null )
+        {
+            ; // throw new LogCheckException("Missing <preferredDir />");
+        }
+        else
+        {
+            currElem = doc.createElement("preferredDir");
+            currElem.appendChild(doc.createTextNode(currPath.toString()));
+            res.appendChild(currElem);
+        }
+
+        // deDuplicationDefaultAction
+        LCDeDupeAction currDDAction = lcc.getDeDupeDefaultAction();
+        if( currDDAction == null )
+        {
+            ; // throw new LogCheckException("Missing <deDuplicationDefaultAction />");
+        }
+        else if( currDDAction != LCDeDupeAction.NONE )
+        {
+            currElem = doc.createElement("deDuplicationDefaultAction");
+            currElem.appendChild(doc.createTextNode(currDDAction.toString().toLowerCase()));
             res.appendChild(currElem);
         }
 
@@ -361,7 +400,7 @@ public final class LogCheckConfigWriter
         {
             ; // throw new LogCheckException("Missing <stopAfter />");
         }
-        else
+        else if( currLong > -1 )
         {
             currElem = doc.createElement("stopAfter");
             currElem.appendChild(doc.createTextNode(currLong.toString()));
@@ -400,7 +439,7 @@ public final class LogCheckConfigWriter
         {
             ; // throw new LogCheckException("Missing <deDuplicationMaxLogsBeforeWrite />");
         }
-        else
+        else if( currInt > -1 )
         {
             currElem = doc.createElement("deDuplicationMaxLogsBeforeWrite");
             currElem.appendChild(doc.createTextNode(currInt.toString()));
@@ -413,7 +452,7 @@ public final class LogCheckConfigWriter
         {
             ; // throw new LogCheckException("Missing <deDuplicationMaxLogsPerFile />");
         }
-        else
+        else if( currInt > -1 )
         {
             currElem = doc.createElement("deDuplicationMaxLogsPerFile");
             currElem.appendChild(doc.createTextNode(currInt.toString()));
@@ -426,7 +465,7 @@ public final class LogCheckConfigWriter
         {
             ; // throw new LogCheckException("Missing <deDuplicationMaxLogFiles />");
         }
-        else
+        else if( currInt > -1 )
         {
             currElem = doc.createElement("deDuplicationMaxLogFiles");
             currElem.appendChild(doc.createTextNode(currInt.toString()));
@@ -439,7 +478,7 @@ public final class LogCheckConfigWriter
         {
             ; // throw new LogCheckException("Missing <readMaxDeDupeEntries />");
         }
-        else
+        else if( currInt > -1 )
         {
             currElem = doc.createElement("readMaxDeDupeEntries");
             currElem.appendChild(doc.createTextNode(currInt.toString()));
@@ -452,7 +491,7 @@ public final class LogCheckConfigWriter
         {
             ; // throw new LogCheckException("Missing <deDuplicationIgnoreUntilCount />");
         }
-        else
+        else if( currLong > -1 )
         {
             currElem = doc.createElement("deDuplicationIgnoreUntilCount");
             currElem.appendChild(doc.createTextNode(currLong.toString()));
@@ -465,7 +504,7 @@ public final class LogCheckConfigWriter
         {
             ; // throw new LogCheckException("Missing <deDuplicationSkipUntilCount />");
         }
-        else
+        else if( currLong > -1 )
         {
             currElem = doc.createElement("deDuplicationSkipUntilCount");
             currElem.appendChild(doc.createTextNode(currLong.toString()));
@@ -478,7 +517,7 @@ public final class LogCheckConfigWriter
         {
             ; // throw new LogCheckException("Missing <deDuplicationIgnoreUntilPercent />");
         }
-        else
+        else if( currInt > -1 )
         {
             currElem = doc.createElement("deDuplicationIgnoreUntilPercent");
             currElem.appendChild(doc.createTextNode(currInt.toString()));
@@ -491,7 +530,7 @@ public final class LogCheckConfigWriter
         {
             ; // throw new LogCheckException("Missing <deDuplicationSkipUntilPercent />");
         }
-        else
+        else if( currInt > -1 )
         {
             currElem = doc.createElement("deDuplicationSkipUntilPercent");
             currElem.appendChild(doc.createTextNode(currInt.toString()));
@@ -624,32 +663,20 @@ public final class LogCheckConfigWriter
         {
             ; // throw new LogCheckException("Missing <verbosity />");
         }
-        else
+        else if( currVerbosity != FSSVerbosityEnum.NONE )
         {
             currElem = doc.createElement("verbosity");
             currElem.appendChild(doc.createTextNode(currVerbosity.toString().toLowerCase()));
             res.appendChild(currElem);
         }
 
-        // deDuplicationDefaultAction
-        LCDeDupeAction currDedupeAction = lcc.getDeDupeDefaultAction();
-        if( currDedupeAction == null )
-        {
-            ; // throw new LogCheckException("Missing <deDuplicationDefaultAction />");
-        }
-        else
-        {
-            currElem = doc.createElement("deDuplicationDefaultAction");
-            currElem.appendChild(doc.createTextNode(currDedupeAction.toString().toLowerCase()));
-            res.appendChild(currElem);
-        }
-
-        Element stores = doc.createElement("logEntryStores");
+        Element stores = null;
 
         Set<LCLogEntryStoreType> lcleStoreSet = new HashSet<>();
         for( LCLogEntryStoreType currStore : lcc.getLogEntryStores() )
         {
-            if( lcleStoreSet.contains(currStore) )
+            if( lcleStoreSet.contains(currStore)
+                    || (currStore == LCLogEntryStoreType.NONE) )
             {
                 continue;
             }
@@ -659,17 +686,25 @@ public final class LogCheckConfigWriter
             currElem = doc.createElement("store");
             currElem.appendChild(doc.createTextNode(
                     StringUtils.lowerCase(currStore.name())));
+
+            if( stores == null )
+            {
+                stores = doc.createElement("logEntryStores");
+            }
             stores.appendChild(currElem);
         }
 
-        res.appendChild(stores);
+        if( stores != null )
+        {
+            res.appendChild(stores);
+        }
 
-        Element builders = doc.createElement("logEntryBuilders");
+        Element builders = null;
 
         Set<LCLogEntryBuilderType> lcleBuilderSet = new HashSet<>();
         for( LCLogEntryBuilderType currBuilder : lcc.getLogEntryBuilders() )
         {
-            if( lcleBuilderSet.contains(currBuilder) )
+            if( lcleBuilderSet.contains(currBuilder) || (currBuilder == LCLogEntryBuilderType.NONE) )
             {
                 continue;
             }
@@ -679,10 +714,18 @@ public final class LogCheckConfigWriter
             currElem = doc.createElement("builder");
             currElem.appendChild(doc.createTextNode(
                     StringUtils.lowerCase(currBuilder.name().replace('_', ' '))));
+
+            if( builders == null )
+            {
+                builders = doc.createElement("logEntryBuilders");
+            }
             builders.appendChild(currElem);
         }
 
-        res.appendChild(builders);
+        if( builders != null )
+        {
+            res.appendChild(builders);
+        }
 
         if( (lcc.getTailerBackupLogNameComps() != null)
                 && (lcc.getTailerBackupLogNameComps().size() > 0) )
