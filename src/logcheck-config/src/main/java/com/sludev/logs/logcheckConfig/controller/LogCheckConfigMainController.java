@@ -910,9 +910,19 @@ public final class LogCheckConfigMainController implements Initializable
             generalTabLockFileTextField.setText(lcc.getLockFilePath().toString());
         }
 
+        if( lcc.getStdOutFile() != null )
+        {
+            generalTabStdOutFileTextField.setText(lcc.getStdOutFile().toString());
+        }
+
         if( lcc.isService() != null )
         {
             generalTabServiceCheck.setSelected(lcc.isService());
+        }
+
+        if( lcc.willCreateMissingDirs() != null )
+        {
+            generalTabCreateMissingDirsCheck.setSelected(lcc.willCreateMissingDirs());
         }
 
         if( StringUtils.isNoneBlank(lcc.getSetName()) )
