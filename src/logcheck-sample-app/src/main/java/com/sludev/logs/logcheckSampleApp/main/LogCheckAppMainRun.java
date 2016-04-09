@@ -22,6 +22,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Stream;
 
 /**
  * 
@@ -75,10 +76,13 @@ public final class LogCheckAppMainRun implements Callable<LCSAResult>
         {
             if( Files.exists(config.getOutputPath()) )
             {
-                long lineCount = Files.lines(config.getOutputPath()).count();
-                if( lineCount > 0 && currRotateAfterCount > lineCount )
+                try( Stream<String> strm = Files.lines(config.getOutputPath()) )
                 {
-                    currRotateAfterCount = currRotateAfterCount - lineCount;
+                    long lineCount = strm.count();
+                    if( lineCount > 0 && currRotateAfterCount > lineCount )
+                    {
+                        currRotateAfterCount = currRotateAfterCount - lineCount;
+                    }
                 }
             }
         }
@@ -100,6 +104,8 @@ public final class LogCheckAppMainRun implements Callable<LCSAResult>
             }
         }
         while(res == LCSAResult.COMPLETED_ROTATE_PENDING);
+
+        wf.closeFile();
 
         return res;
     }
