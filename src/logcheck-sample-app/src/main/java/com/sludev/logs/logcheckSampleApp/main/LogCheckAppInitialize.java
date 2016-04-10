@@ -184,7 +184,7 @@ public final class LogCheckAppInitialize
                         break;
 
                     case "confirm-deletes":
-                        currDeleteLogs = true;
+                        currConfirmDeletes = true;
                         break;
 
                     case "output-to-screen":
