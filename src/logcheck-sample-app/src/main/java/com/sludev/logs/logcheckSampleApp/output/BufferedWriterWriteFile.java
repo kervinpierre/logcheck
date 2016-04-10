@@ -72,7 +72,7 @@ public final class BufferedWriterWriteFile implements IWriteFile
     }
 
     @Override
-    public void closeFile() throws IOException
+    public void close() throws IOException
     {
         if( bufferedWriter == null )
         {

@@ -151,7 +151,7 @@ public class LogCheckAppMainRunTest
     @Test
     public void A002_testRotateAndTimeoutRepeat() throws IOException, InterruptedException, ExecutionException, LogCheckAppException
     {
-        Path testDir = Paths.get("/tmp/A002_testRotateAndTimeoutRepeat");
+        Path testDir = topTestDir.resolve("A002_testRotateAndTimeoutRepeat");
 
         if( Files.exists(testDir) )
         {
@@ -165,17 +165,28 @@ public class LogCheckAppMainRunTest
         testRotateAndTimeout_Internal(logFile, 0);
         testRotateAndTimeout_Internal(logFile, 1024);
 
-        Path[] files = Files.list(testDir).toArray(Path[]::new);
+        Path[] files = null;
+        try(Stream<Path> strm = Files.list(testDir))
+        {
+            files = strm.toArray(Path[]::new);
+        }
 
         Assert.assertTrue(files.length==52);
-        Assert.assertTrue(Files.lines(logFile).count()==8);
+
+        try(Stream<String> strm = Files.lines(logFile))
+        {
+            Assert.assertTrue(strm.count() == 8);
+        }
 
         for( Path p : files )
         {
             if( p.equals(logFile) )
                 continue;
 
-            Assert.assertTrue(Files.lines(p).count() == 40);
+            try(Stream<String> strm = Files.lines(p))
+            {
+                Assert.assertTrue(strm.count() == 40);
+            }
         }
     }
 
@@ -185,7 +196,7 @@ public class LogCheckAppMainRunTest
         String[] args;
         List<String> argsList = new ArrayList<>(20);
 
-        argsList.add(String.format("--output-file %s", logFile));
+        argsList.add(String.format("--output-file %s", logFile.toString().replace("\\", "\\\\")));
         argsList.add("--stop-after-count 1K");
 
         // The following should cause a log rotate per second

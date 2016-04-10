@@ -87,25 +87,24 @@ public final class LogCheckAppMainRun implements Callable<LCSAResult>
             }
         }
 
-        IWriteFile wf = newWriteFile(config.getOutputPath(),
-                                        currRotateAfterCount);
-
         do
         {
-            res = logFile(wf);
-            if(res == LCSAResult.COMPLETED_ROTATE_PENDING)
+            try(IWriteFile wf = newWriteFile(config.getOutputPath(),
+                    currRotateAfterCount))
             {
-                wf.closeFile();
+                res = logFile(wf);
+            }
+
+            if( res == LCSAResult.COMPLETED_ROTATE_PENDING )
+            {
                 Path bk = IWriteFile.rotateFile(config.getOutputPath(),
                         config.getMaxBackups(),
                         config.getConfirmDeletes());
-
-                wf = newWriteFile(config.getOutputPath(), config.getRotateAfterCount());
             }
+
+            currRotateAfterCount = config.getRotateAfterCount();
         }
         while(res == LCSAResult.COMPLETED_ROTATE_PENDING);
-
-        wf.closeFile();
 
         return res;
     }

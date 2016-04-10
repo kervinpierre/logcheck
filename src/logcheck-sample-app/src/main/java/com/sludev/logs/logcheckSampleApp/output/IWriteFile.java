@@ -19,7 +19,7 @@ import java.util.regex.Pattern;
  *
  * Created by kervin on 2015-10-14.
  */
-public interface IWriteFile
+public interface IWriteFile extends AutoCloseable
 {
     public static final Logger log = LogManager.getLogger(IWriteFile.class);
 
@@ -35,7 +35,6 @@ public interface IWriteFile
     }
 
     void openFile() throws IOException, LogCheckAppException;
-    void closeFile() throws IOException;
 
     /**
      * Rotate a file and return the path of the new backup file.
