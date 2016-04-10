@@ -315,8 +315,6 @@ public final class LogFileBlock
                                     final LCHashType hashType,
                                     final LCFileBlockType type) throws LogCheckException
     {
-        FileChannel fc;
-
         try
         {
             if( Files.size(file)<1)
@@ -346,41 +344,38 @@ public final class LogFileBlock
                     String.format("Invalid size %d for file '%s'", size, file));
         }
 
-        try
+        ByteBuffer buffer = ByteBuffer.allocate(size);
+        int bytesRead;
+
+        try(FileChannel fc = FileChannel.open(file, StandardOpenOption.READ))
         {
-            fc = FileChannel.open(file, StandardOpenOption.READ);
+            try
+            {
+                fc.position(pos);
+            }
+            catch(IOException ex)
+            {
+                String errMsg = String.format("Error setting file position '%s'", file);
+
+                LOGGER.debug(errMsg, ex);
+                throw new LogCheckException(errMsg, ex);
+            }
+
+            try
+            {
+                bytesRead = fc.read(buffer);
+            }
+            catch(IOException ex)
+            {
+                String errMsg = String.format("Error reading file '%s'", file);
+
+                LOGGER.debug(errMsg, ex);
+                throw new LogCheckException(errMsg, ex);
+            }
         }
         catch(IOException ex)
         {
             String errMsg = String.format("Error opening file '%s'", file);
-
-            LOGGER.debug(errMsg, ex);
-            throw new LogCheckException(errMsg, ex);
-        }
-
-        try
-        {
-            fc.position(pos);
-        }
-        catch(IOException ex)
-        {
-            String errMsg = String.format("Error setting file position '%s'", file);
-
-            LOGGER.debug(errMsg, ex);
-            throw new LogCheckException(errMsg, ex);
-        }
-
-        ByteBuffer buffer = ByteBuffer.allocate(size);
-
-        int bytesRead;
-
-        try
-        {
-            bytesRead = fc.read(buffer);
-        }
-        catch(IOException ex)
-        {
-            String errMsg = String.format("Error reading file '%s'", file);
 
             LOGGER.debug(errMsg, ex);
             throw new LogCheckException(errMsg, ex);

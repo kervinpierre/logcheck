@@ -82,6 +82,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Created by kervin on 2015-11-28.
@@ -94,11 +95,13 @@ public class LogCheckRunTest
 
     private Properties m_testProperties;
 
+    private Path topTestDir = null;
     @Rule
     public TestWatcher m_testWatcher = new LogCheckTestWatcher();
 
     @Before
     public void setUp()
+            throws IOException
     {
 
         /**
@@ -106,6 +109,9 @@ public class LogCheckRunTest
          * in our source code.
          */
         m_testProperties = LogCheckProperties.GetProperties();
+
+        topTestDir = Files.createTempDirectory("logcheck-unit-tests");
+        LOGGER.debug(String.format("Created Top Test Directory '%s'", topTestDir));
     }
 
     @AfterClass
@@ -116,6 +122,19 @@ public class LogCheckRunTest
     @After
     public void tearDown()
     {
+        if( topTestDir != null
+                && Files.exists(topTestDir))
+        {
+            try
+            {
+                FileUtils.deleteDirectory(topTestDir.toFile());
+            }
+            catch( Exception ex )
+            {
+                // FIXME : Unfortunately Windows holds the FS descriptors for a very long time without letting us delete
+                ;
+            }
+        }
     }
 
     /**
@@ -132,7 +151,7 @@ public class LogCheckRunTest
     public void A001_constantLogsAfterPauseAndRun20s()
                         throws IOException, LogCheckException, InterruptedException, ExecutionException
     {
-        Path testDir = Paths.get("/tmp/A001_constantLogsAfterPauseAndRun20s");
+        Path testDir = topTestDir.resolve("A001_constantLogsAfterPauseAndRun20s");
 
         if( Files.exists(testDir) )
         {
@@ -160,14 +179,18 @@ public class LogCheckRunTest
         // Use the default poll interval
         argsList.add("--read-reopen-log-file");
 
-        argsList.add(String.format("--log-file %s", logFile));
+        argsList.add(String.format("--log-file %s",
+                logFile.toString().replace("\\", "\\\\")));
         argsList.add("--log-entry-builder-type=singleline ");
         argsList.add("--log-entry-store-type=console,simplefile");
-        argsList.add(String.format("--store-log-file %s", storeLogFile ));
+        argsList.add(String.format("--store-log-file %s",
+                storeLogFile.toString().replace("\\", "\\\\")));
         argsList.add("--save-state");
-        argsList.add(String.format("--state-file %s", stateFile));
+        argsList.add(String.format("--state-file %s",
+                stateFile.toString().replace("\\", "\\\\")));
         argsList.add("--set-name=\"test app\"");
-        argsList.add(String.format("--dedupe-dir-path %s", dedupeDir));
+        argsList.add(String.format("--dedupe-dir-path %s",
+                dedupeDir.toString().replace("\\", "\\\\")));
         argsList.add("--dedupe-max-before-write=5");
         argsList.add("--dedupe-log-per-file 10");
         argsList.add("--dedupe-max-log-files=5");
@@ -226,8 +249,11 @@ public class LogCheckRunTest
         Assert.assertNotNull(lcResult);
         Assert.assertTrue(lcResult.getStatus() == LCResultStatus.SUCCESS);
 
-        long storeFileCount = Files.lines(storeLogFile).count();
-        Assert.assertTrue(storeFileCount==10);
+        try(Stream<String> strm = Files.lines(logFile))
+        {
+            long storeFileCount = strm.count();
+            Assert.assertTrue(storeFileCount==10);
+        }
     }
 
     /**
@@ -248,7 +274,7 @@ public class LogCheckRunTest
        // Path testDir = Paths.get("/tmp/",
        //         Thread.currentThread().getStackTrace()[1].getMethodName());
 
-        Path testDir = Paths.get("/tmp/A002_separateThreadsRun60s");
+        Path testDir = topTestDir.resolve("A002_separateThreadsRun60s");
         if( Files.exists(testDir) )
         {
             FileUtils.deleteDirectory(testDir.toFile());
@@ -265,7 +291,8 @@ public class LogCheckRunTest
 
         Path logFile = testDir.resolve("logcheck-sample-app-output.txt");
 
-        argsList.add(String.format("--output-file %s", logFile));
+        argsList.add(String.format("--output-file %s",
+                logFile.toString().replace("\\", "\\\\")));
         argsList.add("--delete-logs");
         argsList.add("--output-frequency 25ms");
         argsList.add("--stop-after-count 1K");
@@ -290,14 +317,18 @@ public class LogCheckRunTest
         Files.createDirectory(dedupeDir);
 
         argsList.add("--stop-after=30S");
-        argsList.add(String.format("--log-file %s", logFile));
+        argsList.add(String.format("--log-file %s",
+                logFile.toString().replace("\\", "\\\\")));
         argsList.add("--log-entry-builder-type=singleline ");
         argsList.add("--log-entry-store-type=console,simplefile");
-        argsList.add(String.format("--store-log-file %s", storeLogFile ));
+        argsList.add(String.format("--store-log-file %s",
+                storeLogFile.toString().replace("\\", "\\\\") ));
         argsList.add("--save-state");
-        argsList.add(String.format("--state-file %s", stateFile));
+        argsList.add(String.format("--state-file %s",
+                stateFile.toString().replace("\\", "\\\\")));
         argsList.add("--set-name=\"test app\"");
-        argsList.add(String.format("--dedupe-dir-path %s", dedupeDir));
+        argsList.add(String.format("--dedupe-dir-path %s",
+                dedupeDir.toString().replace("\\", "\\\\")));
         argsList.add("--dedupe-max-before-write=5");
         argsList.add("--dedupe-log-per-file 10");
         argsList.add("--dedupe-max-log-files=5");
@@ -340,8 +371,17 @@ public class LogCheckRunTest
         Assert.assertNotNull(lcResult);
         Assert.assertTrue(lcResult.getStatus() == LCResultStatus.SUCCESS);
 
-        long logFileCount = Files.lines(logFile).count();
-        long storeFileCount = Files.lines(storeLogFile).count();
+        long storeFileCount;
+        try(Stream<String> strm = Files.lines(storeLogFile))
+        {
+            storeFileCount = strm.count();
+        }
+
+        long logFileCount;
+        try(Stream<String> strm = Files.lines(logFile))
+        {
+            logFileCount = strm.count();
+        }
 
         LOGGER.debug(String.format("\nLog File Count : %d\nStore File Count: %d\n",
                 logFileCount, storeFileCount));
@@ -405,7 +445,7 @@ public class LogCheckRunTest
     public void A003_logRotateThenTail() throws IOException, LogCheckException,
             InterruptedException, ExecutionException, NoSuchAlgorithmException
     {
-        Path testDir = Paths.get("/tmp/A003_logRotateThenTail");
+        Path testDir = topTestDir.resolve("A003_logRotateThenTail");
 
         if( Files.exists(testDir) )
         {
@@ -468,9 +508,11 @@ public class LogCheckRunTest
 
         Path logFile = testDir.resolve("logcheck-sample-app-output.txt");
 
-        argsList.add(String.format("--output-file %s", logFile));
+        argsList.add(String.format("--output-file %s",
+                logFile.toString().replace("\\", "\\\\")));
         // argsList.add("--delete-logs");
         argsList.add("--stop-after-count 1K");
+        argsList.add("--confirm-deletes");
 
         argsList.add(String.format("--start-line-number %d", lineCountStart));
 
@@ -509,15 +551,20 @@ public class LogCheckRunTest
 
         argsList.add("--stop-after=1m");
         argsList.add("--continue");
-        argsList.add(String.format("--log-file %s", logFile));
+        argsList.add(String.format("--log-file %s",
+                logFile.toString().replace("\\", "\\\\")));
         argsList.add("--log-entry-builder-type=singleline ");
         argsList.add("--log-entry-store-type=console,simplefile");
-        argsList.add(String.format("--store-log-file %s", storeLogFile ));
+        argsList.add(String.format("--store-log-file %s",
+                storeLogFile.toString().replace("\\", "\\\\") ));
         argsList.add("--save-state");
-        argsList.add(String.format("--state-file %s", stateFile));
-        argsList.add(String.format("--processed-logs-state-file %s", stateFile2));
+        argsList.add(String.format("--state-file %s",
+                stateFile.toString().replace("\\", "\\\\")));
+        argsList.add(String.format("--processed-logs-state-file %s",
+                stateFile2.toString().replace("\\", "\\\\")));
         argsList.add("--set-name=\"test app\"");
-        argsList.add(String.format("--dedupe-dir-path %s", dedupeDir));
+        argsList.add(String.format("--dedupe-dir-path %s",
+                dedupeDir.toString().replace("\\", "\\\\")));
         argsList.add("--dedupe-max-before-write=5");
         argsList.add("--dedupe-log-per-file 10");
         argsList.add("--dedupe-max-log-files=5");
@@ -532,8 +579,10 @@ public class LogCheckRunTest
         argsList.add("--tailer-backup-log-file-name-component=INTEGER_INC");
         argsList.add("--debug-flags=LOG_SOURCE_LC_APP");
         argsList.add("--verbosity=all");
-        argsList.add(String.format("--tailer-backup-log-dir %s", testDir));
-        argsList.add(String.format("--stdout-file %s", stdOutFile));
+        argsList.add(String.format("--tailer-backup-log-dir %s",
+                testDir.toString().replace("\\", "\\\\")));
+        argsList.add(String.format("--stdout-file %s",
+                stdOutFile.toString().replace("\\", "\\\\")));
 
         if( ignoreStartPosErr )
         {
@@ -582,14 +631,23 @@ public class LogCheckRunTest
         Assert.assertNotNull(lcResult);
         Assert.assertTrue(lcResult.getStatus() == LCResultStatus.SUCCESS);
 
-        long curLogFileCount = Files.lines(logFile).count();
-        long currStoreFileCount = Files.lines(storeLogFile).count();
+        long currStoreFileCount;
+        try(Stream<String> strm = Files.lines(storeLogFile))
+        {
+            currStoreFileCount = strm.count();
+        }
+
+        long currLogFileCount;
+        try(Stream<String> strm = Files.lines(logFile))
+        {
+            currLogFileCount = strm.count();
+        }
 
         LOGGER.debug(String.format("\nLog File Count : %d\nStore File Count: %d\n",
-                curLogFileCount, currStoreFileCount));
+                currLogFileCount, currStoreFileCount));
 
         // Total lines is 1024, but across 26 files, last containing 24 lines
-        Assert.assertTrue(curLogFileCount == logFileCount);
+        Assert.assertTrue(currLogFileCount == logFileCount);
 
         Assert.assertTrue(currStoreFileCount == storeFileCount);
 
@@ -849,7 +907,7 @@ public class LogCheckRunTest
     public void A005_logRotateThenTailTwice() throws IOException, LogCheckException,
             InterruptedException, ExecutionException, NoSuchAlgorithmException
     {
-        Path testDir = Paths.get("/tmp/A005_logRotateThenTailTwice");
+        Path testDir = topTestDir.resolve("A005_logRotateThenTailTwice");
 
         if( Files.exists(testDir) )
         {

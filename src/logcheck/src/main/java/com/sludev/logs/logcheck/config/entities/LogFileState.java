@@ -276,39 +276,40 @@ public final class LogFileState
                     long lineCount = 0;
                     long charCount = 0;
 
-                    FileChannel reader = FileChannel.open(state.getFile(),
-                            StandardOpenOption.READ);
-                    while( reader.read(buffer)!= -1 )
+                    try(FileChannel reader = FileChannel.open(state.getFile(),
+                            StandardOpenOption.READ))
                     {
-                        buffer.flip();
-
-                        for( int i = 0; i < buffer.limit(); i++ )
+                        while( reader.read(buffer) != -1 )
                         {
-                            final byte ch = buffer.get();
-                            if( ch == '\n' )
+                            buffer.flip();
+
+                            for( int i = 0; i < buffer.limit(); i++ )
                             {
-                                if( (lineCount == stateStartLine)
-                                        && (charCount < stateStartChar) )
+                                final byte ch = buffer.get();
+                                if( ch == '\n' )
                                 {
-                                    throw new LogCheckException(
-                                            String.format("Asked to start at Line %d and Char %d,"
-                                                            + " but line only has %d characters",
-                                                    stateStartLine, stateStartChar, charCount));
+                                    if( (lineCount == stateStartLine)
+                                            && (charCount < stateStartChar) )
+                                    {
+                                        throw new LogCheckException(
+                                                String.format("Asked to start at Line %d and Char %d,"
+                                                                + " but line only has %d characters",
+                                                        stateStartLine, stateStartChar, charCount));
+                                    }
+
+                                    lineCount++;
+                                }else
+                                {
+                                    if( lineCount == stateStartLine )
+                                    {
+                                        charCount++;
+                                    }
                                 }
 
-                                lineCount++;
-                            }
-                            else
-                            {
-                                if( lineCount == stateStartLine )
+                                if( (lineCount == stateStartLine) && (charCount == stateStartChar) )
                                 {
-                                    charCount++;
+                                    res = reader.position();
                                 }
-                            }
-
-                            if( (lineCount == stateStartLine) && (charCount == stateStartChar) )
-                            {
-                                res = reader.position();
                             }
                         }
                     }
