@@ -29,6 +29,7 @@ import java.nio.file.Path;
 import java.util.Deque;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 /**
  * Created by kervin on 2015-12-06.
@@ -56,22 +57,24 @@ public final class LogCheckTestFileUtils
     {
         int lineI = 1;
 
-        String[] lines = Files.lines(file).toArray(String[]::new);
-        for( String line : lines )
+        try(Stream<String> strm = Files.lines(file))
         {
-            int lineNo = 0;
-
-            Matcher pm = linePattern.matcher(line);
-            if( pm.matches() )
+            String[] lines = strm.toArray(String[]::new);
+            for( String line : lines )
             {
-                lineNo = Integer.parseInt(pm.group(1));
-            }
-            else
-            {
-                Assert.fail("Log Line did not match regex check '%s'");
-            }
+                int lineNo = 0;
 
-            Assert.assertTrue(lineNo == lineI++ );
+                Matcher pm = linePattern.matcher(line);
+                if( pm.matches() )
+                {
+                    lineNo = Integer.parseInt(pm.group(1));
+                }else
+                {
+                    Assert.fail("Log Line did not match regex check '%s'");
+                }
+
+                Assert.assertTrue(lineNo == lineI++);
+            }
         }
     }
 }
