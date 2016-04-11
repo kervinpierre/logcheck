@@ -60,6 +60,7 @@ import org.junit.rules.TestWatcher;
 import org.junit.runners.MethodSorters;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.ByteBuffer;
@@ -96,6 +97,8 @@ public class LogCheckRunTest
     private Properties m_testProperties;
 
     private Path topTestDir = null;
+    private Path stdOutFile = null;
+
     @Rule
     public TestWatcher m_testWatcher = new LogCheckTestWatcher();
 
@@ -103,6 +106,10 @@ public class LogCheckRunTest
     public void setUp()
             throws IOException
     {
+        if( topTestDir != null )
+        {
+            return;
+        }
 
         /**
          * Get the current test properties from a file so we don't hard-code
@@ -112,6 +119,30 @@ public class LogCheckRunTest
 
         topTestDir = Files.createTempDirectory("logcheck-unit-tests");
         LOGGER.debug(String.format("Created Top Test Directory '%s'", topTestDir));
+
+        try( Stream<Path> paths = Files.list(topTestDir.getParent()) )
+        {
+            List<Path> dirs = paths.filter(p -> p.getFileName().startsWith("logcheck-unit-tests")
+                    && p.equals(topTestDir) == false)
+                    .collect(Collectors.toList());
+
+            for( Path p : dirs )
+            {
+                try
+                {
+                    FileUtils.deleteDirectory(p.toFile());
+                }
+                catch( Exception ex )
+                {
+                    ;
+                }
+            }
+        }
+
+        stdOutFile = topTestDir.resolve("stdOut.txt");
+        Files.write(stdOutFile, new byte[0],
+                StandardOpenOption.TRUNCATE_EXISTING,
+                StandardOpenOption.CREATE );
     }
 
     @AfterClass
@@ -122,19 +153,6 @@ public class LogCheckRunTest
     @After
     public void tearDown()
     {
-        if( topTestDir != null
-                && Files.exists(topTestDir))
-        {
-            try
-            {
-                FileUtils.deleteDirectory(topTestDir.toFile());
-            }
-            catch( Exception ex )
-            {
-                // FIXME : Unfortunately Windows holds the FS descriptors for a very long time without letting us delete
-                ;
-            }
-        }
     }
 
     /**
@@ -713,7 +731,7 @@ public class LogCheckRunTest
     /**
      * Similar to the A003 test.  Except the log rotation is now done in parallel.
      *
-     * FIXME : Ignore until MVP2 completed.
+     * FIXME : Ignore until MVP3 completed.
      *
      */
     @Test
@@ -756,7 +774,7 @@ public class LogCheckRunTest
         argsList.add("--rotate-after-count 40");
 
         args = FSSArgFile.getArgArray(argsList);
-        LogCheckAppConfig appConfig = LogCheckAppInitialize.initialize(args);;
+        LogCheckAppConfig appConfig = LogCheckAppInitialize.initialize(args);
 
         LogCheckAppMainRun currAppRun = new LogCheckAppMainRun(appConfig);
 
@@ -948,7 +966,7 @@ public class LogCheckRunTest
     {
         LOGGER.debug("A006_ACScenario_catchupLogsThenTail");
 
-        Path testDir = Paths.get("tmp/A006_ACScenario_catchupLogsThenTail")
+        Path testDir = topTestDir.resolve("A006_ACScenario_catchupLogsThenTail")
                 .toAbsolutePath();
 
         if( Files.exists(testDir) )
@@ -956,6 +974,10 @@ public class LogCheckRunTest
             FileUtils.deleteDirectory(testDir.toFile());
         }
         Files.createDirectory(testDir);
+
+        // Copy the data we need for testing
+        FileUtils.copyDirectory(new File("test-data"),
+                                    testDir.resolve("test-data").toFile());
 
         internal_ACScenario_catchupLogsThenTail(testDir, "25m", true);
     }
@@ -968,7 +990,7 @@ public class LogCheckRunTest
     {
         LOGGER.debug("A007_ACScenario_catchupLogsThenTail_twice started");
 
-        Path testDir = Paths.get("tmp/A007_ACScenario_catchupLogsThenTail_twice")
+        Path testDir = topTestDir.resolve("A007_ACScenario_catchupLogsThenTail_twice")
                 .toAbsolutePath();
 
         if( Files.exists(testDir) )
@@ -976,6 +998,10 @@ public class LogCheckRunTest
             FileUtils.deleteDirectory(testDir.toFile());
         }
         Files.createDirectory(testDir);
+
+        // Copy the data we need for testing
+        FileUtils.copyDirectory(new File("test-data"),
+                testDir.resolve("test-data").toFile());
 
         internal_ACScenario_catchupLogsThenTail(testDir, "25m", true);
 
@@ -995,19 +1021,17 @@ public class LogCheckRunTest
 
         LOGGER.debug("Starting internal_ACScenario_catchupLogsThenTail");
 
-        Path dataDir = testDir.resolve("../../test-data/web01-test-20160311-01").normalize();
-
-        Path stdOutFile = testDir.resolve("stdOut.txt");
-        Files.write(stdOutFile, new byte[0],
-                StandardOpenOption.TRUNCATE_EXISTING,
-                StandardOpenOption.CREATE );
+        Path dataDir = testDir.resolve("test-data/web01-test-20160311-01").normalize();
 
         argsList.add(String.format("--config-file %s",
-                dataDir.resolve("conf/logcheck-service-01.config.xml")));
+                dataDir.resolve("conf/logcheck-service-01.config.xml")
+                        .normalize().toString().replace("\\", "\\\\")));
         argsList.add("--service");
-        argsList.add(String.format("--stdout-file=%s", stdOutFile));
+        argsList.add(String.format("--stdout-file=%s",
+                stdOutFile.toString().replace("\\", "\\\\")));
         argsList.add(String.format("--stop-after=%s", stopAfter));
-        argsList.add(String.format("--preferred-dir %s", testDir));
+        argsList.add(String.format("--preferred-dir %s",
+                testDir.toString().replace("\\", "\\\\")));
         argsList.add("--create-missing-dirs");
 
         Path outFile = testDir.resolve("elasticsearch-out.txt");
@@ -1019,7 +1043,7 @@ public class LogCheckRunTest
         List<String> indexes = new ArrayList<>();
         indexes.add("logstash-*");
 
-        URL eaURL = new URL("http://127.0.0.1:9200");
+        URL eaURL = new URL("http://sludev01:9200");
 
         if( clearElasticSearch )
         {
