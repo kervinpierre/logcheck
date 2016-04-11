@@ -35,9 +35,10 @@ public final class EAScroll
                                 final Path outFile,
                                 final boolean logOutput) throws IOException, ESAException
     {
-        if( outFile != null && Files.exists(outFile) )
+        if( outFile != null )
         {
-            Files.write(outFile, "[".getBytes(), StandardOpenOption.TRUNCATE_EXISTING);
+            Files.write(outFile, "[".getBytes(), StandardOpenOption.TRUNCATE_EXISTING,
+                                                StandardOpenOption.CREATE);
         }
 
         JestClientFactory factory = new JestClientFactory();
