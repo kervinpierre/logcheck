@@ -802,7 +802,7 @@ public final class LogCheckConfig
         }
         else
         {
-            this.m_logEntryStores = null;
+            this.m_logEntryStores = new ArrayList<>();
         }
 
         if( storeReOpenLogFile != null )
@@ -943,7 +943,7 @@ public final class LogCheckConfig
         }
         else
         {
-            this.m_logEntryBuilders = null;
+            this.m_logEntryBuilders = new ArrayList<>();
         }
 
         if( emailOnError != null )
