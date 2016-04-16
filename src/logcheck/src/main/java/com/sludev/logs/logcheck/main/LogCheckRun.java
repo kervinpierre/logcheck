@@ -146,6 +146,13 @@ public class LogCheckRun implements Callable<LogCheckResult>
 
         List<ILogEntryBuilder> currLogEntryBuilders = new ArrayList<>(10);
 
+
+        if( (m_config.getLogEntryBuilders() == null)
+                || (m_config.getLogEntryBuilders().size() < 1) )
+        {
+            throw new LogCheckException("No valid Log Entry Builders found");
+        }
+
         // FIXME : Support multiple builders.  But for now we don't need it so all but the last will be ignored.
         for( LCLogEntryBuilderType builder : m_config.getLogEntryBuilders() )
         {
