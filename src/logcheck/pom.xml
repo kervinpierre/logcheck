@@ -18,9 +18,7 @@
                 <artifactId>maven-dependency-plugin</artifactId>
                 <version>2.1</version>
                 <configuration>
-                    <outputDirectory>
-                        ${project.build.directory}
-                    </outputDirectory>
+                    <outputDirectory>${project.build.directory}/dependencies</outputDirectory>
                 </configuration>
             </plugin>
             <plugin>
