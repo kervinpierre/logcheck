@@ -26,29 +26,23 @@ import com.sludev.logs.logcheck.enums.LCHashType;
 import com.sludev.logs.logcheck.enums.LCIndexNameFormat;
 import com.sludev.logs.logcheck.enums.LCLogEntryBuilderType;
 import com.sludev.logs.logcheck.enums.LCLogEntryStoreType;
-import com.sludev.logs.logcheck.utils.LogCheckConstants;
+import com.sludev.logs.logcheck.enums.LCLogSourceType;
 import com.sludev.logs.logcheck.exceptions.LogCheckException;
-import com.sludev.logs.logcheck.utils.ParseNumberWithSuffix;
+import com.sludev.logs.logcheck.utils.LogCheckConstants;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.RecursiveToStringStyle;
 import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.apache.commons.lang3.builder.ToStringStyle;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.LocalTime;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
 /**
@@ -59,7 +53,9 @@ import java.util.regex.Pattern;
 public final class LogCheckConfig
 {
     private static final org.apache.logging.log4j.Logger LOGGER
-                             = LogManager.getLogger(LogCheckConfig.class);
+            = LogManager.getLogger(LogCheckConfig.class);
+
+    private final Integer m_id;
 
     private final Long m_pollIntervalSeconds;
     private final Long m_stopAfter;
@@ -83,6 +79,7 @@ public final class LogCheckConfig
     private final String m_elasticsearchIndexName;
     private final String m_elasticsearchIndexPrefix;
     private final String m_elasticsearchLogType;
+    private final String m_windowsEventConnection;
     private final Boolean m_service;
     private final Boolean m_dryRun;
     private final Boolean m_showVersion;
@@ -115,6 +112,7 @@ public final class LogCheckConfig
     private final Path m_preferredDir;
     private final Path m_stdOutFile;
     private final URL m_elasticsearchURL;
+    private final URL m_monitorURL;
     private final LocalTime m_logCutoffDate;
     private final Duration m_logCutoffDuration;
     private final Duration m_logDeduplicationDuration;
@@ -127,7 +125,28 @@ public final class LogCheckConfig
     private final LCHashType m_idBlockHashType;
     private final LCCompressionType m_tailerBackupLogCompression;
     private final Pattern m_tailerBackupLogNameRegex;
+    private final LCLogSourceType m_logSourceType;
     private final FSSVerbosityEnum m_verbosity;
+
+    public Integer getId()
+    {
+        return m_id;
+    }
+
+    public String getWindowsEventConnection()
+    {
+        return m_windowsEventConnection;
+    }
+
+    public URL getMonitorURL()
+    {
+        return m_monitorURL;
+    }
+
+    public LCLogSourceType getLogSourceType()
+    {
+        return m_logSourceType;
+    }
 
     public Path getStdOutFile()
     {
@@ -465,6 +484,7 @@ public final class LogCheckConfig
     }
 
     private LogCheckConfig(final LogCheckConfig orig,
+                           final Integer id,
                            final Boolean service,
                            final String emailOnError,
                            final String smtpServer,
@@ -504,9 +524,11 @@ public final class LogCheckConfig
                            final Path preferredDir,
                            final Path stdOutFile,
                            final URL elasticsearchURL,
+                           final URL monitorURL,
                            final String elasticsearchIndexName,
                            final String elasticsearchIndexPrefix,
                            final String elasticsearchLogType,
+                           final String windowsEventConnection,
                            final LCIndexNameFormat elasticsearchIndexNameFormat,
                            final LocalTime logCutoffDate,
                            final Duration logCutoffDuration,
@@ -531,8 +553,65 @@ public final class LogCheckConfig
                            final LCHashType idBlockHashType,
                            final LCCompressionType tailerBackupLogCompression,
                            final Pattern tailerBackupLogNameRegex,
+                           final LCLogSourceType logSourceType,
                            final Set<LCDebugFlag> debugFlags) throws LogCheckException
     {
+        if( id != null )
+        {
+            this.m_id = id;
+        }
+        else if( (orig != null)
+                && (orig.getId() != null))
+        {
+            this.m_id = orig.getId();
+        }
+        else
+        {
+            this.m_id = null;
+        }
+
+        if( logSourceType != null )
+        {
+            this.m_logSourceType = logSourceType;
+        }
+        else if( (orig != null)
+                && (orig.getLogSourceType() != null))
+        {
+            this.m_logSourceType = orig.getLogSourceType();
+        }
+        else
+        {
+            this.m_logSourceType = null;
+        }
+
+        if( windowsEventConnection != null )
+        {
+            this.m_windowsEventConnection = windowsEventConnection;
+        }
+        else if( (orig != null)
+                && (orig.getWindowsEventConnection() != null))
+        {
+            this.m_windowsEventConnection = orig.getWindowsEventConnection();
+        }
+        else
+        {
+            this.m_windowsEventConnection = null;
+        }
+
+        if( monitorURL != null )
+        {
+            this.m_monitorURL = monitorURL;
+        }
+        else if( (orig != null)
+                && (orig.getMonitorURL() != null))
+        {
+            this.m_monitorURL = orig.getMonitorURL();
+        }
+        else
+        {
+            this.m_monitorURL = null;
+        }
+
         if( (deDupeIgnoreCount != null)
                 && (deDupeIgnoreCount > -1) )
         {
@@ -1466,6 +1545,7 @@ public final class LogCheckConfig
     }
 
     public static LogCheckConfig from(final LogCheckConfig orig,
+                                      final Integer id,
                                       final Boolean service,
                                       final String emailOnError,
                                       final String smtpServer,
@@ -1505,9 +1585,11 @@ public final class LogCheckConfig
                                       final Path preferredDir,
                                       final Path stdOutFile,
                                       final URL elasticsearchURL,
+                                      final URL monitorURL,
                                       final String elasticsearchIndexName,
                                       final String elasticsearchIndexPrefix,
                                       final String elasticsearchLogType,
+                                      final String windowsEventConnection,
                                       final LCIndexNameFormat elasticsearchIndexNameFormat,
                                       final LocalTime logCutoffDate,
                                       final Duration logCutoffDuration,
@@ -1532,9 +1614,11 @@ public final class LogCheckConfig
                                       final LCHashType idBlockHashType,
                                       final LCCompressionType tailerBackupLogCompression,
                                       final Pattern tailerBackupLogNameRegex,
+                                      final LCLogSourceType logSourceType,
                                       final Set<LCDebugFlag> debugFlags) throws LogCheckException
     {
         LogCheckConfig res = new LogCheckConfig(orig,
+                id,
                 service,
                 emailOnError,
                 smtpServer,
@@ -1574,9 +1658,11 @@ public final class LogCheckConfig
                 preferredDir,
                 stdOutFile,
                 elasticsearchURL,
+                monitorURL,
                 elasticsearchIndexName,
                 elasticsearchIndexPrefix,
                 elasticsearchLogType,
+                windowsEventConnection,
                 elasticsearchIndexNameFormat,
                 logCutoffDate,
                 logCutoffDuration,
@@ -1601,591 +1687,7 @@ public final class LogCheckConfig
                 idBlockHashType,
                 tailerBackupLogCompression,
                 tailerBackupLogNameRegex,
-                debugFlags);
-
-        return res;
-    }
-
-    /**
-     * Create a new instance of the LogCheck configuration.
-     *
-     * Parse most of the options from strings.
-    **/
-     public static LogCheckConfig from( final LogCheckConfig orig,
-                                       final Boolean service,
-                                       final String emailOnError,
-                                       final String smtpServer,
-                                       final String smtpPort,
-                                       final String smtpPass,
-                                       final String smtpUser,
-                                       final String smtpProto,
-                                       final String setName,
-                                       final Boolean dryRun,
-                                       final Boolean showVersion,
-                                       final Boolean printLog,
-                                       final Boolean tailFromEnd,
-                                       final Boolean readReOpenLogFile,
-                                        final Boolean storeReOpenLogFile,
-                                       final Boolean saveState,
-                                        final Boolean collectState,
-                                       final Boolean continueState,
-                                        final Boolean startPositionIgnoreError,
-                                        final Boolean validateTailerStats,
-                                        final Boolean tailerBackupReadLog,
-                                        final Boolean tailerBackupReadLogReverse,
-                                        final Boolean tailerBackupReadPriorLog,
-                                        final Boolean stopOnEOF,
-                                        final Boolean readOnlyFileMode,
-                                        final Boolean createMissingDirs,
-                                       final String lockFilePathStr,
-                                       final String logPathStr,
-                                        final String storeLogPathStr,
-                                       final String statusFilePathStr,
-                                       final String stateFilePathStr,
-                                       final String stateProcessedLogsFilePathStr,
-                                       final String errorFilePathStr,
-                                       final String configFilePathStr,
-                                       final String holdingDirPathStr,
-                                       final String deDupeDirPathStr,
-                                        final String tailerLogBackupDirStr,
-                                        final String preferredDirStr,
-                                        final String stdOutFileStr,
-                                       final String elasticsearchURLStr,
-                                       final String elasticsearchIndexName,
-                                       final String elasticsearchIndexPrefix,
-                                       final String elasticsearchLogType,
-                                       final String elasticsearchIndexNameFormatStr,
-                                       final String logCutoffDateStr,
-                                       final String logCutoffDurationStr,
-                                       final String logDeduplicationDurationStr,
-                                       final String pollIntervalSecondsStr,
-                                        final String stopAfterStr,
-                                        final String deDupeIgnoreCountStr,
-                                        final String deDupeSkipCountStr,
-                                        final String readLogFileCountStr,
-                                        final String readMaxDeDupeEntriesStr,
-                                       final String idBlockSizeStr,
-                                        final String deDupeMaxLogsBeforeWriteStr,
-                                        final String deDupeMaxLogsPerFileStr,
-                                        final String deDupeMaxLogFilesStr,
-                                        final String deDupeIgnorePercentStr,
-                                        final String deDupeSkipPercentStr,
-                                        final String verbosityStr,
-                                        final String deDupeDefaultActionStr,
-                                       final String[] logEntryBuilderStrs,
-                                        final String[] logEntryStoreStrs,
-                                        final String[] tailerBackupLogNameCompStrs,
-                                       final String idBlockHashTypeStr,
-                                        final String tailBackupLogCompressionStr,
-                                        final String tailBackupLogNameRegexStr,
-                                        final String[] debugFlagStrs) throws LogCheckException
-    {
-        Path lockFilePath = null;
-        Path logPath = null;
-        Path storeLogPath = null;
-        Path statusFilePath = null;
-        Path stateFilePath = null;
-        Path stateProcessedLogsFilePath = null;
-        Path errorFilePath = null;
-        Path configFilePath = null;
-        Path holdingDirPath = null;
-        Path deDupeDirPath = null;
-        Path tailerLogBackupDir = null;
-        Path preferredDir = null;
-        Path stdOutFile = null;
-        URL elasticsearchURL = null;
-        LCIndexNameFormat elasticsearchIndexNameFormat = null;
-        LocalTime logCutoffDate = null;
-        Duration logCutoffDuration = null;
-        Duration logDeduplicationDuration = null;
-        Long pollIntervalSeconds = null;
-        List<LCLogEntryBuilderType> logEntryBuilders  = null;
-        List<LCLogEntryStoreType> logEntryStores = null;
-        List<LCFileRegexComponent> tailerBackupLogNameComps = null;
-        Integer readLogFileCount = null;
-        Integer readMaxDeDupeEntries = null;
-        Integer idBlockSize = null;
-        Integer deDupeMaxLogsBeforeWrite = null;
-        Integer deDupeMaxLogsPerFile = null;
-        Integer deDupeMaxLogFiles = null;
-        Integer deDupeIgnorePercent = null;
-        Integer deDupeSkipPercent = null;
-        Long stopAfter = null;
-        Long deDupeIgnoreCount = null;
-        Long deDupeSkipCount = null;
-        LCHashType idBlockHash = null;
-        LCCompressionType tailerBackupLogCompression = null;
-        FSSVerbosityEnum verbosity = null;
-        LCDeDupeAction deDupeDefaultAction = null;
-        Pattern tailerBackupLogNameRegex = null;
-        Set<LCDebugFlag> debugFlags = null;
-
-        if(StringUtils.isNoneBlank(tailBackupLogCompressionStr))
-        {
-            tailerBackupLogCompression = LCCompressionType.from(tailBackupLogCompressionStr);
-        }
-
-        if(StringUtils.isNoneBlank(tailBackupLogNameRegexStr))
-        {
-            tailerBackupLogNameRegex = Pattern.compile(tailBackupLogNameRegexStr);
-        }
-
-        if(StringUtils.isNoneBlank(preferredDirStr))
-        {
-            preferredDir = Paths.get(preferredDirStr);
-        }
-
-        if(StringUtils.isNoneBlank(stdOutFileStr))
-        {
-            stdOutFile = Paths.get(stdOutFileStr);
-        }
-
-        if(StringUtils.isNoneBlank(lockFilePathStr))
-        {
-            lockFilePath = Paths.get(lockFilePathStr);
-        }
-
-        if(StringUtils.isNoneBlank(logPathStr))
-        {
-            logPath = Paths.get(logPathStr);
-        }
-
-        if(StringUtils.isNoneBlank(storeLogPathStr))
-        {
-            storeLogPath = Paths.get(storeLogPathStr);
-        }
-
-        if(StringUtils.isNoneBlank(statusFilePathStr))
-        {
-            statusFilePath = Paths.get(statusFilePathStr);
-        }
-
-        if(StringUtils.isNoneBlank(stateFilePathStr))
-        {
-            stateFilePath = Paths.get(stateFilePathStr);
-        }
-
-        if(StringUtils.isNoneBlank(stateProcessedLogsFilePathStr))
-        {
-            stateProcessedLogsFilePath = Paths.get(stateProcessedLogsFilePathStr);
-        }
-
-        if(StringUtils.isNoneBlank(errorFilePathStr))
-        {
-            errorFilePath = Paths.get(errorFilePathStr);
-        }
-
-        if(StringUtils.isNoneBlank(configFilePathStr))
-        {
-            configFilePath = Paths.get(configFilePathStr);
-        }
-
-        if(StringUtils.isNoneBlank(holdingDirPathStr))
-        {
-            holdingDirPath = Paths.get(holdingDirPathStr);
-        }
-
-        if(StringUtils.isNoneBlank(deDupeDirPathStr))
-        {
-            deDupeDirPath = Paths.get(deDupeDirPathStr);
-        }
-
-        if(StringUtils.isNoneBlank(tailerLogBackupDirStr))
-        {
-            tailerLogBackupDir = Paths.get(tailerLogBackupDirStr);
-        }
-
-        if(StringUtils.isNoneBlank(elasticsearchURLStr))
-        {
-            try
-            {
-                elasticsearchURL = new URL(elasticsearchURLStr);
-            }
-            catch(MalformedURLException ex)
-            {
-                String errMsg = String.format("Invalid URL string '%s'", elasticsearchURLStr);
-
-                LOGGER.debug(errMsg, ex);
-                throw new LogCheckException(errMsg, ex);
-            }
-        }
-
-        if(StringUtils.isNoneBlank(elasticsearchIndexNameFormatStr))
-        {
-            elasticsearchIndexNameFormat
-                    = LCIndexNameFormat.from(elasticsearchIndexNameFormatStr);
-        }
-
-        if(StringUtils.isNoneBlank(logCutoffDateStr))
-        {
-            logCutoffDate = LocalTime.parse(logCutoffDateStr);
-        }
-
-        if(StringUtils.isNoneBlank(logCutoffDurationStr))
-        {
-            logCutoffDuration = Duration.parse(logCutoffDurationStr);
-        }
-
-        if(StringUtils.isNoneBlank(logDeduplicationDurationStr))
-        {
-            logDeduplicationDuration
-                    = Duration.parse(logDeduplicationDurationStr);
-        }
-
-        if(StringUtils.isNoneBlank(pollIntervalSecondsStr))
-        {
-            try
-            {
-                pollIntervalSeconds = Long.parseLong(pollIntervalSecondsStr);
-            }
-            catch( NumberFormatException ex )
-            {
-                String errMsg = String.format("Error parsing long '%s'", pollIntervalSecondsStr);
-
-                LOGGER.debug(errMsg, ex);
-                throw new LogCheckException(errMsg, ex);
-            }
-        }
-
-        if(StringUtils.isNoneBlank(deDupeIgnoreCountStr))
-        {
-            try
-            {
-                deDupeIgnoreCount = Long.parseLong(deDupeIgnoreCountStr);
-            }
-            catch( NumberFormatException ex )
-            {
-                String errMsg = String.format("Error parsing long '%s'", deDupeIgnoreCount);
-
-                LOGGER.debug(errMsg, ex);
-                throw new LogCheckException(errMsg, ex);
-            }
-        }
-
-        if(StringUtils.isNoneBlank(deDupeSkipCountStr))
-        {
-            try
-            {
-                deDupeSkipCount = Long.parseLong(deDupeSkipCountStr);
-            }
-            catch( NumberFormatException ex )
-            {
-                String errMsg = String.format("Error parsing long '%s'", deDupeSkipCount);
-
-                LOGGER.debug(errMsg, ex);
-                throw new LogCheckException(errMsg, ex);
-            }
-        }
-
-        if(tailerBackupLogNameCompStrs != null )
-        {
-            tailerBackupLogNameComps = new ArrayList<>(10);
-
-            for( String nameComp : tailerBackupLogNameCompStrs )
-            {
-                if( StringUtils.isNoneBlank(nameComp) )
-                {
-                    String tempStr = nameComp.replace('-', '_')
-                                                .toUpperCase()
-                                                .trim();
-
-                    tailerBackupLogNameComps.add(LCFileRegexComponent.from(tempStr));
-                }
-            }
-        }
-
-        if(debugFlagStrs != null )
-        {
-            debugFlags = new HashSet<>();
-
-            for( String debugFlagStr : debugFlagStrs )
-            {
-                if( StringUtils.isNoneBlank(debugFlagStr) )
-                {
-                    debugFlags.add(LCDebugFlag.from(debugFlagStr.replace('-', '_')
-                            .toUpperCase()
-                            .trim()));
-                }
-            }
-        }
-
-        if(logEntryBuilderStrs != null )
-        {
-            logEntryBuilders = new ArrayList<>(10);
-
-            for( String builder : logEntryBuilderStrs )
-            {
-                if( StringUtils.isNoneBlank(builder) )
-                {
-                    logEntryBuilders.add(LCLogEntryBuilderType.from(builder));
-                }
-            }
-        }
-
-        if(logEntryStoreStrs != null )
-        {
-            logEntryStores = new ArrayList<>(10);
-
-            for( String store : logEntryStoreStrs )
-            {
-                if( StringUtils.isNoneBlank(store) )
-                {
-                    logEntryStores.add(LCLogEntryStoreType.from(store));
-                }
-            }
-        }
-
-        if(StringUtils.isNoneBlank(idBlockSizeStr))
-        {
-            try
-            {
-                idBlockSize = Integer.parseInt(idBlockSizeStr);
-            }
-            catch( NumberFormatException ex )
-            {
-                String errMsg = String.format("Error parsing integer '%s'", idBlockSizeStr);
-
-                LOGGER.debug(errMsg, ex);
-                throw new LogCheckException(errMsg, ex);
-            }
-        }
-
-        if(StringUtils.isNoneBlank(deDupeMaxLogsBeforeWriteStr))
-        {
-            try
-            {
-                deDupeMaxLogsBeforeWrite = Integer.parseInt(deDupeMaxLogsBeforeWriteStr);
-            }
-            catch( NumberFormatException ex )
-            {
-                String errMsg = String.format("Error parsing integer '%s'", deDupeMaxLogsBeforeWriteStr);
-
-                LOGGER.debug(errMsg, ex);
-                throw new LogCheckException(errMsg, ex);
-            }
-        }
-
-        if(StringUtils.isNoneBlank(deDupeMaxLogsPerFileStr))
-        {
-            try
-            {
-                deDupeMaxLogsPerFile = Integer.parseInt(deDupeMaxLogsPerFileStr);
-            }
-            catch( NumberFormatException ex )
-            {
-                String errMsg = String.format("Error parsing integer '%s'", deDupeMaxLogsPerFileStr);
-
-                LOGGER.debug(errMsg, ex);
-                throw new LogCheckException(errMsg, ex);
-            }
-        }
-
-        if(StringUtils.isNoneBlank(deDupeMaxLogFilesStr))
-        {
-            try
-            {
-                deDupeMaxLogFiles = Integer.parseInt(deDupeMaxLogFilesStr);
-            }
-            catch( NumberFormatException ex )
-            {
-                String errMsg = String.format("Error parsing integer '%s'", deDupeMaxLogFilesStr);
-
-                LOGGER.debug(errMsg, ex);
-                throw new LogCheckException(errMsg, ex);
-            }
-        }
-
-        if(StringUtils.isNoneBlank(readLogFileCountStr))
-        {
-            try
-            {
-                readLogFileCount = Integer.parseInt(readLogFileCountStr);
-            }
-            catch( NumberFormatException ex )
-            {
-                String errMsg = String.format("Error parsing integer '%s'", readLogFileCountStr);
-
-                LOGGER.debug(errMsg, ex);
-                throw new LogCheckException(errMsg, ex);
-            }
-        }
-
-        if(StringUtils.isNoneBlank(readMaxDeDupeEntriesStr))
-        {
-            try
-            {
-                readMaxDeDupeEntries = Integer.parseInt(readMaxDeDupeEntriesStr);
-            }
-            catch( NumberFormatException ex )
-            {
-                String errMsg = String.format("Error parsing integer '%s'", readMaxDeDupeEntriesStr);
-
-                LOGGER.debug(errMsg, ex);
-                throw new LogCheckException(errMsg, ex);
-            }
-        }
-
-        if(StringUtils.isNoneBlank(deDupeIgnorePercentStr))
-        {
-            try
-            {
-                deDupeIgnorePercent = Integer.parseInt(deDupeIgnorePercentStr);
-            }
-            catch( NumberFormatException ex )
-            {
-                String errMsg = String.format("Error parsing integer '%s'", deDupeIgnorePercent);
-
-                LOGGER.debug(errMsg, ex);
-                throw new LogCheckException(errMsg, ex);
-            }
-        }
-
-        if(StringUtils.isNoneBlank(deDupeSkipPercentStr))
-        {
-            try
-            {
-                deDupeSkipPercent = Integer.parseInt(deDupeSkipPercentStr);
-            }
-            catch( NumberFormatException ex )
-            {
-                String errMsg = String.format("Error parsing integer '%s'", deDupeSkipPercent);
-
-                LOGGER.debug(errMsg, ex);
-                throw new LogCheckException(errMsg, ex);
-            }
-        }
-
-        if(StringUtils.isNoneBlank(stopAfterStr))
-        {
-            try
-            {
-                Pair<Long,TimeUnit> stop = ParseNumberWithSuffix.parseIntWithTimeUnits(stopAfterStr);
-                if( stop != null )
-                {
-                    stopAfter = stop.getRight().toSeconds(stop.getLeft());
-                }
-            }
-            catch( NumberFormatException ex )
-            {
-                String errMsg = String.format("Error parsing integer '%s'", stopAfterStr);
-
-                LOGGER.debug(errMsg, ex);
-                throw new LogCheckException(errMsg, ex);
-            }
-        }
-
-        if(StringUtils.isNoneBlank(idBlockHashTypeStr))
-        {
-            try
-            {
-                idBlockHash = LCHashType.from(idBlockHashTypeStr);
-            }
-            catch( LogCheckException ex )
-            {
-                String errMsg = String.format("Error parsing ID Block Hash '%s'", idBlockHashTypeStr);
-
-                LOGGER.debug(errMsg, ex);
-                throw new LogCheckException(errMsg, ex);
-            }
-        }
-
-        if(StringUtils.isNoneBlank(deDupeDefaultActionStr))
-        {
-            try
-            {
-                deDupeDefaultAction = LCDeDupeAction.from(deDupeDefaultActionStr);
-            }
-            catch( LogCheckException ex )
-            {
-                String errMsg = String.format("Error parsing Deduplication Default Action '%s'", deDupeDefaultActionStr);
-
-                LOGGER.debug(errMsg, ex);
-                throw new LogCheckException(errMsg, ex);
-            }
-        }
-
-        if(StringUtils.isNoneBlank(verbosityStr))
-        {
-            try
-            {
-                verbosity = FSSVerbosityEnum.from(verbosityStr);
-            }
-            catch( Exception ex )
-            {
-                String errMsg = String.format("Error parsing verbosity '%s'", verbosityStr);
-
-                LOGGER.debug(errMsg, ex);
-                throw new LogCheckException(errMsg, ex);
-            }
-        }
-
-        LogCheckConfig res = LogCheckConfig.from(orig,
-                service,
-                emailOnError,
-                smtpServer,
-                smtpPort,
-                smtpPass,
-                smtpUser,
-                smtpProto,
-                setName,
-                dryRun,
-                showVersion,
-                printLog,
-                tailFromEnd,
-                readReOpenLogFile,
-                storeReOpenLogFile,
-                saveState,
-                collectState,
-                continueState,
-                startPositionIgnoreError,
-                validateTailerStats,
-                tailerBackupReadLog,
-                tailerBackupReadLogReverse,
-                tailerBackupReadPriorLog,
-                stopOnEOF,
-                readOnlyFileMode,
-                createMissingDirs,
-                lockFilePath,
-                logPath,
-                storeLogPath,
-                statusFilePath,
-                stateFilePath,
-                stateProcessedLogsFilePath,
-                errorFilePath,
-                configFilePath,
-                holdingDirPath,
-                deDupeDirPath,
-                tailerLogBackupDir,
-                preferredDir,
-                stdOutFile,
-                elasticsearchURL,
-                elasticsearchIndexName,
-                elasticsearchIndexPrefix,
-                elasticsearchLogType,
-                elasticsearchIndexNameFormat,
-                logCutoffDate,
-                logCutoffDuration,
-                logDeduplicationDuration,
-                pollIntervalSeconds,
-                stopAfter,
-                deDupeIgnoreCount,
-                deDupeSkipCount,
-                readLogFileCount,
-                readMaxDeDupeEntries,
-                idBlockSize,
-                deDupeMaxLogsBeforeWrite,
-                deDupeMaxLogsPerFile,
-                deDupeMaxLogFiles,
-                deDupeIgnorePercent,
-                deDupeSkipPercent,
-                verbosity,
-                deDupeDefaultAction,
-                logEntryBuilders,
-                logEntryStores,
-                tailerBackupLogNameComps,
-                idBlockHash,
-                tailerBackupLogCompression,
-                tailerBackupLogNameRegex,
+                logSourceType,
                 debugFlags);
 
         return res;

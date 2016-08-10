@@ -20,6 +20,11 @@ package com.sludev.logs.logcheck.enums;
 
 import org.apache.commons.lang3.StringUtils;
 
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
 /**
  * Signal various testing features and modes across the application.
  *
@@ -40,7 +45,29 @@ public enum LCDebugFlag
     {
         LCDebugFlag res;
 
-        res = LCDebugFlag.valueOf(StringUtils.upperCase(StringUtils.trim(flag)));
+        res = LCDebugFlag.valueOf(
+                StringUtils.upperCase(
+                        StringUtils.trim(
+                                flag.replace('-', '_'))));
+
+        return res;
+    }
+
+    public static Set<LCDebugFlag> from( String[] debugFlagStrs )
+    {
+        Set<LCDebugFlag> res = null;
+        if(debugFlagStrs != null )
+        {
+            res = new HashSet<>();
+
+            for( String debugFlagStr : debugFlagStrs )
+            {
+                if( StringUtils.isNoneBlank(debugFlagStr) )
+                {
+                    res.add(LCDebugFlag.from(debugFlagStr));
+                }
+            }
+        }
 
         return res;
     }

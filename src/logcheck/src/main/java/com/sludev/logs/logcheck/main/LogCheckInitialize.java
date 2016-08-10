@@ -17,11 +17,14 @@
  */
 package com.sludev.logs.logcheck.main;
 
+import com.sludev.logs.logcheck.config.builders.LogCheckConfigBuilder;
 import com.sludev.logs.logcheck.config.entities.LogCheckConfig;
 import com.sludev.logs.logcheck.config.parsers.LogCheckConfigParser;
 import com.sludev.logs.logcheck.config.parsers.ParserUtil;
 import com.sludev.logs.logcheck.enums.FSSVerbosityEnum;
+import com.sludev.logs.logcheck.enums.LCDebugFlag;
 import com.sludev.logs.logcheck.enums.LCFileFormat;
+import com.sludev.logs.logcheck.enums.LCFileRegexComponent;
 import com.sludev.logs.logcheck.utils.FSSArgFile;
 import com.sludev.logs.logcheck.exceptions.LogCheckException;
 import com.sludev.logs.logcheck.utils.FSSLog4JConfiguration;
@@ -37,6 +40,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.LoggerContext;
+import org.apache.logging.log4j.core.impl.ExtendedClassInfo;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -44,11 +48,15 @@ import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Deque;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Initialize the LogCheck application.
@@ -63,72 +71,80 @@ public class LogCheckInitialize
     /**
      * @param args the command line arguments
      */
-    public static LogCheckConfig initialize(String[] args)
+    public static LinkedHashMap<Integer,LogCheckConfig> initialize(String[] args)
     {  
         CommandLineParser parser = new DefaultParser();
         Options options = configureOptions();
-        LogCheckConfig config = null;
 
-        Boolean currService = null;
-        Boolean currDryRun = null;
-        Boolean currShowVersion = null;
-        Boolean currTailFromEnd = null;
-        Boolean currPrintLogs = null;
-        Boolean currSaveState = null;
-        Boolean currContinue = null;
-        Boolean currReadReOpenLogFile = null;
-        Boolean currStoreReOpenLogFile = null;
-        Boolean currStartPositionIgnoreError = null;
-        Boolean currValidateTailerStats = null;
-        Boolean currTailerBackupReadLogs = null;
-        Boolean currTailerBackupReadLogsReverse = null;
-        Boolean currTailerBackupReadPriorLogs = null;
-        Boolean currStopOnEOF = null;
-        Boolean currReadOnlyFileMode = null;
-        Boolean currCreateMissingDirs = null;
-        String currPollIntervalSeconds = null;
-        String currEmailOnError = null;
-        String currSmtpServer = null;
-        String currSmtpPort = null;
-        String currSmtpUser = null;
-        String currSmtpPass = null;
-        String currSmtpProto = null;
-        String currLogDeduplicationDuration = null;
-        String currLockFile = null;
-        String currLogPath = null;
-        String currLogCutoffDuration = null;
-        String currLogCutoffDate = null;
-        String currElasticsearchUrl = null;
-        String currStatusFile = null;
-        String currStateFile = null;
-        String currProcessedLogsFile = null;
-        String currErrorFile = null;
-        String currIdBlockHashtype = null;
-        String currIdBlockSize = null;
-        String currSetName = null;
-        String currDeDupeDirPath = null;
-        String currDeDupeMaxLogsPerFile = null;
-        String currDeDupeMaxLogFiles = null;
-        String currDeDupeMaxLogsBeforeWrite = null;
-        String currDeDupeDefaultAction = null;
-        String currDeDupeIgnoreUntilPercent = null;
-        String currDeDupeIgnoreUntilCount = null;
-        String currDeDupeSkipUntilPercent = null;
-        String currDeDupeSkipUntilCount = null;
-        String currStopAfter = null;
-        String currReadLogFileCount = null;
-        String currReadMaxDeDupeEntries = null;
-        String currStoreLogFile = null;
-        String currTailerBackupLogNameRegex = null;
-        String currTailerBackupLogCompression = null;
-        String currTailerBackupLogDir = null;
-        String currVerbosity = null;
-        String currStdOutFile = null;
-        String currPreferredDir = null;
-        String[] currLEBuilderType = null;
-        String[] currLEStoreType = null;
-        String[] currTailerBackupLogNameComps = null;
-        String[] currDebugFlags = null;
+        // Ordered map
+        LinkedHashMap<Integer,LogCheckConfig> configs = new LinkedHashMap<>(10);
+
+        LogCheckConfigBuilder currConfBuilder = null;
+
+//        Boolean currService = null;
+//        Boolean currDryRun = null;
+//        Boolean currShowVersion = null;
+//        Boolean currTailFromEnd = null;
+//        Boolean currPrintLogs = null;
+//        Boolean currSaveState = null;
+//        Boolean currContinue = null;
+//        Boolean currReadReOpenLogFile = null;
+//        Boolean currStoreReOpenLogFile = null;
+//        Boolean currStartPositionIgnoreError = null;
+//        Boolean currValidateTailerStats = null;
+//        Boolean currTailerBackupReadLogs = null;
+//        Boolean currTailerBackupReadLogsReverse = null;
+//        Boolean currTailerBackupReadPriorLogs = null;
+//        Boolean currStopOnEOF = null;
+//        Boolean currReadOnlyFileMode = null;
+//        Boolean currCreateMissingDirs = null;
+//        String currPollIntervalSeconds = null;
+//        String currEmailOnError = null;
+//        String currSmtpServer = null;
+//        String currSmtpPort = null;
+//        String currSmtpUser = null;
+//        String currSmtpPass = null;
+//        String currSmtpProto = null;
+//        String currLogDeduplicationDuration = null;
+//        String currLockFile = null;
+//        String currLogPath = null;
+//        String currLogCutoffDuration = null;
+//        String currLogCutoffDate = null;
+//        String currElasticsearchUrl = null;
+//        String currStatusFile = null;
+//        String currStateFile = null;
+//        String currProcessedLogsFile = null;
+//        String currErrorFile = null;
+//        String currIdBlockHashtype = null;
+//        String currIdBlockSize = null;
+//        String currSetName = null;
+//        String currDeDupeDirPath = null;
+//        String currDeDupeMaxLogsPerFile = null;
+//        String currDeDupeMaxLogFiles = null;
+//        String currDeDupeMaxLogsBeforeWrite = null;
+//        String currDeDupeDefaultAction = null;
+//        String currDeDupeIgnoreUntilPercent = null;
+//        String currDeDupeIgnoreUntilCount = null;
+//        String currDeDupeSkipUntilPercent = null;
+//        String currDeDupeSkipUntilCount = null;
+//        String currStopAfter = null;
+//        String currReadLogFileCount = null;
+//        String currReadMaxDeDupeEntries = null;
+//        String currStoreLogFile = null;
+//        String currTailerBackupLogNameRegex = null;
+//        String currTailerBackupLogCompression = null;
+//        String currTailerBackupLogDir = null;
+//        String currVerbosity = null;
+//        String currLogSource = null;
+//        String currWinEventConnection = null;
+//        String currMonitorURL = null;
+//        String currConfigStr = null;
+//        String currStdOutFile = null;
+//        String currPreferredDir = null;
+//        String[] currLEBuilderType = null;
+//        String[] currLEStoreType = null;
+//        String[] currTailerBackupLogNameComps = null;
+//        String[] currDebugFlags = null;
 
         try
         {
@@ -177,7 +193,7 @@ public class LogCheckInitialize
             {
                 // Second, check for the configuration file.  It needs to be parsed
                 // before all command line arguments.  So that these arguments later
-                // override the configuration file values
+                // override the configuration file builders
                 if( currLine.hasOption("config-file") )
                 {
                     String configfile = currLine.getOptionValue("config-file");
@@ -189,9 +205,10 @@ public class LogCheckInitialize
                                         configfile));
                     }
 
-                    config = LogCheckConfigParser.readConfig(
+                    LinkedHashMap<Integer,LogCheckConfig> confConfs = LogCheckConfigParser.readConfig(
                             ParserUtil.readConfig(Paths.get(configfile),
                                     LCFileFormat.LCCONFIG));
+                    configs.putAll(confConfs);
                 }
             }
             
@@ -214,328 +231,390 @@ public class LogCheckInitialize
                     Option currOpt = (Option) cmdI.next();
                     String currOptName = currOpt.getLongOpt();
 
-                    switch( currOptName )
+                    if( currOptName.equalsIgnoreCase("config") )
                     {
-                        case "service":
-                            // Run as a service
-                            currService = true;
-                            break;
+                        // Configuration number
+                        String currConfigStr = currOpt.getValue();
+                        int pos;
+                        try
+                        {
+                            pos = Integer.parseInt(currConfigStr);
+                        }
+                        catch( Exception ex )
+                        {
+                            throw new LogCheckException(
+                                    String.format("Error parsing config number '%s'", currConfigStr),
+                                    ex);
+                        }
 
-                        case "poll-interval":
-                            // File polling interval
-                            currPollIntervalSeconds = currOpt.getValue();
-                            break;
+                        if( currConfBuilder != null
+                                && currConfBuilder.getId() != null
+                                && currConfBuilder.getId() >= 0 )
+                        {
+                            // Check if the config exists
+                            LogCheckConfig currLCC = configs.get(currConfBuilder.getId());
+                            currLCC = currConfBuilder.toConfig(currLCC);
+                            configs.put(currConfBuilder.getId(), currLCC);
+                        }
 
-                        case "email-on-error":
-                            // Send an email when we have an error
-                            currEmailOnError = null;
-                            break;
+                        // Start a new builder object
+                        currConfBuilder = LogCheckConfigBuilder.from(pos);
+                    }
+                    else
+                    {
+                        if( currConfBuilder == null )
+                        {
+                            throw new LogCheckException("Missing leading '--config=[number]' flag");
+                        }
 
-                        case "smtp-server":
-                            // SMTP host server
-                            currSmtpServer = currOpt.getValue();
-                            break;
+                        switch( currOptName )
+                        {
+                            case "service":
+                                // Run as a service
+                                currConfBuilder.setService(true);
+                                break;
 
-                        case "smtp-port":
-                            // SMTP server port
-                            currSmtpPort = currOpt.getValue();
-                            break;
+                            case "poll-interval":
+                                // File polling interval
+                                currConfBuilder.setPollIntervalSeconds(currOpt.getValue());
+                                break;
 
-                        case "smtp-user":
-                            // SMTP Login user
-                            currSmtpUser = currOpt.getValue();
-                            break;
+                            case "email-on-error":
+                                // Send an email when we have an error
+                                currConfBuilder.setEmailOnError(null);
+                                break;
 
-                        case "smtp-pass":
-                            // SMTP Login password
-                            currSmtpPass = currOpt.getValue();
-                            break;
+                            case "smtp-server":
+                                // SMTP host server
+                                currConfBuilder.setSmtpServer(currOpt.getValue());
+                                break;
 
-                        case "smtp-proto":
-                            // STMP Protocol type
-                            currSmtpProto = currOpt.getValue();
-                            break;
+                            case "smtp-port":
+                                // SMTP server port
+                                currConfBuilder.setSmtpPort(currOpt.getValue());
+                                break;
 
-                        case "dry-run":
-                            // For testing, do not update the database
-                            currDryRun = true;
-                            break;
+                            case "smtp-user":
+                                // SMTP Login user
+                                currConfBuilder.setSmtpUser(currOpt.getValue());
+                                break;
 
-                        case "version":
-                            // Show the application version and exit
-                            currShowVersion = true;
-                            break;
+                            case "smtp-pass":
+                                // SMTP Login password
+                                currConfBuilder.setSmtpPass(currOpt.getValue());
+                                break;
 
-                        case "log-deduplication-duration":
-                            // Don't send the same log twice
-                            currLogDeduplicationDuration = currOpt.getValue();
-                            break;
+                            case "smtp-proto":
+                                // STMP Protocol type
+                                currConfBuilder.setSmtpProto(currOpt.getValue());
+                                break;
 
-                        case "lock-file":
-                            // Write a file preventing multiple instances
-                            currLockFile = currOpt.getValue();
-                            break;
+                            case "dry-run":
+                                // For testing, do not update the database
+                                currConfBuilder.setDryRun(true);
+                                break;
 
-                        case "log-file":
-                            // Log file for monitoring
-                            currLogPath = currOpt.getValue();
-                            break;
+                            case "version":
+                                // Show the application version and exit
+                                currConfBuilder.setShowVersion(true);
+                                break;
 
-                        case "log-cutoff-duration":
-                            // Do not process before specified period
-                            currLogCutoffDuration = currOpt.getValue();
-                            break;
+                            case "log-deduplication-duration":
+                                // Don't send the same log twice
+                                currConfBuilder.setLogDeduplicationDuration(currOpt.getValue());
+                                break;
 
-                        case "log-cutoff-date":
-                            // Do not process before specified period
-                            currLogCutoffDate = currOpt.getValue();
-                            break;
+                            case "lock-file":
+                                // Write a file preventing multiple instances
+                                currConfBuilder.setLockFilePath(currOpt.getValue());
+                                break;
 
-                        case "file-from-start":
-                            // Process the specified log file from its start
-                            currTailFromEnd = false;
-                            break;
+                            case "windows-event-connection":
+                                // Windows Event Log Connection string
+                                currConfBuilder.setWindowsEventConnection(currOpt.getValue());
+                                break;
 
-                        case "elasticsearch-url":
-                            // The Elasticsearch URL
-                            currElasticsearchUrl = currOpt.getValue();
-                            break;
+                            case "monitor-url":
+                                // URL of listening monitor service
+                                currConfBuilder.setMonitorURL(currOpt.getValue());
+                                break;
 
-                        case "state-file":
-                            // Save the full state of a completed job for future
-                            // continuation
-                            currStateFile = currOpt.getValue();
-                            break;
+                            case "log-source":
+                                // Log source
+                                currConfBuilder.setLogSourceType(currOpt.getValue());
+                                break;
 
-                        case "processed-logs-state-file":
-                            // Track already processed log files
-                            currProcessedLogsFile = currOpt.getValue();
-                            break;
+                            case "log-file":
+                                // Log file for monitoring
+                                currConfBuilder.setLogPath(currOpt.getValue());
+                                break;
 
-                        case "error-file":
-                            // Save the full state of a completed job for future
-                            // continuation
-                            currErrorFile = currOpt.getValue();
-                            break;
+                            case "log-cutoff-duration":
+                                // Do not process before specified period
+                                currConfBuilder.setLogCutoffDuration(currOpt.getValue());
+                                break;
 
-                        case "status-file":
-                            // Write session data
-                            currStatusFile = currOpt.getValue();
-                            break;
+                            case "log-cutoff-date":
+                                // Do not process before specified period
+                                currConfBuilder.setLogCutoffDate(currOpt.getValue());
+                                break;
 
-                        case "print-logs":
-                            // Print logs to console
-                            currPrintLogs = true;
-                            break;
+                            case "file-from-start":
+                                // Process the specified log file from its start
+                                currConfBuilder.setTailFromEnd(false);
+                                break;
 
-                        case "continue":
-                            // Continue the last job
-                            currContinue = true;
-                            break;
+                            case "elasticsearch-url":
+                                // The Elasticsearch URL
+                                currConfBuilder.setElasticsearchURL(currOpt.getValue());
+                                break;
 
-                        case "save-state":
-                            // Continue the last job
-                            currSaveState = true;
-                            break;
+                            case "state-file":
+                                // Save the full state of a completed job for future
+                                // continuation
+                                currConfBuilder.setStateFilePath(currOpt.getValue());
+                                break;
 
-                        case "id-block-hashtype":
-                            //
-                            currIdBlockHashtype = currOpt.getValue();
-                            break;
+                            case "processed-logs-state-file":
+                                // Track already processed log files
+                                currConfBuilder.setStateProcessedLogsFilePath(currOpt.getValue());
+                                break;
 
-                        case "id-block-size":
-                            //
-                            currIdBlockSize = currOpt.getValue();
-                            break;
+                            case "error-file":
+                                // Save the full state of a completed job for future
+                                // continuation
+                                currConfBuilder.setErrorFilePath(currOpt.getValue());
+                                break;
 
-                        case "set-name":
-                            //
-                            currSetName = StringUtils.removeStart(currOpt.getValue(), "\"");
-                            break;
+                            case "status-file":
+                                // Write session data
+                                currConfBuilder.setStatusFilePath(currOpt.getValue());
+                                break;
 
-                        case "dedupe-dir-path":
-                            //
-                            currDeDupeDirPath = currOpt.getValue();
-                            break;
+                            case "print-logs":
+                                // Print logs to console
+                                currConfBuilder.setPrintLog(true);
+                                break;
 
-                        case "dedupe-log-per-file":
-                            //
-                            currDeDupeMaxLogsPerFile = currOpt.getValue();
-                            break;
+                            case "continue":
+                                // Continue the last job
+                                currConfBuilder.setContinueState(true);
+                                break;
 
-                        case "dedupe-max-log-files":
-                            //
-                            currDeDupeMaxLogFiles = currOpt.getValue();
-                            break;
+                            case "save-state":
+                                // Continue the last job
+                                currConfBuilder.setSaveState(true);
+                                break;
 
-                        case "dedupe-max-before-write":
-                            //
-                            currDeDupeMaxLogsBeforeWrite = currOpt.getValue();
-                            break;
+                            case "id-block-hashtype":
+                                //
+                                currConfBuilder.setIdBlockHashType(currOpt.getValue());
+                                break;
 
-                        case "dedupe-default-action":
-                            //
-                            currDeDupeDefaultAction = currOpt.getValue();
-                            break;
+                            case "id-block-size":
+                                //
+                                currConfBuilder.setIdBlockSize(currOpt.getValue());
+                                break;
 
-                        case "dedupe-ignore-percent":
-                            //
-                            currDeDupeIgnoreUntilPercent = currOpt.getValue();
-                            break;
+                            case "set-name":
+                                //
+                                currConfBuilder.setSetName(currOpt.getValue());
+                                break;
 
-                        case "dedupe-ignore-count":
-                            //
-                            currDeDupeIgnoreUntilCount = currOpt.getValue();
-                            break;
+                            case "dedupe-dir-path":
+                                //
+                                currConfBuilder.setDeDupeDirPath(currOpt.getValue());
+                                break;
 
-                        case "dedupe-skip-percent":
-                            //
-                            currDeDupeSkipUntilPercent = currOpt.getValue();
-                            break;
+                            case "dedupe-log-per-file":
+                                //
+                                currConfBuilder.setDeDupeMaxLogsPerFile(currOpt.getValue());
+                                break;
 
-                        case "dedupe-skip-count":
-                            //
-                            currDeDupeSkipUntilCount = currOpt.getValue();
-                            break;
+                            case "dedupe-max-log-files":
+                                //
+                                currConfBuilder.setDeDupeMaxLogFiles(currOpt.getValue());
+                                break;
 
-                        case "log-entry-builder-type":
-                            // Specify the log entry builder type to use
-                            currLEBuilderType = currOpt.getValues();
-                            break;
+                            case "dedupe-max-before-write":
+                                //
+                                currConfBuilder.setDeDupeMaxLogsBeforeWrite(currOpt.getValue());
+                                break;
 
-                        case "log-entry-store-type":
-                            // Specify the log entry store type to use
-                            currLEStoreType = currOpt.getValues();
-                            break;
+                            case "dedupe-default-action":
+                                //
+                                currConfBuilder.setDeDupeDefaultAction(currOpt.getValue());
+                                break;
 
-                        case "stop-after":
-                            // How long to run the tailer
-                            currStopAfter = currOpt.getValue();
-                            break;
+                            case "dedupe-ignore-percent":
+                                //
+                                currConfBuilder.setDeDupeIgnorePercent(currOpt.getValue());
+                                break;
 
-                        case "read-log-file-count":
-                            // Read log file count for deduplication logs
-                            currReadLogFileCount = currOpt.getValue();
-                            break;
+                            case "dedupe-ignore-count":
+                                //
+                                currConfBuilder.setDeDupeIgnoreCount(currOpt.getValue());
+                                break;
 
-                        case "read-max-dedupe-entries":
-                            // Maximum deduplication log entries
-                            currReadMaxDeDupeEntries = currOpt.getValue();
-                            break;
+                            case "dedupe-skip-percent":
+                                //
+                                currConfBuilder.setdeDupeSkipPercent(currOpt.getValue());
+                                break;
 
-                        case "read-reopen-log-file":
-                            // Specify the log entry builder type to use
-                            currReadReOpenLogFile = true;
-                            break;
+                            case "dedupe-skip-count":
+                                //
+                                currConfBuilder.setDeDupeSkipCount(currOpt.getValue());
+                                break;
 
-                        case "store-reopen-log-file":
-                            // Specify the log entry builder type to use
-                            currStoreReOpenLogFile = true;
-                            break;
+                            case "log-entry-builder-type":
+                                // Specify the log entry builder type to use
+                                currConfBuilder.setLogEntryBuilderStrs(currOpt.getValues());
+                                break;
 
-                        case "store-log-file":
-                            // Maximum deduplication log entries
-                            currStoreLogFile = currOpt.getValue();
-                            break;
+                            case "log-entry-store-type":
+                                // Specify the log entry store type to use
+                                currConfBuilder.setLogEntryStoreStrs(currOpt.getValues());
+                                break;
 
-                        case "start-position-ignore-error":
-                            // If there is a discrepancy between the State File and the Log File
-                            currStartPositionIgnoreError = true;
-                            break;
+                            case "stop-after":
+                                // How long to run the tailer
+                                currConfBuilder.setStopAfter(currOpt.getValue());
+                                break;
 
-                        case "tailer-validate-log-file":
-                            // Validate Tailer Statistics on disk periodically to make sure the logs
-                            // have not been rotated.
-                            currValidateTailerStats = true;
-                            break;
+                            case "read-log-file-count":
+                                // Read log file count for deduplication logs
+                                currConfBuilder.setReadLogFileCount(currOpt.getValue());
+                                break;
 
-                        case "tailer-read-backup-log":
-                            // Find the backup log files after they've been rotated.
-                            currTailerBackupReadLogs = true;
-                            break;
+                            case "read-max-dedupe-entries":
+                                // Maximum deduplication log entries
+                                currConfBuilder.setReadMaxDeDupeEntries(currOpt.getValue());
+                                break;
 
-                        case "tailer-read-prior-backup-log":
-                            // Read the old backup logs prior to tailing
-                            currTailerBackupReadPriorLogs = true;
-                            break;
+                            case "read-reopen-log-file":
+                                // Specify the log entry builder type to use
+                                currConfBuilder.setReadReOpenLogFile(true);
+                                break;
 
-                        case "tailer-backup-log-file-name-regex":
-                            // The file regular expression for matching backup log files.
-                            currTailerBackupLogNameRegex = currOpt.getValue();
-                            break;
+                            case "store-reopen-log-file":
+                                // Specify the log entry builder type to use
+                                currConfBuilder.setStoreReOpenLogFile(true);
+                                break;
 
-                        case "tailer-backup-log-file-name-component":
-                            // These match the file name grouping the the related file name regex.
-                            if( currTailerBackupLogNameComps == null )
-                            {
-                                currTailerBackupLogNameComps = currOpt.getValues();
-                            }
-                            else
-                            {
-                                currTailerBackupLogNameComps
-                                        = ArrayUtils.addAll(currTailerBackupLogNameComps, currOpt.getValues());
-                            }
-                            break;
+                            case "store-log-file":
+                                // Maximum deduplication log entries
+                                currConfBuilder.setStoreLogPath(currOpt.getValue());
+                                break;
 
-                        case "debug-flags":
-                            // Miscellaneous debug flags
-                            if( currDebugFlags == null )
-                            {
-                                currDebugFlags = currOpt.getValues();
-                            }
-                            else
-                            {
-                                currDebugFlags
-                                        = ArrayUtils.addAll(currDebugFlags, currOpt.getValues());
-                            }
-                            break;
+                            case "start-position-ignore-error":
+                                // If there is a discrepancy between the State File and the Log File
+                                currConfBuilder.setStartPositionIgnoreError(true);
+                                break;
 
-                        case "tailer-backup-log-file-compression":
-                            // Decompress the already backed up log file before reading.
-                            currTailerBackupLogCompression = currOpt.getValue();
-                            break;
+                            case "tailer-validate-log-file":
+                                // Validate Tailer Statistics on disk periodically to make sure the logs
+                                // have not been rotated.
+                                currConfBuilder.setValidateTailerStats(true);
+                                break;
 
-                        case "tailer-backup-log-dir":
-                            // Log backups folder
-                            currTailerBackupLogDir = currOpt.getValue();
-                            break;
+                            case "tailer-read-backup-log":
+                                // Find the backup log files after they've been rotated.
+                                currConfBuilder.setTailerBackupReadLog(true);
+                                break;
 
-                        case "tailer-stop-on-eof":
-                            // Stop after EOF
-                            currStopOnEOF = true;
-                            break;
+                            case "tailer-read-prior-backup-log":
+                                // Read the old backup logs prior to tailing
+                                currConfBuilder.setTailerBackupReadPriorLog(true);
+                                break;
 
-                        case "tailer-read-backup-reverse-order":
-                            // Read backup logs in reverse order
-                            currTailerBackupReadLogsReverse = true;
-                            break;
+                            case "tailer-backup-log-file-name-regex":
+                                // The file regular expression for matching backup log files.
+                                currConfBuilder.setTailerBackupLogNameRegex(currOpt.getValue());
+                                break;
 
-                        case "tailer-read-only-file":
-                            // Read Only File
-                            currReadOnlyFileMode = true;
-                            break;
+                            case "tailer-backup-log-file-name-component":
+                                // These match the file name grouping the the related file name regex.
+                                if( currConfBuilder.getTailerBackupLogNameComps() == null )
+                                {
+                                    currConfBuilder.setTailerBackupLogNameCompStrs(currOpt.getValues());
+                                }else
+                                {
+                                    currConfBuilder.getTailerBackupLogNameComps()
+                                            .addAll(LCFileRegexComponent.from(currOpt.getValues()));
+                                }
+                                break;
 
-                        case "create-missing-dirs":
-                            // Create missing directories
-                            currCreateMissingDirs = true;
-                            break;
+                            case "debug-flags":
+                                // Miscellaneous debug flags
+                                if( currConfBuilder.getDebugFlags() == null )
+                                {
+                                    currConfBuilder.setDebugFlagStrs(currOpt.getValues());
+                                }
+                                else
+                                {
+                                    currConfBuilder.getDebugFlags().addAll(
+                                            LCDebugFlag.from(currOpt.getValues()));
+                                }
+                                break;
 
-                        case "verbosity":
-                            // Verbosity
-                            currVerbosity = currOpt.getValue();
-                            break;
+                            case "tailer-backup-log-file-compression":
+                                // Decompress the already backed up log file before reading.
+                                currConfBuilder.setTailerBackupLogCompression(currOpt.getValue());
+                                break;
 
-                        case "stdout-file":
-                            // Standard Output
-                            currStdOutFile = currOpt.getValue();
-                            break;
+                            case "tailer-backup-log-dir":
+                                // Log backups folder
+                                currConfBuilder.setTailerLogBackupDir(currOpt.getValue());
+                                break;
 
-                        case "preferred-dir":
-                            // Preferred directory
-                            currPreferredDir = currOpt.getValue();
-                            break;
+                            case "tailer-stop-on-eof":
+                                // Stop after EOF
+                                currConfBuilder.setStopOnEOF(true);
+                                break;
+
+                            case "tailer-read-backup-reverse-order":
+                                // Read backup logs in reverse order
+                                currConfBuilder.setTailerBackupReadLogReverse(true);
+                                break;
+
+                            case "tailer-read-only-file":
+                                // Read Only File
+                                currConfBuilder.setReadOnlyFileMode(true);
+                                break;
+
+                            case "create-missing-dirs":
+                                // Create missing directories
+                                currConfBuilder.setCreateMissingDirs(true);
+                                break;
+
+                            case "verbosity":
+                                // Verbosity
+                                currConfBuilder.setVerbosity(currOpt.getValue());
+                                break;
+
+                            case "stdout-file":
+                                // Standard Output
+                                currConfBuilder.setStdOutFile(currOpt.getValue());
+                                break;
+
+                            case "preferred-dir":
+                                // Preferred directory
+                                currConfBuilder.setPreferredDir(currOpt.getValue());
+                                break;
+                        }
                     }
                 }
+            }
+
+            // Save the last builder
+            if( currConfBuilder != null
+                    && currConfBuilder.getId() != null
+                    && currConfBuilder.getId() >= 0 )
+            {
+                // Check if the config exists
+                LogCheckConfig currLCC = configs.get(currConfBuilder.getId());
+                currLCC = currConfBuilder.toConfig(currLCC);
+                configs.put(currConfBuilder.getId(), currLCC);
             }
 
             /*
@@ -550,33 +629,26 @@ public class LogCheckInitialize
                it sets the logger's verbosity from the "java/jre" start, you should set it so
                that you do not lose any messages
             */
-            FSSVerbosityEnum currVerbose;
-            if( StringUtils.isBlank(currVerbosity) && (config != null) && (config.getVerbosity() != null) )
+            LogCheckConfig mainConfig = null;
+
+            if( configs.isEmpty() == false && configs.keySet().contains(0))
             {
-                currVerbose = config.getVerbosity();
-            }
-            else
-            {
-                currVerbose = FSSVerbosityEnum.from(currVerbosity);
+                mainConfig = configs.get(0);
             }
 
-            if( currVerbose != null )
+            if( (mainConfig != null) && (mainConfig.getVerbosity() != null) )
             {
-                FSSLog4JConfiguration.setVerbosity(currVerbose);
+                FSSLog4JConfiguration.setVerbosity(mainConfig.getVerbosity());
             }
 
             /*
               Or use -DFSSOUTREDIRECT=/path/to/file
              */
             Path usedStdOut = null;
-            if( (config != null)
-                    && (config.getStdOutFile() != null) )
+            if( (mainConfig != null)
+                    && (mainConfig.getStdOutFile() != null) )
             {
-                usedStdOut = config.getStdOutFile();
-            }
-            else if( StringUtils.isNoneBlank(currStdOutFile) )
-            {
-                usedStdOut = Paths.get(currStdOutFile);
+                usedStdOut = mainConfig.getStdOutFile();
             }
 
             if( usedStdOut != null )
@@ -586,75 +658,6 @@ public class LogCheckInitialize
 
                 FSSLog4JConfiguration.outputRedirect(usedStdOut);
             }
-
-            config = LogCheckConfig.from(config,
-                    currService, // service,
-                    currEmailOnError, // emailOnError,
-                    currSmtpServer,
-                    currSmtpPort,
-                    currSmtpPass,
-                    currSmtpUser,
-                    currSmtpProto,
-                    currSetName,
-                    currDryRun,
-                    currShowVersion, // showVersion,
-                    currPrintLogs, // printLog,
-                    currTailFromEnd, // tailFromEnd,
-                    currReadReOpenLogFile, // reOpenLogFile
-                    currStoreReOpenLogFile, // --store-reopen-log-file
-                    currSaveState,  // saveState
-                    null, // collectState
-                    currContinue,
-                    currStartPositionIgnoreError,
-                    currValidateTailerStats,
-                    currTailerBackupReadLogs,
-                    currTailerBackupReadLogsReverse,
-                    currTailerBackupReadPriorLogs,
-                    currStopOnEOF,
-                    currReadOnlyFileMode,
-                    currCreateMissingDirs,
-                    currLockFile,
-                    currLogPath,
-                    currStoreLogFile,
-                    currStatusFile,
-                    currStateFile,
-                    currProcessedLogsFile,
-                    currErrorFile,
-                    null, // configFilePath,
-                    null, // holdingDir
-                    currDeDupeDirPath,
-                    currTailerBackupLogDir,
-                    currPreferredDir,
-                    currStdOutFile,
-                    currElasticsearchUrl,
-                    null, // elasticsearchIndexName,
-                    null, // elasticsearchIndexPrefix,
-                    null, // elasticsearchLogType,
-                    null, // elasticsearchIndexNameFormat,
-                    currLogCutoffDate, // logCutoffDate,
-                    currLogCutoffDuration, // logCutoffDuration,
-                    currLogDeduplicationDuration, // logDeduplicationDuration,
-                    currPollIntervalSeconds,
-                    currStopAfter,
-                    currDeDupeIgnoreUntilCount,
-                    currDeDupeSkipUntilCount,
-                    currReadLogFileCount,
-                    currReadMaxDeDupeEntries,
-                    currIdBlockSize,
-                    currDeDupeMaxLogsBeforeWrite,
-                    currDeDupeMaxLogsPerFile,
-                    currDeDupeMaxLogFiles,
-                    currDeDupeIgnoreUntilPercent,
-                    currDeDupeSkipUntilPercent,
-                    currVerbosity,
-                    currDeDupeDefaultAction,
-                    currLEBuilderType,
-                    currLEStoreType,
-                    currTailerBackupLogNameComps,
-                    currIdBlockHashtype,
-                    currTailerBackupLogCompression,
-                    currTailerBackupLogNameRegex,
-                    currDebugFlags);
         }
         catch (LogCheckException ex)
         {
@@ -680,7 +683,7 @@ public class LogCheckInitialize
             System.exit(1);
         }
         
-        return config;
+        return configs;
     }
     
     private static Options configureOptions()
@@ -691,6 +694,27 @@ public class LogCheckInitialize
                 .desc( "Configuration file." )
                 .hasArg()
                 .argName("CONFFILE")
+                .build() );
+
+        options.addOption( Option.builder().longOpt("log-source")
+                .desc( "Log source.  File ( default ), Windows-Event-Log" )
+                .hasArg()
+                .build() );
+
+        options.addOption( Option.builder().longOpt("windows-event-connection")
+                .desc( "[<hostname>|localhost]:[Application|Security|System|,]+" )
+                .hasArg()
+                .build() );
+
+        options.addOption( Option.builder().longOpt("monitor-url")
+                .desc( "Monitor URL. E.g. JMS Url or 'file://'" )
+                .hasArg()
+                .build() );
+
+        options.addOption( Option.builder().longOpt("config")
+                .desc( "The configuration object number.  Configuration "
+                        + "number '0' is the special 'main' configuration object" )
+                .hasArg()
                 .build() );
 
         options.addOption( Option.builder().longOpt("state-file")

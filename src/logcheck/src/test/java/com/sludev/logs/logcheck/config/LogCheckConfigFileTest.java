@@ -22,12 +22,16 @@ import com.sludev.logs.logcheck.LogCheckTestWatcher;
 import com.sludev.logs.logcheck.config.entities.LogCheckConfig;
 import com.sludev.logs.logcheck.config.parsers.LogCheckConfigParser;
 import com.sludev.logs.logcheck.config.parsers.ParserUtil;
+import com.sludev.logs.logcheck.enums.FSSVerbosityEnum;
 import com.sludev.logs.logcheck.enums.LCFileFormat;
 import com.sludev.logs.logcheck.exceptions.LogCheckException;
 
+import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Map;
 import java.util.Properties;
 
+import com.sludev.logs.logcheck.utils.FSSLog4JConfiguration;
 import org.junit.Assert;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -92,15 +96,19 @@ public class LogCheckConfigFileTest
     @Ignore
     public void testRead() throws LogCheckException
     {
+        FSSLog4JConfiguration.setVerbosity(FSSVerbosityEnum.ALL);
+
         log.info("read");
-        
+
         String confPathString = testProperties.getProperty("logcheck.test0001.conffile");
-        
-        LogCheckConfig config = LogCheckConfigParser.readConfig(
+
+        Map<Integer, LogCheckConfig> config = LogCheckConfigParser.readConfig(
                 ParserUtil.readConfig(Paths.get(confPathString),
                         LCFileFormat.LCCONFIG));
 
         Assert.assertNotNull(config);
+        Assert.assertTrue(config.size() == 1);
+        Assert.assertTrue(config.containsKey(0));
     }
     
 }

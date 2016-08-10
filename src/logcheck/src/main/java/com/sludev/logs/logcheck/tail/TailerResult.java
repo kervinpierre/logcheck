@@ -29,9 +29,9 @@ import java.util.Set;
 /**
  * Created by kervin on 2016-01-04.
  */
-public final class FileTailerResult
+public final class TailerResult
 {
-    private static final Logger LOGGER = LogManager.getLogger(FileTailerResult.class);
+    private static final Logger LOGGER = LogManager.getLogger(TailerResult.class);
 
     private final Set<LCTailerResult> m_result;
     private final LogCheckState m_state;
@@ -46,8 +46,8 @@ public final class FileTailerResult
         return m_state;
     }
 
-    private FileTailerResult(final Set<LCTailerResult> result,
-                             final LogCheckState state)
+    private TailerResult( final Set<LCTailerResult> result,
+                          final LogCheckState state)
     {
         if( result == null )
         {
@@ -61,10 +61,10 @@ public final class FileTailerResult
         this.m_state = state;
     }
 
-    public static FileTailerResult from(final Set<LCTailerResult> result,
-                             final LogCheckState state)
+    public static TailerResult from( final Set<LCTailerResult> result,
+                                     final LogCheckState state)
     {
-        FileTailerResult res = new FileTailerResult(result,
+        TailerResult res = new TailerResult(result,
                                                     state);
 
         return res;
@@ -83,7 +83,7 @@ public final class FileTailerResult
             }
         }
 
-        res.append("\nFileTailerResult\n{\n");
+        res.append("\nTailerResult\n{\n");
         res.append(String.format("  result : '%s'\n", msg));
         res.append("}\n");
 

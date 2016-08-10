@@ -23,6 +23,8 @@ import com.sludev.logs.logcheck.exceptions.LogCheckException;
 import com.sludev.logs.logcheck.utils.LogCheckResult;
 
 import java.util.Arrays;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -74,8 +76,8 @@ public class LogCheckMain
                 Arrays.toString(args)) );
         
         // Initialize only.  Don't actually run or do anything else
-        LogCheckConfig res = LogCheckInitialize.initialize(args);
-        LogCheckResult procRes;
+        LinkedHashMap<Integer, LogCheckConfig> res = LogCheckInitialize.initialize(args);
+        Map<Integer, LogCheckResult> procRes;
 
 
         try
@@ -96,7 +98,7 @@ public class LogCheckMain
                 Arrays.toString(args)) );
         
         // Initialize only.  Don't actually run or do anything else
-        LogCheckConfig res = LogCheckInitialize.initialize(args);
+        LinkedHashMap<Integer, LogCheckConfig> res = LogCheckInitialize.initialize(args);
         LogCheckResult procRes;
 
         procRes = processStop(res); 
@@ -188,20 +190,22 @@ public class LogCheckMain
      *
      * FIXME : Does not return.
      *
-     * @param config 
+     * @param configs
      * @return  
      * @throws LogCheckException
      */
-    public static LogCheckResult processStart(LogCheckConfig config) throws LogCheckException
+    public static Map<Integer, LogCheckResult> processStart(LinkedHashMap<Integer, LogCheckConfig> configs) throws LogCheckException
     {
-        LogCheckResult resp = null;
-        LogCheckRun currRun = new LogCheckRun(config);
+        Map<Integer, LogCheckResult> resp = null;
+        LogCheckRun currRun = new LogCheckRun(configs);
 
         BasicThreadFactory thFactory = new BasicThreadFactory.Builder()
             .namingPattern("runThread-%d")
             .build();
 
         s_mainThreadExe = Executors.newSingleThreadExecutor(thFactory);
+
+        LogCheckConfig mainConf = configs.get(0);
 
         try
         {
@@ -210,17 +214,17 @@ public class LogCheckMain
             {
                 LOGGER.debug(String.format("processStart() : Run #%d", i++));
 
-                Future<LogCheckResult> currTask = s_mainThreadExe.submit(currRun);
+                Future<Map<Integer, LogCheckResult>> currTask = s_mainThreadExe.submit(currRun);
 
                 //s_mainThreadExe.shutdown();
 
                 try
                 {
                     resp = currTask.get();
-                    if( (resp != null) && (resp.getStatus() == LCResultStatus.FAIL) )
+                    if( (resp != null) && (resp.get(0).getStatus() == LCResultStatus.FAIL) )
                     {
                         String msg = String.format("Run task returned an error status '%s'",
-                                resp.getStatus());
+                                resp.get(0).getStatus());
 
                         LOGGER.debug(msg);
 
@@ -242,7 +246,7 @@ public class LogCheckMain
                     LOGGER.debug("processStart() : Clean-up.");
                 }
             }
-            while( s_run && BooleanUtils.isTrue(config.isService()) );
+            while( s_run && BooleanUtils.isTrue(mainConf.isService()) );
         }
         finally
         {
@@ -271,7 +275,7 @@ public class LogCheckMain
      * @param config
      * @return
      */
-    public static LogCheckResult processStop(LogCheckConfig config)
+    public static LogCheckResult processStop(LinkedHashMap<Integer, LogCheckConfig> config)
     {
         LogCheckResult resp = LogCheckResult.from(LCResultStatus.SUCCESS);
 

@@ -15,7 +15,7 @@
  *   is strictly forbidden unless prior written permission is obtained
  *   from SLU Dev Inc.
  */
-package com.sludev.logs.logcheck.tail;
+package com.sludev.logs.logcheck.tail.impl;
 
 import com.sludev.logs.logcheck.config.entities.LogCheckState;
 import com.sludev.logs.logcheck.config.entities.LogFileState;
@@ -33,12 +33,14 @@ import com.sludev.logs.logcheck.enums.LCTailerResult;
 import com.sludev.logs.logcheck.exceptions.LogCheckException;
 import com.sludev.logs.logcheck.fs.BackupFileWatch;
 import com.sludev.logs.logcheck.log.ILogEntryBuilder;
+import com.sludev.logs.logcheck.tail.TailerResult;
+import com.sludev.logs.logcheck.tail.ILogCheckTail;
+import com.sludev.logs.logcheck.tail.TailerStatistics;
 import com.sludev.logs.logcheck.utils.LogCheckConstants;
 import com.sludev.logs.logcheck.utils.LogCheckFileRotate;
 import com.sludev.logs.logcheck.utils.LogCheckResult;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.BooleanUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.concurrent.BasicThreadFactory;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -59,7 +61,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
@@ -78,10 +79,10 @@ import java.util.stream.Collectors;
  *
  * @author kervin
  */
-public final class LogCheckTail implements Callable<LogCheckResult>
+public final class FileLogCheckTail implements ILogCheckTail
 {
     private static final Logger LOGGER
-            = LogManager.getLogger(LogCheckTail.class);
+            = LogManager.getLogger(FileLogCheckTail.class);
 
     private final List<ILogEntryBuilder> m_mainLogEntryBuilders;
 
@@ -121,42 +122,42 @@ public final class LogCheckTail implements Callable<LogCheckResult>
     private final Pattern m_tailerBackupLogNameRegex;
     private final Set<LCDebugFlag> m_debugFlags;
 
-    private LogCheckTail(final List<ILogEntryBuilder> mainLogEntryBuilders,
-                         final Path logFile,
-                         final Path deDupeDir,
-                         final Long startPosition,
-                         final Long delay,
-                         final Boolean continueState,
-                         final Boolean tailFromEnd,
-                         final Boolean reOpenLogFile,
-                         final Boolean saveState,
-                         final Boolean startPosIgnoreError,
-                         final Boolean validateTailerStatistics,
-                         final Boolean collectTailerStatistics,
-                         final Boolean watchBackupDirectory,
-                         final Boolean tailerBackupReadLog,
-                         final Boolean tailerBackupReadLogReverse,
-                         final Boolean tailerBackupReadPriorLog,
-                         final Boolean stopOnEOF,
-                         final Boolean readOnlyFileMode,
-                         final Boolean mainThread,
-                         final Boolean statsReset,
-                         final Integer bufferSize,
-                         final Integer readLogFileCount,
-                         final Integer readMaxDeDupeEntries,
-                         final Long stopAfter,
-                         final LCHashType idBlockHash,
-                         final Integer idBlockSize,
-                         final String setName,
-                         final Path stateFile,
-                         final Path stateProcessedLogsFilePath,
-                         final Path errorFile,
-                         final Path tailerLogBackupDir,
-                         final Path preferredDir,
-                         final List<LCFileRegexComponent> tailerBackupLogNameComps,
-                         final LCCompressionType tailerBackupLogCompression,
-                         final Pattern tailerBackupLogNameRegex,
-                         final Set<LCDebugFlag> debugFlags)
+    private FileLogCheckTail( final List<ILogEntryBuilder> mainLogEntryBuilders,
+                              final Path logFile,
+                              final Path deDupeDir,
+                              final Long startPosition,
+                              final Long delay,
+                              final Boolean continueState,
+                              final Boolean tailFromEnd,
+                              final Boolean reOpenLogFile,
+                              final Boolean saveState,
+                              final Boolean startPosIgnoreError,
+                              final Boolean validateTailerStatistics,
+                              final Boolean collectTailerStatistics,
+                              final Boolean watchBackupDirectory,
+                              final Boolean tailerBackupReadLog,
+                              final Boolean tailerBackupReadLogReverse,
+                              final Boolean tailerBackupReadPriorLog,
+                              final Boolean stopOnEOF,
+                              final Boolean readOnlyFileMode,
+                              final Boolean mainThread,
+                              final Boolean statsReset,
+                              final Integer bufferSize,
+                              final Integer readLogFileCount,
+                              final Integer readMaxDeDupeEntries,
+                              final Long stopAfter,
+                              final LCHashType idBlockHash,
+                              final Integer idBlockSize,
+                              final String setName,
+                              final Path stateFile,
+                              final Path stateProcessedLogsFilePath,
+                              final Path errorFile,
+                              final Path tailerLogBackupDir,
+                              final Path preferredDir,
+                              final List<LCFileRegexComponent> tailerBackupLogNameComps,
+                              final LCCompressionType tailerBackupLogCompression,
+                              final Pattern tailerBackupLogNameRegex,
+                              final Set<LCDebugFlag> debugFlags)
     {
         this.m_mainLogEntryBuilders = mainLogEntryBuilders;
         this.m_idBlockHash = idBlockHash;
@@ -334,44 +335,44 @@ public final class LogCheckTail implements Callable<LogCheckResult>
         }
     }
 
-    public static LogCheckTail from(final List<ILogEntryBuilder> mainLogEntryBuilders,
-                                    final Path logFile,
-                                    final Path deDupeDir,
-                                    final Long startPosition,
-                                    final Long delay,
-                                    final Boolean continueState,
-                                    final Boolean tailFromEnd,
-                                    final Boolean reOpenOnChunk,
-                                    final Boolean saveState,
-                                    final Boolean startPosIgnoreError,
-                                    final Boolean validateTailerStatistics,
-                                    final Boolean collectTailerStatistics,
-                                    final Boolean watchBackupDirectory,
-                                    final Boolean tailerBackupReadLog,
-                                    final Boolean tailerBackupReadLogReverse,
-                                    final Boolean tailerBackupReadPriorLog,
-                                    final Boolean stopOnEOF,
-                                    final Boolean readOnlyFileMode,
-                                    final Boolean mainThread,
-                                    final Boolean statsReset,
-                                    final Integer bufferSize,
-                                    final Integer readLogFileCount,
-                                    final Integer readMaxDeDupeEntries,
-                                    final Long stopAfter,
-                                    final LCHashType idBlockHash,
-                                    final Integer idBlockSize,
-                                    final String setName,
-                                    final Path stateFile,
-                                    final Path stateProcessedLogsFilePath,
-                                    final Path errorFile,
-                                    final Path tailerLogBackupDir,
-                                    final Path preferredDir,
-                                    final List<LCFileRegexComponent> tailerBackupLogNameComps,
-                                    final LCCompressionType tailerBackupLogCompression,
-                                    final Pattern tailerBackupLogNameRegex,
-                                    final Set<LCDebugFlag> debugFlags)
+    public static FileLogCheckTail from( final List<ILogEntryBuilder> mainLogEntryBuilders,
+                                         final Path logFile,
+                                         final Path deDupeDir,
+                                         final Long startPosition,
+                                         final Long delay,
+                                         final Boolean continueState,
+                                         final Boolean tailFromEnd,
+                                         final Boolean reOpenOnChunk,
+                                         final Boolean saveState,
+                                         final Boolean startPosIgnoreError,
+                                         final Boolean validateTailerStatistics,
+                                         final Boolean collectTailerStatistics,
+                                         final Boolean watchBackupDirectory,
+                                         final Boolean tailerBackupReadLog,
+                                         final Boolean tailerBackupReadLogReverse,
+                                         final Boolean tailerBackupReadPriorLog,
+                                         final Boolean stopOnEOF,
+                                         final Boolean readOnlyFileMode,
+                                         final Boolean mainThread,
+                                         final Boolean statsReset,
+                                         final Integer bufferSize,
+                                         final Integer readLogFileCount,
+                                         final Integer readMaxDeDupeEntries,
+                                         final Long stopAfter,
+                                         final LCHashType idBlockHash,
+                                         final Integer idBlockSize,
+                                         final String setName,
+                                         final Path stateFile,
+                                         final Path stateProcessedLogsFilePath,
+                                         final Path errorFile,
+                                         final Path tailerLogBackupDir,
+                                         final Path preferredDir,
+                                         final List<LCFileRegexComponent> tailerBackupLogNameComps,
+                                         final LCCompressionType tailerBackupLogCompression,
+                                         final Pattern tailerBackupLogNameRegex,
+                                         final Set<LCDebugFlag> debugFlags)
     {
-        LogCheckTail res = new LogCheckTail(mainLogEntryBuilders,
+        FileLogCheckTail res = new FileLogCheckTail(mainLogEntryBuilders,
                 logFile,
                 deDupeDir,
                 startPosition,
@@ -418,7 +419,7 @@ public final class LogCheckTail implements Callable<LogCheckResult>
         {
             StringBuilder msg = new StringBuilder(100);
 
-            msg.append("\nLogCheckTail\n{\n");
+            msg.append("\nFileLogCheckTail\n{\n");
             msg.append(String.format("  Log File        : %s\n", m_logFile));
             msg.append(String.format("  Start Pos       : %s\n", m_startPosition));
             msg.append(String.format("  Main Thread     : %b\n", m_mainThread));
@@ -598,7 +599,7 @@ public final class LogCheckTail implements Callable<LogCheckResult>
 
         ExecutorService tailerExe = Executors.newSingleThreadExecutor(tailerFactory);
 
-        FileTailerResult tailerRes = null;
+        TailerResult tailerRes = null;
 
         BigInteger passCount = BigInteger.ZERO;
         try
@@ -730,7 +731,7 @@ public final class LogCheckTail implements Callable<LogCheckResult>
                     // default of FALSE
                     nextStatsReset = false;
 
-                    Future<FileTailerResult> tailerExeRes = tailerExe.submit(mainTailer.get());
+                    Future<TailerResult> tailerExeRes = tailerExe.submit(mainTailer.get());
 
                     if( currBackupFileWatch != null )
                     {
@@ -1162,7 +1163,7 @@ public final class LogCheckTail implements Callable<LogCheckResult>
                                             }
 
                                             // Parse that backup file
-                                            LogCheckTail lct = LogCheckTail.from(m_mainLogEntryBuilders,
+                                            FileLogCheckTail lct = FileLogCheckTail.from(m_mainLogEntryBuilders,
                                                     currBackupFile,
                                                     m_deDupeDir,
                                                     currStartPos,

@@ -17,8 +17,8 @@
   from SLU Dev Inc.
 -->
 
-<logCheckConfigs>
 
+<logCheckConfigs>
     <logCheckConfig id="0">
 
         <service>false</service>
@@ -43,5 +43,28 @@
 
     </logCheckConfig>
 
-</logCheckConfigs>
+    <logCheckConfig id="1">
 
+        <service>false</service>
+        <holdingFolder>/tmp</holdingFolder>
+
+        <elasticsearchURL>http://127.0.0.1:9200/</elasticsearchURL>
+        <pollInterval>10</pollInterval>
+
+        <emailOnError>false</emailOnError>
+
+        <smtpServer>smtp.sendgrid.net</smtpServer>
+        <smtpUser>testsmtp</smtpUser>
+        <smtpPass>t3stpass</smtpPass>
+        <smtpPort>23</smtpPort>
+        <smtpProtocol>STARTTLS</smtpProtocol>
+
+        <dryRun>true</dryRun>
+        <lockFilePath>/tmp/logcheck.lck</lockFilePath>
+
+        <logFilePath>/tmp/app-test.log</logFilePath>
+        <statusFilePath>/tmp/logcheck.status</statusFilePath>
+
+    </logCheckConfig>
+
+</logCheckConfigs>
