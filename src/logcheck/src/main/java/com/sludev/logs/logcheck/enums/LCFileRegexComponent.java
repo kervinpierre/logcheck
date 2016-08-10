@@ -20,6 +20,9 @@ package com.sludev.logs.logcheck.enums;
 
 import org.apache.commons.lang3.StringUtils;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Created by kervin on 2015-12-07.
  */
@@ -35,6 +38,30 @@ public enum LCFileRegexComponent
         LCFileRegexComponent res;
 
         res = LCFileRegexComponent.valueOf(StringUtils.upperCase(StringUtils.trim(comp)));
+
+        return res;
+    }
+
+    public static List<LCFileRegexComponent> from( final String[] tailerBackupLogNameCompStrs )
+    {
+        List<LCFileRegexComponent> res = null;
+
+        if(tailerBackupLogNameCompStrs != null )
+        {
+            res = new ArrayList<>(10);
+
+            for( String nameComp : tailerBackupLogNameCompStrs )
+            {
+                if( StringUtils.isNoneBlank(nameComp) )
+                {
+                    String tempStr = nameComp.replace('-', '_')
+                            .toUpperCase()
+                            .trim();
+
+                    res.add(LCFileRegexComponent.from(tempStr));
+                }
+            }
+        }
 
         return res;
     }

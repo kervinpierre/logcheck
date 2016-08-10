@@ -15,7 +15,7 @@
  *   is strictly forbidden unless prior written permission is obtained
  *   from SLU Dev Inc.
  */
-package com.sludev.logs.logcheck.tail;
+package com.sludev.logs.logcheck.tail.impl;
 
 import com.sludev.logs.logcheck.config.entities.LogCheckState;
 import com.sludev.logs.logcheck.config.entities.LogFileBlock;
@@ -26,7 +26,9 @@ import com.sludev.logs.logcheck.enums.LCHashType;
 import com.sludev.logs.logcheck.enums.LCTailerResult;
 import com.sludev.logs.logcheck.exceptions.LogCheckException;
 import com.sludev.logs.logcheck.log.ILogEntryBuilder;
-import com.sludev.logs.logcheck.utils.LogCheckConstants;
+import com.sludev.logs.logcheck.tail.TailerResult;
+import com.sludev.logs.logcheck.tail.ITail;
+import com.sludev.logs.logcheck.tail.TailerStatistics;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.concurrent.BasicThreadFactory;
@@ -46,7 +48,6 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -60,10 +61,10 @@ import java.util.regex.Pattern;
  *
  * TODO : This should be the ONLY class doing I/O on the file being tailed.
  */
-public final class FileTailer implements Callable<FileTailerResult>
+public final class WindowsEventsTailer implements ITail
 {
     private static final Logger LOGGER
-                    = LogManager.getLogger(FileTailer.class);
+                    = LogManager.getLogger(WindowsEventsTailer.class);
 
     /**
      * The m_file which will be tailed.
@@ -140,7 +141,7 @@ public final class FileTailer implements Callable<FileTailerResult>
 
     private LogCheckState m_lastLCState;
 
-    private FileTailerResult m_finalResult;
+    private TailerResult m_finalResult;
     /**
      * Used to debug and track Logcheck Log App's log sequence.
      */
@@ -158,26 +159,26 @@ public final class FileTailer implements Callable<FileTailerResult>
      * @param reOpen if true, close and reopen the m_file between reading chunks
      * @param bufSize Buffer size
      */
-    private FileTailer(final Path file,
-                       final Long startPosition,
-                       final Charset cset,
-                       final List<ILogEntryBuilder> builders,
-                       final long delayMillis,
-                       final boolean end,
-                       final boolean reOpen,
-                       final boolean startPosIgnoreErr,
-                       final boolean statsValidate,
-                       final boolean statsCollect,
-                       final boolean statsReset,
-                       final boolean stopOnEOF,
-                       final int bufSize,
-                       final int saveTimerSeconds,
-                       final TailerStatistics stats,
-                       final LCHashType hashType,
-                       final Integer idBlockSize,
-                       final String setName,
-                       final Set<LCDebugFlag> debugFlags,
-                       final CountDownLatch completionLatch)
+    private WindowsEventsTailer( final Path file,
+                                 final Long startPosition,
+                                 final Charset cset,
+                                 final List<ILogEntryBuilder> builders,
+                                 final long delayMillis,
+                                 final boolean end,
+                                 final boolean reOpen,
+                                 final boolean startPosIgnoreErr,
+                                 final boolean statsValidate,
+                                 final boolean statsCollect,
+                                 final boolean statsReset,
+                                 final boolean stopOnEOF,
+                                 final int bufSize,
+                                 final int saveTimerSeconds,
+                                 final TailerStatistics stats,
+                                 final LCHashType hashType,
+                                 final Integer idBlockSize,
+                                 final String setName,
+                                 final Set<LCDebugFlag> debugFlags,
+                                 final CountDownLatch completionLatch)
     {
         this.m_file = file;
         this.m_delayMillis = delayMillis;
@@ -213,28 +214,28 @@ public final class FileTailer implements Callable<FileTailerResult>
         this.m_finalResult = null;
     }
 
-    public static FileTailer from(final Path file,
-                                  final Long startPosition,
-                                  final Charset cset,
-                                  final List<ILogEntryBuilder> builders,
-                                  final long delayMillis,
-                                  final boolean end,
-                                  final boolean reOpen,
-                                  final boolean startPosIgnoreErr,
-                                  final boolean statsValidate,
-                                  final boolean statsCollect,
-                                  final boolean statsReset,
-                                  final boolean stopOnEOF,
-                                  final int bufSize,
-                                  final int saveTimerSeconds,
-                                  final TailerStatistics stats,
-                                  final LCHashType hashType,
-                                  final Integer idBlockSize,
-                                  final String setName,
-                                  final Set<LCDebugFlag> debugFlags,
-                                  final CountDownLatch completionLatch)
+    public static WindowsEventsTailer from( final Path file,
+                                            final Long startPosition,
+                                            final Charset cset,
+                                            final List<ILogEntryBuilder> builders,
+                                            final long delayMillis,
+                                            final boolean end,
+                                            final boolean reOpen,
+                                            final boolean startPosIgnoreErr,
+                                            final boolean statsValidate,
+                                            final boolean statsCollect,
+                                            final boolean statsReset,
+                                            final boolean stopOnEOF,
+                                            final int bufSize,
+                                            final int saveTimerSeconds,
+                                            final TailerStatistics stats,
+                                            final LCHashType hashType,
+                                            final Integer idBlockSize,
+                                            final String setName,
+                                            final Set<LCDebugFlag> debugFlags,
+                                            final CountDownLatch completionLatch)
     {
-        FileTailer res = new FileTailer(file,
+        WindowsEventsTailer res = new WindowsEventsTailer(file,
                 startPosition,
                 cset,
                 builders,
@@ -275,7 +276,7 @@ public final class FileTailer implements Callable<FileTailerResult>
      *
      * @return
      */
-    public synchronized FileTailerResult getFinalResult()
+    public synchronized TailerResult getFinalResult()
     {
         return m_finalResult;
     }
@@ -285,14 +286,14 @@ public final class FileTailer implements Callable<FileTailerResult>
      * for each new line.
      */
     @Override
-    public FileTailerResult call() throws LogCheckException, IOException
+    public TailerResult call() throws LogCheckException, IOException
     {
         if( LOGGER.isInfoEnabled() )
         {
             LOGGER.info(String.format("Starting tailer : TailerStart .\n%s", toString()));
         }
 
-        FileTailerResult res = FileTailerResult.from(null, null);
+        TailerResult res = TailerResult.from(null, null);
         FileChannel reader = null;
         long position = 0; // position within the m_file
 
@@ -435,7 +436,7 @@ public final class FileTailer implements Callable<FileTailerResult>
                             if( m_statsValidate )
                             {
                                 stop();
-                                res = FileTailerResult.from(res.getResultSet(), m_lastLCState);
+                                res = TailerResult.from(res.getResultSet(), m_lastLCState);
                                 res.getResultSet().add(LCTailerResult.VALIDATION_FAIL);
                                 res.getResultSet().add(LCTailerResult.STATISTICS_RESET);
                             }
@@ -453,7 +454,7 @@ public final class FileTailer implements Callable<FileTailerResult>
                                 // FIXME : Shouldn't we return the state?  So that backups can be processed?
 
                                 stop();
-                                res = FileTailerResult.from(res.getResultSet(), m_lastLCState);
+                                res = TailerResult.from(res.getResultSet(), m_lastLCState);
                                 res.getResultSet().add(LCTailerResult.VALIDATION_FAIL);
                                 res.getResultSet().add(LCTailerResult.FILE_TRUNCATED);
                             }
@@ -512,7 +513,7 @@ public final class FileTailer implements Callable<FileTailerResult>
                         if( valRes.contains( LCTailerResult.SUCCESS ) == false )
                         {
                             // Statistics validation from disk failed.
-                            res = FileTailerResult.from(res.getResultSet(), lastState);
+                            res = TailerResult.from(res.getResultSet(), lastState);
                             res.getResultSet().addAll(valRes);
                             stop();
                             break;
@@ -598,7 +599,7 @@ public final class FileTailer implements Callable<FileTailerResult>
                             m_delayMillis));
 
                     // Delay without interrupts
-                    final FileTailer objInstance = this;
+                    final WindowsEventsTailer objInstance = this;
                     final AtomicBoolean delayCompleted = new AtomicBoolean(false);
                     final Thread delayThread = new Thread( () ->
                     {
@@ -655,7 +656,7 @@ public final class FileTailer implements Callable<FileTailerResult>
             if( res.getState() == null )
             {
                 LOGGER.debug("call() : result without a Log State object.  Adding last state...");
-                res = FileTailerResult.from(res.getResultSet(), m_lastLCState);
+                res = TailerResult.from(res.getResultSet(), m_lastLCState);
             }
 
             m_finalResult = res;
@@ -731,7 +732,7 @@ public final class FileTailer implements Callable<FileTailerResult>
      * Read new lines.
      *
      * @param reader The m_file to read
-     * @throws java.io.IOException if an I/O error occurs.
+     * @throws IOException if an I/O error occurs.
      */
     private void readLines( final FileChannel reader )
             throws IOException, LogCheckException, InterruptedException

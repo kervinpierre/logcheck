@@ -48,6 +48,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -58,7 +59,7 @@ public final class LogCheckConfigWriter
 {
     private static final Logger LOGGER = LogManager.getLogger(LogCheckConfigWriter.class);
 
-    public static void write( final LogCheckConfig js,
+    public static void write( final Map<Integer, LogCheckConfig> js,
                               final Path confFile ) throws LogCheckException
     {
         DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
@@ -78,9 +79,14 @@ public final class LogCheckConfigWriter
 
         Document doc = docBuilder.newDocument();
 
-        Element currElem = LogCheckConfigWriter.toElement(doc, "logCheckConfig", js);
-        doc.appendChild(currElem);
-
+        Element rootElem = doc.createElement("logCheckConfigs");
+        for( Integer i : js.keySet() )
+        {
+            Element currElem = LogCheckConfigWriter.toElement(doc, "logCheckConfig", js.get(i));
+            rootElem.appendChild(currElem);
+        }
+        doc.appendChild(rootElem);
+        
         // write the content into xml file
         TransformerFactory transformerFactory = TransformerFactory.newInstance();
         Transformer transformer = null;
@@ -117,7 +123,7 @@ public final class LogCheckConfigWriter
         }
     }
 
-    public static Path write( final LogCheckConfig js) throws LogCheckException
+    public static Path write( final Map<Integer, LogCheckConfig> js) throws LogCheckException
     {
         Path res = null;
 

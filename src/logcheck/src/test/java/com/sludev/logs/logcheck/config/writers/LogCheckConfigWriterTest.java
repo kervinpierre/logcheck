@@ -23,9 +23,11 @@ import com.sludev.logs.logcheck.LogCheckTestWatcher;
 import com.sludev.logs.logcheck.config.entities.LogCheckConfig;
 import com.sludev.logs.logcheck.config.parsers.LogCheckConfigParser;
 import com.sludev.logs.logcheck.config.parsers.ParserUtil;
+import com.sludev.logs.logcheck.enums.FSSVerbosityEnum;
 import com.sludev.logs.logcheck.enums.LCFileFormat;
 import com.sludev.logs.logcheck.main.LogCheckInitialize;
 import com.sludev.logs.logcheck.utils.FSSArgFile;
+import com.sludev.logs.logcheck.utils.FSSLog4JConfiguration;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.After;
@@ -42,6 +44,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
 /**
@@ -82,9 +85,13 @@ public class LogCheckConfigWriterTest
     @Test
     public void A001_testWrite() throws Exception
     {
+        FSSLog4JConfiguration.setVerbosity(FSSVerbosityEnum.ALL);
+
         LOGGER.debug("A001_testWrite");
 
         List<String> argsList = new ArrayList<>();
+
+        argsList.add("--config=0");
 
         // Top tailing afer 1 minute
         argsList.add("--stop-after=1M");
@@ -129,14 +136,14 @@ public class LogCheckConfigWriterTest
         argsList.add(String.format("--tailer-backup-log-dir %s", logFile));
 
         String[] args = FSSArgFile.getArgArray(argsList);
-        LogCheckConfig config = LogCheckInitialize.initialize(args);
+        Map<Integer, LogCheckConfig> config = LogCheckInitialize.initialize(args);
 
         Path tmpConf = LogCheckConfigWriter.write(config);
 
         Assert.assertNotNull(tmpConf);
         Assert.assertTrue(Files.exists(tmpConf));
 
-        LogCheckConfig lc = LogCheckConfigParser.readConfig(
+        Map<Integer, LogCheckConfig> lc = LogCheckConfigParser.readConfig(
                 ParserUtil.readConfig(tmpConf, LCFileFormat.LCCONFIG));
 
         Assert.assertNotNull(lc);

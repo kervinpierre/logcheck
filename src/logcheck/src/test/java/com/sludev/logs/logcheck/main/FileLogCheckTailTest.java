@@ -39,7 +39,7 @@ import org.junit.rules.TestWatcher;
  *
  * @author kervin
  */
-public class LogCheckTailTest
+public class FileLogCheckTailTest
 {
     private static final Logger log 
                    = LogManager.getLogger(LogEntryElasticSearchTest.class);
@@ -60,7 +60,7 @@ public class LogCheckTailTest
         testProperties = LogCheckProperties.GetProperties();
     }
     
-    public LogCheckTailTest()
+    public FileLogCheckTailTest()
     {
     }
     
@@ -80,7 +80,7 @@ public class LogCheckTailTest
     }
 
     /**
-     * Test of call method, of class LogCheckTail.
+     * Test of call method, of class FileLogCheckTail.
      * @throws java.lang.InterruptedException
      * @throws java.util.concurrent.ExecutionException
      */
@@ -103,7 +103,7 @@ public class LogCheckTailTest
 //        MultiLineDelimitedBuilder currLogEntryBuilder = new MultiLineDelimitedBuilder(logRowStartPattern, logRowEndPattern, logColumnStartPattern, logColumnEndPattern, completionCallback);
 //        currLogEntryBuilder.setCompletionCallback(logEntrySink);
 //
-//        LogCheckTail lct = new LogCheckTail(mainLogEntryBuilder);
+//        FileLogCheckTail lct = new FileLogCheckTail(mainLogEntryBuilder);
 //        //lct.setLogFile(config.getLogPath());
 //        lct.setTailFromEnd(false);
 //        lct.setMainLogEntryBuilder(currLogEntryBuilder);

@@ -34,7 +34,7 @@ import com.sludev.logs.logcheck.config.parsers.ParserUtil;
 import com.sludev.logs.logcheck.enums.LCFileFormat;
 import com.sludev.logs.logcheck.enums.LCResultStatus;
 import com.sludev.logs.logcheck.exceptions.LogCheckException;
-import com.sludev.logs.logcheck.tail.FileTailer;
+import com.sludev.logs.logcheck.tail.impl.FileTailer;
 import com.sludev.logs.logcheck.utils.FSSArgFile;
 import com.sludev.logs.logcheck.utils.LogCheckConstants;
 import com.sludev.logs.logcheck.utils.LogCheckResult;
@@ -73,7 +73,9 @@ import java.nio.file.StandardOpenOption;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -218,7 +220,7 @@ public class LogCheckRunTest
 
         args = FSSArgFile.getArgArray(argsList);
 
-        LogCheckConfig config = LogCheckInitialize.initialize(args);
+        LinkedHashMap<Integer, LogCheckConfig> config = LogCheckInitialize.initialize(args);
 
         LogCheckRun currRun = new LogCheckRun(config);
 
@@ -240,10 +242,10 @@ public class LogCheckRunTest
                 .namingPattern("testLCRunThread-%d")
                 .build();
         ExecutorService lcThreadExe = Executors.newSingleThreadExecutor(thFactory);
-        Future<LogCheckResult> lcFuture = lcThreadExe.submit(currRun);
+        Future<Map<Integer, LogCheckResult>> lcFuture = lcThreadExe.submit(currRun);
         lcThreadExe.shutdown();
 
-        LogCheckResult lcResult;
+        Map<Integer, LogCheckResult> lcResult;
 
         try
         {
@@ -265,7 +267,7 @@ public class LogCheckRunTest
         }
 
         Assert.assertNotNull(lcResult);
-        Assert.assertTrue(lcResult.getStatus() == LCResultStatus.SUCCESS);
+        Assert.assertTrue(lcResult.get(0).getStatus() == LCResultStatus.SUCCESS);
 
         try(Stream<String> strm = Files.lines(logFile))
         {
@@ -359,17 +361,17 @@ public class LogCheckRunTest
         // argsList.add("--random-wait-max=1");
 
         args = FSSArgFile.getArgArray(argsList);
-        LogCheckConfig config = LogCheckInitialize.initialize(args);
+        LinkedHashMap<Integer, LogCheckConfig> config = LogCheckInitialize.initialize(args);
         LogCheckRun currRun = new LogCheckRun(config);
 
         thFactory = new BasicThreadFactory.Builder()
                 .namingPattern("testLCRunThread-%d")
                 .build();
         ExecutorService lcThreadExe = Executors.newSingleThreadExecutor(thFactory);
-        Future<LogCheckResult> lcFuture = lcThreadExe.submit(currRun);
+        Future<Map<Integer, LogCheckResult>> lcFuture = lcThreadExe.submit(currRun);
         lcThreadExe.shutdown();
 
-        LogCheckResult lcResult;
+        Map<Integer, LogCheckResult> lcResult;
 
         try
         {
@@ -387,7 +389,7 @@ public class LogCheckRunTest
         }
 
         Assert.assertNotNull(lcResult);
-        Assert.assertTrue(lcResult.getStatus() == LCResultStatus.SUCCESS);
+        Assert.assertTrue(lcResult.get(0).getStatus() == LCResultStatus.SUCCESS);
 
         long storeFileCount;
         try(Stream<String> strm = Files.lines(storeLogFile))
@@ -608,7 +610,7 @@ public class LogCheckRunTest
         }
 
         args = FSSArgFile.getArgArray(argsList);
-        LogCheckConfig config = LogCheckInitialize.initialize(args);
+        LinkedHashMap<Integer, LogCheckConfig> config = LogCheckInitialize.initialize(args);
 
         // Start the sample app
         Future<LCSAResult> lcAppFuture = appThreadExe.submit(currAppRun);
@@ -626,10 +628,10 @@ public class LogCheckRunTest
                 .namingPattern("testLCRunThread-%d")
                 .build();
         ExecutorService lcThreadExe = Executors.newSingleThreadExecutor(thFactory);
-        Future<LogCheckResult> lcFuture = lcThreadExe.submit(currRun);
+        Future<Map<Integer, LogCheckResult>> lcFuture = lcThreadExe.submit(currRun);
         lcThreadExe.shutdown();
 
-        LogCheckResult lcResult;
+        Map<Integer, LogCheckResult> lcResult;
 
         try
         {
@@ -647,7 +649,7 @@ public class LogCheckRunTest
         }
 
         Assert.assertNotNull(lcResult);
-        Assert.assertTrue(lcResult.getStatus() == LCResultStatus.SUCCESS);
+        Assert.assertTrue(lcResult.get(0).getStatus() == LCResultStatus.SUCCESS);
 
         long currStoreFileCount;
         try(Stream<String> strm = Files.lines(storeLogFile))
@@ -829,17 +831,17 @@ public class LogCheckRunTest
         argsList.add(String.format("--tailer-backup-log-dir %s", testDir));
 
         args = FSSArgFile.getArgArray(argsList);
-        LogCheckConfig config = LogCheckInitialize.initialize(args);
+        LinkedHashMap<Integer, LogCheckConfig> config = LogCheckInitialize.initialize(args);
         LogCheckRun currRun = new LogCheckRun(config);
 
         thFactory = new BasicThreadFactory.Builder()
                 .namingPattern("testLCRunThread-%d")
                 .build();
         ExecutorService lcThreadExe = Executors.newSingleThreadExecutor(thFactory);
-        Future<LogCheckResult> lcFuture = lcThreadExe.submit(currRun);
+        Future<Map<Integer, LogCheckResult>> lcFuture = lcThreadExe.submit(currRun);
         lcThreadExe.shutdown();
 
-        LogCheckResult lcResult;
+        Map<Integer, LogCheckResult> lcResult;
 
         try
         {
@@ -857,7 +859,7 @@ public class LogCheckRunTest
         }
 
         Assert.assertNotNull(lcResult);
-        Assert.assertTrue(lcResult.getStatus() == LCResultStatus.SUCCESS);
+        Assert.assertTrue(lcResult.get(0).getStatus() == LCResultStatus.SUCCESS);
 
         long currLogFileCount = Files.lines(logFile).count();
         long currStoreFileCount = Files.lines(storeLogFile).count();
@@ -1037,7 +1039,7 @@ public class LogCheckRunTest
         Path outFile = testDir.resolve("elasticsearch-out.txt");
 
         args = FSSArgFile.getArgArray(argsList);
-        LogCheckConfig config = LogCheckInitialize.initialize(args);
+        LinkedHashMap<Integer, LogCheckConfig> config = LogCheckInitialize.initialize(args);
         LogCheckRun currRun = new LogCheckRun(config);
 
         List<String> indexes = new ArrayList<>();
@@ -1055,10 +1057,10 @@ public class LogCheckRunTest
                 .namingPattern("testLCRunThread-%d")
                 .build();
         ExecutorService lcThreadExe = Executors.newSingleThreadExecutor(thFactory);
-        Future<LogCheckResult> lcFuture = lcThreadExe.submit(currRun);
+        Future<Map<Integer, LogCheckResult>> lcFuture = lcThreadExe.submit(currRun);
         lcThreadExe.shutdown();
 
-        LogCheckResult lcResult;
+        Map<Integer, LogCheckResult> lcResult;
 
         try
         {
@@ -1071,7 +1073,7 @@ public class LogCheckRunTest
         }
 
         Assert.assertNotNull(lcResult);
-        Assert.assertTrue(lcResult.getStatus() == LCResultStatus.SUCCESS);
+        Assert.assertTrue(lcResult.get(0).getStatus() == LCResultStatus.SUCCESS);
 
         // Now download all data to a file
         EAScroll.doScroll(eaURL, indexes, outFile, false);

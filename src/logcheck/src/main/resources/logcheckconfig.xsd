@@ -23,9 +23,21 @@ NOTICE:  All information contained herein is, and remains
            xmlns:xs="http://www.w3.org/2001/XMLSchema"
            elementFormDefault="qualified">
 
-    <xs:element name="logCheckConfig">
+    <xs:element name="logCheckConfigs">
         <xs:complexType>
             <xs:choice minOccurs="0" maxOccurs="unbounded">
+                <xs:element name="logCheckConfig" type="LogCheckConfigType">
+                    <xs:annotation>
+                        <xs:documentation>Configuration object</xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+            </xs:choice>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:complexType name="LogCheckConfigType">
+
+        <xs:choice minOccurs="0" maxOccurs="unbounded">
                 
                 <xs:element name="service" type="xs:boolean" minOccurs="0" maxOccurs="1">
                     <xs:annotation>
@@ -129,7 +141,19 @@ NOTICE:  All information contained herein is, and remains
                         <xs:documentation>SMTP Protocol</xs:documentation>
                     </xs:annotation>
                 </xs:element>
-                
+
+                <xs:element name="windowsEventConnection" type="xs:string" minOccurs="0"  maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>Windows OS Event Connection</xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+
+                <xs:element name="monitorURL" type="xs:string" minOccurs="0"  maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>Monitor Service URL</xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+
                 <xs:element name="dryRun" type="xs:boolean" minOccurs="0"  maxOccurs="1">
                     <xs:annotation>
                         <xs:documentation>Do not update the database.</xs:documentation>
@@ -139,6 +163,12 @@ NOTICE:  All information contained herein is, and remains
                 <xs:element name="idBlockHashType" type="HashType" minOccurs="0"  maxOccurs="1">
                     <xs:annotation>
                         <xs:documentation>Type of hash algorithm.</xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+
+                <xs:element name="logSourceType" type="LogSourceTypeType" minOccurs="0"  maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>Type of log source for this configuration.</xs:documentation>
                     </xs:annotation>
                 </xs:element>
 
@@ -363,8 +393,9 @@ NOTICE:  All information contained herein is, and remains
                 </xs:element>
 
             </xs:choice>
-        </xs:complexType>
-    </xs:element>
+        <xs:attribute name="id" type="xs:integer" use="required"/>
+
+    </xs:complexType>
 
     <xs:complexType name="DebugFlagsListType">
         <xs:choice minOccurs="0" maxOccurs="unbounded">
@@ -376,6 +407,15 @@ NOTICE:  All information contained herein is, and remains
         <xs:restriction base="xs:string">
             <xs:enumeration value="none"/>
             <xs:enumeration value="log-source-lc-app"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="LogSourceTypeType">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="none"/>
+            <xs:enumeration value="file-local"/>
+            <xs:enumeration value="windows-events"/>
+            <xs:enumeration value="syslog"/>
         </xs:restriction>
     </xs:simpleType>
 

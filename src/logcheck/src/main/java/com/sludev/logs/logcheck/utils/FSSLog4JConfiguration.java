@@ -113,7 +113,7 @@ public class FSSLog4JConfiguration extends AbstractConfiguration
         final Appender appender =
                 ConsoleAppender.createAppender(layout, null,
                         ConsoleAppender.Target.SYSTEM_OUT,
-                        "CONSOLE", true, true);
+                        "CONSOLE", true, false, true);
 
         appender.start();
 
