@@ -91,8 +91,6 @@ public class LogCheckConfigWriterTest
 
         List<String> argsList = new ArrayList<>();
 
-        argsList.add("--config=0");
-
         // Top tailing afer 1 minute
         argsList.add("--stop-after=1M");
 
