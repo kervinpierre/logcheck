@@ -79,72 +79,8 @@ public class LogCheckInitialize
         // Ordered map
         LinkedHashMap<Integer,LogCheckConfig> configs = new LinkedHashMap<>(10);
 
-        LogCheckConfigBuilder currConfBuilder = null;
-
-//        Boolean currService = null;
-//        Boolean currDryRun = null;
-//        Boolean currShowVersion = null;
-//        Boolean currTailFromEnd = null;
-//        Boolean currPrintLogs = null;
-//        Boolean currSaveState = null;
-//        Boolean currContinue = null;
-//        Boolean currReadReOpenLogFile = null;
-//        Boolean currStoreReOpenLogFile = null;
-//        Boolean currStartPositionIgnoreError = null;
-//        Boolean currValidateTailerStats = null;
-//        Boolean currTailerBackupReadLogs = null;
-//        Boolean currTailerBackupReadLogsReverse = null;
-//        Boolean currTailerBackupReadPriorLogs = null;
-//        Boolean currStopOnEOF = null;
-//        Boolean currReadOnlyFileMode = null;
-//        Boolean currCreateMissingDirs = null;
-//        String currPollIntervalSeconds = null;
-//        String currEmailOnError = null;
-//        String currSmtpServer = null;
-//        String currSmtpPort = null;
-//        String currSmtpUser = null;
-//        String currSmtpPass = null;
-//        String currSmtpProto = null;
-//        String currLogDeduplicationDuration = null;
-//        String currLockFile = null;
-//        String currLogPath = null;
-//        String currLogCutoffDuration = null;
-//        String currLogCutoffDate = null;
-//        String currElasticsearchUrl = null;
-//        String currStatusFile = null;
-//        String currStateFile = null;
-//        String currProcessedLogsFile = null;
-//        String currErrorFile = null;
-//        String currIdBlockHashtype = null;
-//        String currIdBlockSize = null;
-//        String currSetName = null;
-//        String currDeDupeDirPath = null;
-//        String currDeDupeMaxLogsPerFile = null;
-//        String currDeDupeMaxLogFiles = null;
-//        String currDeDupeMaxLogsBeforeWrite = null;
-//        String currDeDupeDefaultAction = null;
-//        String currDeDupeIgnoreUntilPercent = null;
-//        String currDeDupeIgnoreUntilCount = null;
-//        String currDeDupeSkipUntilPercent = null;
-//        String currDeDupeSkipUntilCount = null;
-//        String currStopAfter = null;
-//        String currReadLogFileCount = null;
-//        String currReadMaxDeDupeEntries = null;
-//        String currStoreLogFile = null;
-//        String currTailerBackupLogNameRegex = null;
-//        String currTailerBackupLogCompression = null;
-//        String currTailerBackupLogDir = null;
-//        String currVerbosity = null;
-//        String currLogSource = null;
-//        String currWinEventConnection = null;
-//        String currMonitorURL = null;
-//        String currConfigStr = null;
-//        String currStdOutFile = null;
-//        String currPreferredDir = null;
-//        String[] currLEBuilderType = null;
-//        String[] currLEStoreType = null;
-//        String[] currTailerBackupLogNameComps = null;
-//        String[] currDebugFlags = null;
+        // Setup a default '--config=0' config builder object
+        LogCheckConfigBuilder currConfBuilder = LogCheckConfigBuilder.from(0);
 
         try
         {
@@ -262,11 +198,6 @@ public class LogCheckInitialize
                     }
                     else
                     {
-                        if( currConfBuilder == null )
-                        {
-                            throw new LogCheckException("Missing leading '--config=[number]' flag");
-                        }
-
                         switch( currOptName )
                         {
                             case "service":

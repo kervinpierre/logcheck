@@ -29,6 +29,7 @@ import com.sludev.logs.logcheck.exceptions.LogCheckException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
@@ -152,6 +153,15 @@ public final class LogCheckConfigWriter
         Element currElem = null;
 
         res = doc.createElement(elementName);
+        if( lcc.getId() == null
+                || lcc.getId() < 0 )
+        {
+            throw new LogCheckException("Missing ID value");
+        }
+        else
+        {
+            res.setAttribute("id", lcc.getId().toString());
+        }
 
         // service
         Boolean currBoolean = lcc.isService();

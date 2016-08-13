@@ -417,7 +417,7 @@ public class LogCheckConfigParser
             String tempStr = currXPath.compile("./logFilePath").evaluate(currEl);
             if( StringUtils.isNoneBlank(tempStr) )
             {
-                currBuilder.setLockFilePath(tempStr);
+                currBuilder.setLogPath(tempStr);
             }
         }
         catch (XPathExpressionException ex)
@@ -793,7 +793,7 @@ public class LogCheckConfigParser
             String tempStr = currXPath.compile("./reOpenLogFile").evaluate(currEl);
             if( StringUtils.isNoneBlank(tempStr) )
             {
-                currBuilder.setStoreReOpenLogFile(Boolean.parseBoolean(tempStr));
+                currBuilder.setReadReOpenLogFile(Boolean.parseBoolean(tempStr));
             }
         }
         catch (XPathExpressionException ex)
