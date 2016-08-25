@@ -26,7 +26,7 @@ import com.sludev.logs.elasticsearchApp.utils.ESAException;
 import com.sludev.logs.logcheck.LogCheckProperties;
 import com.sludev.logs.logcheck.LogCheckTestWatcher;
 import com.sludev.logs.logcheck.config.entities.LogCheckConfig;
-import com.sludev.logs.logcheck.config.entities.LogCheckState;
+import com.sludev.logs.logcheck.config.entities.impl.LogCheckState;
 import com.sludev.logs.logcheck.config.entities.LogEntryVO;
 import com.sludev.logs.logcheck.config.entities.LogFileBlock;
 import com.sludev.logs.logcheck.config.parsers.LogCheckStateParser;

@@ -17,7 +17,8 @@
  */
 package com.sludev.logs.logcheck.tail.impl;
 
-import com.sludev.logs.logcheck.config.entities.LogCheckState;
+import com.sludev.logs.logcheck.config.entities.LogCheckStateBase;
+import com.sludev.logs.logcheck.config.entities.impl.LogCheckState;
 import com.sludev.logs.logcheck.config.entities.LogFileBlock;
 import com.sludev.logs.logcheck.config.entities.LogFileState;
 import com.sludev.logs.logcheck.enums.LCDebugFlag;
@@ -67,17 +68,17 @@ public final class FileTailer implements ITail
                     = LogManager.getLogger(FileTailer.class);
 
     /**
-     * The m_file which will be tailed.
+     * The file which will be tailed.
      */
     private final Path m_file;
 
     /**
-     * The character set that will be used to read the m_file.
+     * The character set that will be used to read the file.
      */
     private final Charset m_cset;
 
     /**
-     * The amount of time to wait for the m_file to be updated.
+     * The amount of time to wait for the file to be updated.
      */
     private final long m_delayMillis;
 
@@ -86,7 +87,7 @@ public final class FileTailer implements ITail
     private final int m_bufferSize;
 
     /**
-     * Whether to tail from the end or start of m_file
+     * Whether to tail from the end or start of file
      */
     private final boolean m_end;
 
@@ -104,7 +105,7 @@ public final class FileTailer implements ITail
     private final List<ILogEntryBuilder> m_builders;
 
     /**
-     * Whether to close and reopen the m_file whilst waiting for more input.
+     * Whether to close and reopen the file whilst waiting for more input.
      */
     private final boolean m_reOpen;
 
@@ -148,15 +149,15 @@ public final class FileTailer implements ITail
     public static int DEBUG_LCAPP_LOG_SEQUENCE = 0;
 
     /**
-     * Creates a Tailer for the given m_file, with a specified buffer size.
+     * Creates a Tailer for the given file, with a specified buffer size.
      *
-     * @param file the m_file to follow.
-     * @param cset the Charset to be used for reading the m_file
-     * @param delayMillis the delay between checks of the m_file for new content
+     * @param file the file to follow.
+     * @param cset the Charset to be used for reading the file
+     * @param delayMillis the delay between checks of the file for new content
      * in milliseconds.
-     * @param end Set to true to tail from the end of the m_file, false to tail
-     * from the beginning of the m_file.
-     * @param reOpen if true, close and reopen the m_file between reading chunks
+     * @param end Set to true to tail from the end of the file, false to tail
+     * from the beginning of the file.
+     * @param reOpen if true, close and reopen the file between reading chunks
      * @param bufSize Buffer size
      */
     private FileTailer(final Path file,
@@ -491,7 +492,14 @@ public final class FileTailer implements ITail
             {
                 if( m_statsValidate && (m_statsReset == false) )
                 {
-                    LogCheckState lastState = m_statistics.getRestoredStates().peekFirst();
+                    LogCheckStateBase lastStateOrig = m_statistics.getRestoredStates().peekFirst();
+                    LogCheckState lastState = null;
+
+                    if( lastStateOrig instanceof LogCheckState )
+                    {
+                        lastState = (LogCheckState)lastStateOrig;
+                    }
+
                     if( m_lastLCState != null )
                     {
                         // Use the last state if we have it.
@@ -934,9 +942,14 @@ public final class FileTailer implements ITail
                 null);
 
         res = LogCheckState.from(currLogFile,
-                Instant.now(),
                 UUID.randomUUID(),
                 setName,
+                null,
+                null,
+                Instant.now(),
+                null,
+                null,
+                null,
                 null,
                 null);
 
@@ -1010,9 +1023,14 @@ public final class FileTailer implements ITail
 
         // FIXME : We're resetting the processed file list
         res = LogCheckState.from(currLogFile,
-                Instant.now(),
                 UUID.randomUUID(),
                 setName,
+                null,
+                null,
+                Instant.now(),
+                null,
+                null,
+                null,
                 null,
                 null);
 

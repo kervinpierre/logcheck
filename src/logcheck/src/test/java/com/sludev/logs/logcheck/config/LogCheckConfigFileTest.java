@@ -26,7 +26,6 @@ import com.sludev.logs.logcheck.enums.FSSVerbosityEnum;
 import com.sludev.logs.logcheck.enums.LCFileFormat;
 import com.sludev.logs.logcheck.exceptions.LogCheckException;
 
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
 import java.util.Properties;

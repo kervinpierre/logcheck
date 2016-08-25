@@ -18,11 +18,12 @@
 
 package com.sludev.logs.logcheck.config.parsers;
 
-import com.sludev.logs.logcheck.config.entities.LogCheckState;
+import com.sludev.logs.logcheck.config.entities.LogCheckStateBase;
+import com.sludev.logs.logcheck.config.entities.impl.LogCheckState;
 import com.sludev.logs.logcheck.config.entities.LogFileBlock;
 import com.sludev.logs.logcheck.config.entities.LogFileState;
 import com.sludev.logs.logcheck.config.entities.LogFileStatus;
-import com.sludev.logs.logcheck.enums.LCResultStatus;
+import com.sludev.logs.logcheck.config.entities.impl.WindowsEventLogCheckState;
 import com.sludev.logs.logcheck.exceptions.LogCheckException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -39,9 +40,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.ArrayDeque;
-import java.util.ArrayList;
 import java.util.Deque;
-import java.util.List;
 
 /**
  *
@@ -51,25 +50,31 @@ public final class LogCheckStateParser
 {
     private static final Logger LOGGER = LogManager.getLogger(LogCheckStateParser.class);
 
-    public static LogCheckState readConfig(Document doc) throws LogCheckException
+    @SuppressWarnings("unchecked")
+    public static <T extends LogCheckStateBase> T readConfig( Document doc) throws LogCheckException
     {
-        LogCheckState res;
+        T res;
 
-        Element currEl;
+        Element rootEl;
 
-        currEl = doc.getDocumentElement();
+        rootEl = doc.getDocumentElement();
 
         XPathFactory currXPathfactory = XPathFactory.newInstance();
         XPath currXPath = currXPathfactory.newXPath();
         String saveDateStr = null;
+        String recordPositionStr = null;
+        String recordCountStr = null;
+        String recordIdStr = null;
         String setNameStr = null;
+        String serverIdStr = null;
+        String sourceIdStr = null;
         String idStr = null;
         LogFileState logFile = null;
         Deque<LogFileStatus> statuses = null;
 
         try
         {
-            setNameStr = currXPath.compile("./setName").evaluate(currEl);
+            setNameStr = currXPath.compile("./setName").evaluate(rootEl);
         }
         catch (XPathExpressionException ex)
         {
@@ -78,7 +83,7 @@ public final class LogCheckStateParser
 
         try
         {
-            saveDateStr = currXPath.compile("./saveDate").evaluate(currEl);
+            saveDateStr = currXPath.compile("./saveDate").evaluate(rootEl);
         }
         catch (XPathExpressionException ex)
         {
@@ -87,7 +92,52 @@ public final class LogCheckStateParser
 
         try
         {
-            idStr = currXPath.compile("./id").evaluate(currEl);
+            idStr = currXPath.compile("./id").evaluate(rootEl);
+        }
+        catch (XPathExpressionException ex)
+        {
+            LOGGER.debug("configuration parsing error.", ex);
+        }
+
+        try
+        {
+            serverIdStr = currXPath.compile("./serverId").evaluate(rootEl);
+        }
+        catch (XPathExpressionException ex)
+        {
+            LOGGER.debug("configuration parsing error.", ex);
+        }
+
+        try
+        {
+            sourceIdStr = currXPath.compile("./sourceId").evaluate(rootEl);
+        }
+        catch (XPathExpressionException ex)
+        {
+            LOGGER.debug("configuration parsing error.", ex);
+        }
+
+        try
+        {
+            recordIdStr = currXPath.compile("./recordId").evaluate(rootEl);
+        }
+        catch (XPathExpressionException ex)
+        {
+            LOGGER.debug("configuration parsing error.", ex);
+        }
+
+        try
+        {
+            recordCountStr = currXPath.compile("./recordCount").evaluate(rootEl);
+        }
+        catch (XPathExpressionException ex)
+        {
+            LOGGER.debug("configuration parsing error.", ex);
+        }
+
+        try
+        {
+            recordPositionStr = currXPath.compile("./recordPosition").evaluate(rootEl);
         }
         catch (XPathExpressionException ex)
         {
@@ -97,7 +147,7 @@ public final class LogCheckStateParser
         try
         {
             Element tempEl = (Element)currXPath.compile("./logFile").evaluate(
-                    currEl, XPathConstants.NODE);
+                    rootEl, XPathConstants.NODE);
 
             if( (tempEl != null) && tempEl.hasChildNodes() )
             {
@@ -112,7 +162,7 @@ public final class LogCheckStateParser
         try
         {
             NodeList currElList = (NodeList)currXPath.compile("./fileStatuses/fileStatus").evaluate(
-                    currEl, XPathConstants.NODESET);
+                    rootEl, XPathConstants.NODESET);
 
             if( (currElList != null) && (currElList.getLength() > 0) )
             {
@@ -134,12 +184,58 @@ public final class LogCheckStateParser
             LOGGER.debug("configuration parsing error <fileStatuses>.", ex);
         }
 
-        res = LogCheckState.from(logFile,
-                saveDateStr,
-                idStr,
-                setNameStr,
-                null,
-                statuses);
+        String type = null;
+        try
+        {
+            String tempStr = currXPath.compile("./@type").evaluate(rootEl);
+            if( StringUtils.isNoneBlank(tempStr) )
+            {
+                type = StringUtils.upperCase(tempStr);
+            }
+        }
+        catch (XPathExpressionException ex)
+        {
+            LOGGER.debug("configuration parsing error.", ex);
+        }
+
+        if( StringUtils.isBlank(type) )
+        {
+            throw new LogCheckException("Log Check State type not found.");
+        }
+
+        switch( type )
+        {
+            case "WINDOWSEVENTLOGCHECKSTATE":
+                {
+                    res = (T) WindowsEventLogCheckState.from(
+                            idStr,
+                            setNameStr,
+                            serverIdStr,
+                            sourceIdStr,
+                            saveDateStr,
+                            recordIdStr,
+                            recordPositionStr,
+                            recordCountStr,
+                            null);
+                }
+                break;
+
+            default:
+                {
+                    res = (T)LogCheckState.from(logFile,
+                            idStr,
+                            setNameStr,
+                            serverIdStr,
+                            sourceIdStr,
+                            saveDateStr,
+                            recordIdStr,
+                            recordPositionStr,
+                            recordCountStr,
+                            null,
+                            null);
+                }
+                break;
+        }
 
         return res;
     }

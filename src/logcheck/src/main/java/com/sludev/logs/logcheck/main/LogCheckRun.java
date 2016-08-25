@@ -31,6 +31,7 @@ import com.sludev.logs.logcheck.log.ILogEntrySource;
 import com.sludev.logs.logcheck.log.impl.builder.MultiLineDelimitedBuilder;
 import com.sludev.logs.logcheck.log.impl.LogEntryQueueSink;
 import com.sludev.logs.logcheck.log.impl.LogEntryQueueSource;
+import com.sludev.logs.logcheck.log.impl.builder.WindowsEventBuilder;
 import com.sludev.logs.logcheck.store.ILogEntryStore;
 import com.sludev.logs.logcheck.store.LogEntryStore;
 import com.sludev.logs.logcheck.store.impl.LogEntryConsole;
@@ -38,6 +39,8 @@ import com.sludev.logs.logcheck.store.impl.LogEntryElasticSearch;
 import com.sludev.logs.logcheck.store.impl.LogEntrySimpleFile;
 import com.sludev.logs.logcheck.tail.ILogCheckTail;
 import com.sludev.logs.logcheck.tail.impl.FileLogCheckTail;
+import com.sludev.logs.logcheck.tail.impl.WindowsEventTail;
+import com.sludev.logs.logcheck.tail.impl.WindowsEventTailer;
 import com.sludev.logs.logcheck.utils.LogCheckConstants;
 import com.sludev.logs.logcheck.utils.LogCheckResult;
 import com.sludev.logs.logcheck.exceptions.LogCheckException;
@@ -61,7 +64,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingDeque;
 
 import org.apache.commons.lang3.BooleanUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.concurrent.BasicThreadFactory;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -126,9 +128,9 @@ public class LogCheckRun implements Callable<Map<Integer, LogCheckResult>>
 
         Map<Integer, LogCheckResult> res = new HashMap<>(10);
 
-        LogCheckConfig firstConf = m_configs.get(0);
+        LogCheckConfig firstConfig = m_configs.get(0);
 
-        if( BooleanUtils.isTrue(firstConf.isShowVersion()) )
+        if( BooleanUtils.isTrue(firstConfig.isShowVersion()) )
         {
             LogCheckUtil.displayVersion();
             res.put(0, LogCheckResult.from(LCResultStatus.SUCCESS));
@@ -137,13 +139,13 @@ public class LogCheckRun implements Callable<Map<Integer, LogCheckResult>>
         }
 
         // Preferred directory setup in first config
-        if( firstConf.getPreferredDir() != null )
+        if( firstConfig.getPreferredDir() != null )
         {
             // This doesn't do much, but less set user.dir for CWD hint
-            if( Files.notExists(firstConf.getPreferredDir() ) )
+            if( Files.notExists(firstConfig.getPreferredDir() ) )
             {
                 String msg = String.format("Preferred Directory supplied does not exist. '%s'",
-                        firstConf.getPreferredDir());
+                        firstConfig.getPreferredDir());
 
                 LOGGER.debug(msg);
 
@@ -151,11 +153,11 @@ public class LogCheckRun implements Callable<Map<Integer, LogCheckResult>>
             }
 
             // FIXME : Though this doesn't *actually* modify the CWD
-            String prefDirStr = firstConf.getPreferredDir().toAbsolutePath().toString();
+            String prefDirStr = firstConfig.getPreferredDir().toAbsolutePath().toString();
             System.setProperty("user.dir", prefDirStr);
         }
 
-        m_lockFile = firstConf.getLockFilePath();
+        m_lockFile = firstConfig.getLockFilePath();
 
         // Setup the acquiring and release of the lock file
         acquireLockFile(m_lockFile);
@@ -163,26 +165,30 @@ public class LogCheckRun implements Callable<Map<Integer, LogCheckResult>>
 
         // Loop configs for log sources
         Map<Integer, LCLogSourceType> logSourceTypeMap = new HashMap<>(10);
-        Map<Integer, ILogEntrySource> logSourceMap = new HashMap<>(10);
+        Map<Integer, ILogEntrySource> logSourceMap     = new HashMap<>(10);
         Map<Integer, List<ILogEntryBuilder>> logBuilderMap = new HashMap<>(10);
         for(Integer confKey : m_configs.keySet() )
         {
-            if( confKey == 0 )
-            {
-                continue;
-            }
-
             LogCheckConfig currConfig = m_configs.get(confKey);
 
             LCLogSourceType currSrcType = currConfig.getLogSourceType();
             if( currSrcType == null )
             {
-                String errMsg = String.format("Missing source for configuration '%d'",
-                        confKey);
+                if( confKey == 0 )
+                {
+                    // Config '0' is allowed to not have a source since it
+                    // may only provide defaults for the other configs.
+                    continue;
+                }
+                else
+                {
+                    String errMsg = String.format("Missing source for configuration '%d'",
+                            confKey);
 
-                LOGGER.debug(errMsg);
+                    LOGGER.debug(errMsg);
 
-                throw new LogCheckException(errMsg);
+                    throw new LogCheckException(errMsg);
+                }
             }
 
             BlockingDeque<LogEntry> currQ = new LinkedBlockingDeque<>();
@@ -247,6 +253,12 @@ public class LogCheckRun implements Callable<Map<Integer, LogCheckResult>>
                     }
                     break;
 
+                    case WINDOWS_EVENT:
+                    {
+                        currLogEntryBuilders.add(WindowsEventBuilder.from(null, logEntrySink));
+                    }
+                    break;
+
                     default:
                         String errMsg = String.format("Error creating LogEntry builder '%s'",
                                 currConfig.getLogEntryBuilders());
@@ -258,81 +270,134 @@ public class LogCheckRun implements Callable<Map<Integer, LogCheckResult>>
 
         }
 
-        Path currDeDupeDirPath = firstConf.fixPathWithPreferred(
-                                            firstConf.getDeDupeDirPath());
-
-        // Create missing directories if necessary
-        if( BooleanUtils.isTrue(firstConf.willCreateMissingDirs()) )
-        {
-            if( (currDeDupeDirPath != null)
-                    && Files.notExists(currDeDupeDirPath) )
-            {
-                try
-                {
-                    Files.createDirectory(currDeDupeDirPath);
-                }
-                catch( IOException ex )
-                {
-                    String msg = String.format("Failed creating De-duplication directory '%s'",
-                            currDeDupeDirPath);
-
-                    LOGGER.debug(msg, ex);
-
-                    throw new LogCheckException(msg, ex);
-                }
-            }
-        }
-
         Map<Integer, ILogCheckTail> tailerMap = new HashMap<>(10);
         for( Integer confKey : logSourceTypeMap.keySet() )
         {
             LCLogSourceType tailerType = logSourceTypeMap.get(confKey);
             LogCheckConfig currConfig = m_configs.get(confKey);
 
+            // Merge the first config with the current configuration.
+            // This is done so we can have the default setup in the first
+            // configuration object.
+            currConfig = LogCheckConfig.merge(currConfig, firstConfig);
+
+            // Each config has a unique source and so should have a unique
+            // deduplication directory
+            Path currDeDupeDirPath = currConfig.fixPathWithPreferred(
+                    currConfig.getDeDupeDirPath())
+                            .resolve(confKey.toString());
+
+            // Create missing directories if necessary
+            if( BooleanUtils.isTrue(currConfig.willCreateMissingDirs()) )
+            {
+                if( (currDeDupeDirPath != null)
+                        && Files.notExists(currDeDupeDirPath) )
+                {
+                    try
+                    {
+                        Files.createDirectories(currDeDupeDirPath);
+                    }
+                    catch( IOException ex )
+                    {
+                        String msg = String.format("Failed creating De-duplication directory '%s'",
+                                currDeDupeDirPath);
+
+                        LOGGER.debug(msg, ex);
+
+                        throw new LogCheckException(msg, ex);
+                    }
+                }
+            }
+
             // Create the tailer for each config
             // And pass into it the previously selected Log Entry Builder.
             switch( tailerType )
             {
                 case FILE_LOCAL:
+                {
                     FileLogCheckTail lct = FileLogCheckTail.from(
                             logBuilderMap.get(confKey),
-                        currConfig.fixPathWithPreferred(currConfig.getLogPath()),
-                        currConfig.fixPathWithPreferred(currConfig.getDeDupeDirPath()),
-                        null, // startPosition
-                        currConfig.getPollIntervalSeconds(),
-                        currConfig.willContinueState(),
-                        currConfig.isTailFromEnd(),
-                        currConfig.willReadReOpenLogFile(),
-                        currConfig.willSaveState(),
-                        currConfig.willIgnoreStartPositionError(),
-                        currConfig.willValidateTailerStats(),
-                        currConfig.willCollectState(),
-                        true, // watch backup directory
-                        currConfig.willTailerBackupReadLog(),
-                        currConfig.willTailerBackupReadLogReverse(),
-                        currConfig.willTailerBackupReadPriorLog(),
-                        currConfig.willStopOnEOF(),
-                        currConfig.isReadOnlyFileMode(),
-                        true, // Is main thread?
-                        false, // Reset statistics?
-                        null, // bufferSize
-                        currConfig.getReadLogFileCount(),
-                        currConfig.getReadMaxDeDupeEntries(),
-                        currConfig.getStopAfter(), // stopAfter
-                        currConfig.getIdBlockHashType(),
-                        currConfig.getIdBlockSize(),
-                        currConfig.getSetName(),
-                        currConfig.fixPathWithPreferred(currConfig.getStateFilePath()),
-                        currConfig.fixPathWithPreferred(currConfig.getStateProcessedLogsFilePath()),
-                        currConfig.fixPathWithPreferred(currConfig.getErrorFilePath()),
-                        currConfig.fixPathWithPreferred(currConfig.getTailerLogBackupDir()),
-                        currConfig.getPreferredDir(),
-                        currConfig.getTailerBackupLogNameComps(),
-                        currConfig.getTailerBackupLogCompression(),
-                        currConfig.getTailerBackupLogNameRegex(),
-                        currConfig.getDebugFlags());
+                            currConfig.fixPathWithPreferred(currConfig.getLogPath()),
+                            currDeDupeDirPath,
+                            null, // startPosition
+                            currConfig.getPollIntervalSeconds(),
+                            currConfig.willContinueState(),
+                            currConfig.isTailFromEnd(),
+                            currConfig.willReadReOpenLogFile(),
+                            currConfig.willSaveState(),
+                            currConfig.willIgnoreStartPositionError(),
+                            currConfig.willValidateTailerStats(),
+                            currConfig.willCollectState(),
+                            true, // watch backup directory
+                            currConfig.willTailerBackupReadLog(),
+                            currConfig.willTailerBackupReadLogReverse(),
+                            currConfig.willTailerBackupReadPriorLog(),
+                            currConfig.willStopOnEOF(),
+                            currConfig.isReadOnlyFileMode(),
+                            true, // Is main thread?
+                            false, // Reset statistics?
+                            null, // bufferSize
+                            currConfig.getReadLogFileCount(),
+                            currConfig.getReadMaxDeDupeEntries(),
+                            currConfig.getStopAfter(), // stopAfter
+                            currConfig.getIdBlockHashType(),
+                            currConfig.getIdBlockSize(),
+                            currConfig.getSetName(),
+                            currConfig.fixPathWithPreferred(currConfig.getStateFilePath()),
+                            currConfig.fixPathWithPreferred(currConfig.getStateProcessedLogsFilePath()),
+                            currConfig.fixPathWithPreferred(currConfig.getErrorFilePath()),
+                            currConfig.fixPathWithPreferred(currConfig.getTailerLogBackupDir()),
+                            currConfig.getPreferredDir(),
+                            currConfig.getTailerBackupLogNameComps(),
+                            currConfig.getTailerBackupLogCompression(),
+                            currConfig.getTailerBackupLogNameRegex(),
+                            currConfig.getDebugFlags());
 
                     tailerMap.put(confKey, lct);
+                    }
+                    break;
+
+                case WINDOWS_EVENT:
+                {
+                    WindowsEventTail lct = WindowsEventTail.from(logBuilderMap.get(confKey),
+                            currConfig.getWindowsEventConnection(),
+                            currDeDupeDirPath,
+                            null, // startPosition
+                            currConfig.getPollIntervalSeconds(),
+                            currConfig.willContinueState(),
+                            currConfig.isTailFromEnd(),
+                            currConfig.willReadReOpenLogFile(),
+                            currConfig.willSaveState(),
+                            currConfig.willIgnoreStartPositionError(),
+                            currConfig.willValidateTailerStats(),
+                            currConfig.willCollectState(),
+                            true, // watch backup directory
+                            currConfig.willTailerBackupReadLog(),
+                            currConfig.willTailerBackupReadLogReverse(),
+                            currConfig.willTailerBackupReadPriorLog(),
+                            currConfig.willStopOnEOF(),
+                            currConfig.isReadOnlyFileMode(),
+                            true, // Is main thread?
+                            false, // Reset statistics?
+                            null, // bufferSize
+                            currConfig.getReadLogFileCount(),
+                            currConfig.getReadMaxDeDupeEntries(),
+                            currConfig.getStopAfter(), // stopAfter
+                            currConfig.getIdBlockHashType(),
+                            currConfig.getIdBlockSize(),
+                            currConfig.getSetName(),
+                            currConfig.fixPathWithPreferred(currConfig.getStateFilePath()),
+                            currConfig.fixPathWithPreferred(currConfig.getStateProcessedLogsFilePath()),
+                            currConfig.fixPathWithPreferred(currConfig.getErrorFilePath()),
+                            currConfig.fixPathWithPreferred(currConfig.getTailerLogBackupDir()),
+                            currConfig.getPreferredDir(),
+                            currConfig.getTailerBackupLogNameComps(),
+                            currConfig.getTailerBackupLogCompression(),
+                            currConfig.getTailerBackupLogNameRegex(),
+                            currConfig.getDebugFlags());
+
+                    tailerMap.put(confKey, lct);
+                }
                     break;
             }
         }
@@ -342,11 +407,6 @@ public class LogCheckRun implements Callable<Map<Integer, LogCheckResult>>
         Map<Integer, LogEntryStore> storeWrapperMap = new HashMap<>(10);
         for(Integer confKey : m_configs.keySet() )
         {
-            if( confKey == 0 )
-            {
-                continue;
-            }
-
             LogCheckConfig currConfig = m_configs.get(confKey);
 
             List<ILogEntryStore> currStores = new ArrayList<>(10);
@@ -396,15 +456,32 @@ public class LogCheckRun implements Callable<Map<Integer, LogCheckResult>>
                         break;
                 }
             }
-
-            if( currStores.size() < 1 )
-            {
-                throw new LogCheckException("No valid log store found");
-            }
+//
+//            if( currStores.size() < 1 )
+//            {
+//                throw new LogCheckException("No valid log store found");
+//            }
 
             for( ILogEntryStore store : currStores )
             {
                 store.init();
+            }
+        }
+
+        List<ILogEntryStore> defaultStores = storeMap.get(0);
+        for(Integer confKey : m_configs.keySet() )
+        {
+            List<ILogEntryStore> currStores = storeMap.get(confKey);
+            LogCheckConfig currConfig = m_configs.get(confKey);
+
+            if( currStores == null )
+            {
+                currStores = defaultStores;
+            }
+
+            if( currStores == null )
+            {
+                throw new LogCheckException("No valid log store found");
             }
 
             LogEntryStore storeWrapper = LogEntryStore.from(logSourceMap.get(confKey),
@@ -450,23 +527,15 @@ public class LogCheckRun implements Callable<Map<Integer, LogCheckResult>>
                 .build();
         ExecutorService logStoreExe = Executors.newCachedThreadPool(logStoreFactory);
 
-        Map<Integer, List<Future<LogCheckResult>>> storeThreads = new HashMap<>(10);
-        for(Integer currK : tailerMap.keySet())
+        Map<Integer, Future<LogCheckResult>> storeThreads = new HashMap<>(10);
+        for(Integer currK : storeWrapperMap.keySet())
         {
-            List<ILogEntryStore> currStores = storeMap.get(currK);
-            List<Future<LogCheckResult>> currStoreFutures = new ArrayList<>(10);
+            Future<LogCheckResult> logStoreFuture = logStoreExe.submit(storeWrapperMap.get(currK));
 
-            for( ILogEntryStore iles : currStores )
-            {
-                Future<LogCheckResult> logStoreFuture = logStoreExe.submit(storeWrapperMap.get(currK));
-
-                currStoreFutures.add(logStoreFuture);
-
-                LogCheckResult logStoreRes = null;
-            }
-            storeThreads.put(currK, currStoreFutures);
-
+            LogCheckResult logStoreRes = null;
+            storeThreads.put(currK, logStoreFuture);
         }
+
         logStoreExe.shutdown();
 
         try
@@ -485,12 +554,8 @@ public class LogCheckRun implements Callable<Map<Integer, LogCheckResult>>
                     // The Log Store stopped so we should stop the tailer as well
                     for( Integer currK : storeThreads.keySet() )
                     {
-                        List<Future<LogCheckResult>> currFutures = storeThreads.get(currK);
-                        for( Future<LogCheckResult> currFuture : currFutures )
-                        {
-                            currFuture.cancel(true);
-                        }
-
+                        Future<LogCheckResult> currFuture = storeThreads.get(currK);
+                        currFuture.cancel(true);
                     }
 
                     run = false;
@@ -527,11 +592,8 @@ public class LogCheckRun implements Callable<Map<Integer, LogCheckResult>>
                                         + "CANCELLING the Log Store thread because the Tailer thread was done first."
                                         + "\n==============================\n");
 
-                                List<Future<LogCheckResult>> currStores = storeThreads.get(currK);
-                                for( Future<LogCheckResult> store : currStores )
-                                {
-                                    store.cancel(true);
-                                }
+                                Future<LogCheckResult> currStore = storeThreads.get(currK);
+                                currStore.cancel(true);
                              //   logStoreFuture.cancel(true);
                             }
                         }
@@ -543,40 +605,37 @@ public class LogCheckRun implements Callable<Map<Integer, LogCheckResult>>
                 {
                     for( Integer currK : storeThreads.keySet() )
                     {
-                        List<Future<LogCheckResult>> currStores = storeThreads.get(currK);
-                        for( Future<LogCheckResult> store : currStores )
+                        Future<LogCheckResult> currStore = storeThreads.get(currK);
+                        if( currStore.isCancelled() )
                         {
-                            if( store.isCancelled() )
+                            allStoresAreRunning = false;
+
+                            break;
+                        }
+                        else if( currStore.isDone() )
+                        {
+                            allStoresAreRunning = false;
+
+                            // Log storage thread has completed.  Generally this should
+                            // not happen until we're shutting down.
+                            try
                             {
-                                allStoresAreRunning = false;
-
-                                break;
+                                storeResList.put(currK, currStore.get());
                             }
-                            else if( store.isDone() )
+                            catch( InterruptedException ex )
                             {
-                                allStoresAreRunning = false;
+                                LOGGER.error("Log Store Thread interrupted.", ex);
 
-                                // Log storage thread has completed.  Generally this should
-                                // not happen until we're shutting down.
-                                try
-                                {
-                                    storeResList.put(currK, store.get());
-                                }
-                                catch( InterruptedException ex )
-                                {
-                                    LOGGER.error("Log Store Thread interrupted.", ex);
-
-                                    storeResList.put(currK,
-                                            LogCheckResult.from(LCResultStatus.INTERRUPTED));
-                                }
-                                catch( ExecutionException ex )
-                                {
-                                    LOGGER.error("Log Store Thread failed.", ex);
-                                    storeResList.put(currK,
-                                            LogCheckResult.from(LCResultStatus.FAIL));
-                                }
-                                break;
+                                storeResList.put(currK,
+                                        LogCheckResult.from(LCResultStatus.INTERRUPTED));
                             }
+                            catch( ExecutionException ex )
+                            {
+                                LOGGER.error("Log Store Thread failed.", ex);
+                                storeResList.put(currK,
+                                        LogCheckResult.from(LCResultStatus.FAIL));
+                            }
+                            break;
                         }
                     }
                 }

@@ -12,6 +12,7 @@ public enum LCLogEntryBuilderType
     NONE,
     SINGLELINE,
     NCSA_COMMON_LOG,
+    WINDOWS_EVENT,
     MULTILINE_DELIMITED;
 
     public static Logger log
@@ -26,8 +27,7 @@ public enum LCLogEntryBuilderType
             res = LCLogEntryBuilderType.valueOf(
                     StringUtils.upperCase(
                             StringUtils.trim(
-                                    StringUtils.replace(
-                                            StringUtils.remove(s, "-"), " ", "_"))));
+                                    StringUtils.replace(s, "-", "_"))));
         }
         catch(Exception ex)
         {

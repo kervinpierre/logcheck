@@ -17,6 +17,8 @@
  */
 package com.sludev.logs.logcheck.enums;
 
+import org.apache.commons.lang3.StringUtils;
+
 /**
  *
  * @author kervin
@@ -27,6 +29,32 @@ public enum LCLogLevel
     ALL,
     DEBUG,
     INFO,
+    INFORMATION,
     WARN,
-    ERROR
+    WARNING,
+    ERROR,
+    FAILUREAUDIT,
+    SUCCESSAUDIT;
+
+    public static LCLogLevel from( String s )
+    {
+        LCLogLevel res;
+
+        res = LCLogLevel.valueOf(
+                StringUtils.upperCase(
+                        StringUtils.trim(s)));
+
+        switch( res )
+        {
+            case WARNING:
+                res = WARN;
+                break;
+
+            case INFORMATION:
+                res = INFO;
+                break;
+        }
+
+        return res;
+    }
 }

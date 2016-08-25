@@ -106,29 +106,30 @@
 **/
 
 ## A11. Test tailing multiple files and Windows Events
---config=0                                     \
-  --set-name="Main configuration"              \
+--set-name="Main configuration"              \
   --verbosity=debug                            \
   --create-missing-dirs                        \
-  --stdout-file=/tmp/test01.txt                \
+  --stdout-file=c:/windows/temp/test01.txt                \
   --service                                    \
-  --monitor-url=file://                        \
+    # Use local file for monitor IO
+  --monitor-url=file://c:/windows/temp/mon.dat \
     # Stop after 60 seconds
-  --stop-after=60                              \
+  --stop-after=600                              \
 --config=1                                     \
   --set-name="First monitored file"            \
   --continue                                   \
     # Close/reopen the log file during reads
   --read-reopen-log-file                       \
   --tailer-validate-log-file                   \
-  --print-logs
-  --log-file /tmp/logcheck-sample-app-output1.txt \
+  --print-logs                                 \
+  --log-source=file-local                      \
+  --log-file c:/windows/temp/logcheck-sample-app-output1.txt \
   --log-entry-builder-type=singleline            \
   --log-entry-store-type=console,simplefile      \
-  --store-log-file /tmp/store-log.txt            \
+  --store-log-file c:/windows/temp/store-log.txt            \
   --save-state                                   \
-  --state-file /tmp/current-state.xml            \
-  --dedupe-dir-path /tmp/dedupe                  \
+  --state-file c:/windows/temp/current-state01.xml            \
+  --dedupe-dir-path c:/windows/temp/dedupe                  \
   --dedupe-max-before-write=5                    \
   --dedupe-log-per-file 10                       \
   --dedupe-max-log-files=5                       \
@@ -138,14 +139,15 @@
     # Close/reopen the log file during reads
   --read-reopen-log-file                       \
   --tailer-validate-log-file                   \
-  --print-logs
-  --log-file /tmp/logcheck-sample-app-output2.txt \
+  --print-logs                                 \
+  --log-source=file-local                      \
+  --log-file c:/windows/temp/logcheck-sample-app-output2.txt \
   --log-entry-builder-type=singleline            \
   --log-entry-store-type=console,simplefile      \
-  --store-log-file /tmp/store-log.txt            \
+  --store-log-file c:/windows/temp/store-log.txt            \
   --save-state                                   \
-  --state-file /tmp/current-state.xml            \
-  --dedupe-dir-path /tmp/dedupe                  \
+  --state-file c:/windows/temp/current-state02.xml            \
+  --dedupe-dir-path c:/windows/temp/dedupe                  \
   --dedupe-max-before-write=5                    \
   --dedupe-log-per-file 10                       \
   --dedupe-max-log-files=5                       \
@@ -153,17 +155,18 @@
   --set-name="Windows Events Local"            \
   --continue                                   \
     # Close/reopen the log file during reads
-  --read-reopen-log-file                       \
-  --tailer-validate-log-file                   \
-  --print-logs
-  --log-source=windows-event-log                 \
-  --windows-event-connection=localhost:Application,Security,System \
+  --read-reopen-log-file                        \
+  --tailer-validate-log-file                    \
+  --print-logs                                  \
+  --log-source=windows-event                    \
+  --windows-event-connection=localhost:Application,Security,System,LogCheckTestAA \
+  --log-entry-builder-type=windows-event         \
   --log-entry-builder-type=windows-event         \
   --log-entry-store-type=console,simplefile      \
-  --store-log-file /tmp/store-log.txt            \
+  --store-log-file c:/windows/temp/store-log.txt            \
   --save-state                                   \
-  --state-file /tmp/current-state.xml            \
-  --dedupe-dir-path /tmp/dedupe                  \
+  --state-file c:/windows/temp/current-state03.xml            \
+  --dedupe-dir-path c:/windows/temp/dedupe                  \
   --dedupe-max-before-write=5                    \
   --dedupe-log-per-file 10                       \
   --dedupe-max-log-files=5

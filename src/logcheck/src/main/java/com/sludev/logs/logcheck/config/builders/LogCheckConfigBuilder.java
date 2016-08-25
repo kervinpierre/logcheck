@@ -24,7 +24,6 @@ import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.LocalTime;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -1348,7 +1347,6 @@ public final class LogCheckConfigBuilder
     public void setLogSourceType( String logSourceTypeStr )
             throws LogCheckException
     {
-
         if(StringUtils.isNoneBlank(logSourceTypeStr))
         {
             try
