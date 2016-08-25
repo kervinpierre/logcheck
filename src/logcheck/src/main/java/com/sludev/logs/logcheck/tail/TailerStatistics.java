@@ -18,8 +18,10 @@
 
 package com.sludev.logs.logcheck.tail;
 
+import com.sludev.logs.logcheck.config.entities.LogCheckStateBase;
 import com.sludev.logs.logcheck.config.entities.LogCheckDeDupeLog;
-import com.sludev.logs.logcheck.config.entities.LogCheckState;
+import com.sludev.logs.logcheck.config.entities.LogCheckStateBase;
+import com.sludev.logs.logcheck.config.entities.impl.LogCheckState;
 import com.sludev.logs.logcheck.config.entities.LogEntryDeDupe;
 import com.sludev.logs.logcheck.config.entities.LogFileState;
 import com.sludev.logs.logcheck.config.parsers.LogCheckStateParser;
@@ -62,9 +64,9 @@ public final class TailerStatistics
     private final String m_setName;
 
     // Mutable
-    private final BlockingDeque<LogCheckState> m_savedStates;
-    private final BlockingDeque<LogCheckState> m_pendingSaveStates;
-    private final BlockingDeque<LogCheckState> m_restoredStates;
+    private final BlockingDeque<LogCheckStateBase> m_savedStates;
+    private final BlockingDeque<LogCheckStateBase> m_pendingSaveStates;
+    private final BlockingDeque<LogCheckStateBase> m_restoredStates;
 
     private Instant m_LastProcessedTimeStart;
 
@@ -78,7 +80,7 @@ public final class TailerStatistics
         m_LastProcessedTimeStart = inst;
     }
 
-    public BlockingDeque<LogCheckState> getRestoredStates()
+    public BlockingDeque<LogCheckStateBase> getRestoredStates()
     {
         return m_restoredStates;
     }
@@ -106,7 +108,7 @@ public final class TailerStatistics
         return res;
     }
 
-    public synchronized void putPendingSaveState(LogCheckState lcs) throws InterruptedException
+    public synchronized void putPendingSaveState(LogCheckStateBase lcs) throws InterruptedException
     {
         m_pendingSaveStates.putFirst(lcs);
     }
@@ -127,7 +129,7 @@ public final class TailerStatistics
                                               final boolean ignoreMissingLogFile )
             throws InterruptedException, LogCheckException
     {
-        LogCheckState state = null;
+        LogCheckStateBase state = null;
 
         if( m_pendingSaveStates.isEmpty() )
         {
@@ -152,7 +154,6 @@ public final class TailerStatistics
         {
             clearPendingSaveState();
         }
-
 
         save(state, resetPosition, ignoreMissingLogFile);
     }
@@ -179,7 +180,7 @@ public final class TailerStatistics
         save(currState, resetPosition, ignoreMissingLogFile);
     }
 
-    public synchronized void save(  final LogCheckState currState,
+    public synchronized void save(  final LogCheckStateBase currState,
                                     final boolean resetPosition,
                                     final boolean ignoreMissingLogFile )
             throws LogCheckException, InterruptedException
@@ -189,7 +190,7 @@ public final class TailerStatistics
         m_savedStates.putFirst(currState);
     }
 
-    public static synchronized void save(final LogCheckState state,
+    public static synchronized void save(final LogCheckStateBase state,
                                          final Path stateFile,
                                          final Path errorFile,
                                          final Boolean resetPosition,
@@ -198,23 +199,28 @@ public final class TailerStatistics
         LOGGER.debug(String.format("Saving statistics to '%s'.", stateFile));
 
         Pair<Path,Path> files;
-        LogFileState currLFS = state.getLogFile();
 
-        if( (currLFS == null) && BooleanUtils.isNotTrue(ignoreMissingLogFile) )
+        // FIXME : Use inheritance instead of a class check
+        if( state instanceof LogCheckState )
         {
-            throw new LogCheckException("LogFile cannot be null.");
-        }
+            LogFileState currLFS = ((LogCheckState)state).getLogFile();
 
-        if( BooleanUtils.isNotTrue(resetPosition) )
-        {
-            if( (currLFS != null)
-                    && (currLFS.getLastProcessedPosition() < 1) )
+            if( (currLFS == null) && BooleanUtils.isNotTrue(ignoreMissingLogFile) )
             {
-                // Don't save a log file that hasn't processed data
-                LOGGER.debug(String.format("TailerStatistics::save() called but no data processed since LastProcessedPosition is %d",
-                            state.getLogFile().getLastProcessedPosition()));
+                throw new LogCheckException("LogFile cannot be null.");
+            }
 
-                return;
+            if( BooleanUtils.isNotTrue(resetPosition) )
+            {
+                if( (currLFS != null)
+                        && (currLFS.getLastProcessedPosition() < 1) )
+                {
+                    // Don't save a log file that hasn't processed data
+                    LOGGER.debug(String.format("TailerStatistics::save() called but no data processed since LastProcessedPosition is %d",
+                            currLFS.getLastProcessedPosition()));
+
+                    return;
+                }
             }
         }
 

@@ -1,9 +1,10 @@
 package com.sludev.logs.logcheck.config.writers;
 
-import com.sludev.logs.logcheck.config.entities.LogCheckState;
+import com.sludev.logs.logcheck.config.entities.LogCheckStateBase;
 import com.sludev.logs.logcheck.config.entities.LogFileBlock;
 import com.sludev.logs.logcheck.config.entities.LogFileState;
 import com.sludev.logs.logcheck.config.entities.LogFileStatus;
+import com.sludev.logs.logcheck.config.entities.impl.LogCheckState;
 import com.sludev.logs.logcheck.exceptions.LogCheckException;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
@@ -26,7 +27,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Deque;
-import java.util.List;
 import java.util.UUID;
 
 /**
@@ -37,7 +37,7 @@ public final class LogCheckStateWriter
     private static final Logger LOGGER = LogManager.getLogger(LogCheckStateWriter.class);
 
 
-    public static void write( LogCheckState js, Path stateFile, Path errFile ) throws LogCheckException
+    public static void write( LogCheckStateBase js, Path stateFile, Path errFile ) throws LogCheckException
     {
         DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
         DocumentBuilder docBuilder = null;
@@ -115,7 +115,7 @@ public final class LogCheckStateWriter
         }
     }
 
-    public static Pair<Path, Path> write(LogCheckState js) throws LogCheckException
+    public static Pair<Path, Path> write(LogCheckStateBase js) throws LogCheckException
     {
         Path resStateFile = null;
         Path resErrFile = null;
@@ -138,7 +138,7 @@ public final class LogCheckStateWriter
         return Pair.of(resStateFile, resErrFile);
     }
 
-    public static Element toElement( Document doc, String elementName, LogCheckState lcs ) throws LogCheckException
+    public static Element toElement( Document doc, String elementName, LogCheckStateBase lcs ) throws LogCheckException
     {
         Element res = null;
         Element currElem = null;
@@ -165,6 +165,71 @@ public final class LogCheckStateWriter
         currElem.appendChild(doc.createTextNode( currStr ));
         res.appendChild(currElem);
 
+        // server
+        currStr = lcs.getServerId();
+        if( currStr == null )
+        {
+            ; //throw new LogCheckException("Missing server ID");
+        }
+        else
+        {
+            currElem = doc.createElement("serverId");
+            currElem.appendChild(doc.createTextNode(currStr));
+            res.appendChild(currElem);
+        }
+
+        // source
+        currStr = lcs.getSourceId();
+        if( currStr == null )
+        {
+            ; //throw new LogCheckException("Missing source ID");
+        }
+        else
+        {
+            currElem = doc.createElement("sourceId");
+            currElem.appendChild(doc.createTextNode(currStr));
+            res.appendChild(currElem);
+        }
+
+        // record id
+        currStr = lcs.getRecordId();
+        if( currStr == null )
+        {
+            ; //throw new LogCheckException("Missing record ID");
+        }
+        else
+        {
+            currElem = doc.createElement("recordId");
+            currElem.appendChild(doc.createTextNode(currStr));
+            res.appendChild(currElem);
+        }
+
+        // record position
+        Integer currInt = lcs.getRecordPosition();
+        if( currInt == null )
+        {
+            ; //throw new LogCheckException("Missing record position");
+        }
+        else
+        {
+            currElem = doc.createElement("recordPosition");
+            currElem.appendChild(doc.createTextNode(currInt.toString()));
+            res.appendChild(currElem);
+        }
+
+        // record count
+        currInt = lcs.getRecordCount();
+        if( currInt == null )
+        {
+            ; //throw new LogCheckException("Missing record count");
+        }
+        else
+        {
+            currElem = doc.createElement("recordCount");
+            currElem.appendChild(doc.createTextNode(currInt.toString()));
+            res.appendChild(currElem);
+        }
+
         // save date
         Instant currInst = lcs.getSaveDate();
         if( currInst == null )
@@ -175,24 +240,30 @@ public final class LogCheckStateWriter
         currElem.appendChild(doc.createTextNode( currInst.toString() ));
         res.appendChild(currElem);
 
-        LogFileState currLog = lcs.getLogFile();
-        if( currLog != null )
+        // FIXME : This really should rely on polymorphism
+        if( lcs instanceof LogCheckState )
         {
-            currElem = LogCheckFileWriter.toElement(doc, "logFile", currLog);
-            res.appendChild(currElem);
-        }
+            LogCheckState lcsTemp = (LogCheckState)lcs;
 
-        // completed log files
-        Deque<LogFileStatus> currStatuses = lcs.getCompletedLogFiles();
-        if( currStatuses != null )
-        {
-            Element statuses = doc.createElement("fileStatuses");
-            for( LogFileStatus status : currStatuses )
+            LogFileState currLog = lcsTemp.getLogFile();
+            if( currLog != null )
             {
-                currElem = toElement(doc, "fileStatus", status);
-                statuses.appendChild(currElem);
+                currElem = LogCheckFileWriter.toElement(doc, "logFile", currLog);
+                res.appendChild(currElem);
             }
-            res.appendChild(statuses);
+
+            // completed log files
+            Deque<LogFileStatus> currStatuses = lcsTemp.getCompletedLogFiles();
+            if( currStatuses != null )
+            {
+                Element statuses = doc.createElement("fileStatuses");
+                for( LogFileStatus status : currStatuses )
+                {
+                    currElem = toElement(doc, "fileStatus", status);
+                    statuses.appendChild(currElem);
+                }
+                res.appendChild(statuses);
+            }
         }
 
         return res;

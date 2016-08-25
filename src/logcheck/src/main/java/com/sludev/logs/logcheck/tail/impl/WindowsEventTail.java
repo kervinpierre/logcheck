@@ -41,6 +41,7 @@ import com.sludev.logs.logcheck.utils.LogCheckFileRotate;
 import com.sludev.logs.logcheck.utils.LogCheckResult;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.concurrent.BasicThreadFactory;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -53,7 +54,6 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Deque;
 import java.util.EnumSet;
 import java.util.Iterator;
@@ -79,14 +79,14 @@ import java.util.stream.Collectors;
  *
  * @author kervin
  */
-public final class FileLogCheckTail implements ILogCheckTail
+public final class WindowsEventTail implements ILogCheckTail
 {
     private static final Logger LOGGER
-            = LogManager.getLogger(FileLogCheckTail.class);
+            = LogManager.getLogger(WindowsEventTail.class);
 
     private final List<ILogEntryBuilder> m_mainLogEntryBuilders;
 
-    private final Path m_logFile;
+    private final String m_windowsConnectionStr;
     private final Path m_deDupeDir;
     private final Path m_stateFile;
     private final Path m_stateProcessedLogsFilePath;
@@ -122,8 +122,8 @@ public final class FileLogCheckTail implements ILogCheckTail
     private final Pattern m_tailerBackupLogNameRegex;
     private final Set<LCDebugFlag> m_debugFlags;
 
-    private FileLogCheckTail( final List<ILogEntryBuilder> mainLogEntryBuilders,
-                              final Path logFile,
+    private WindowsEventTail( final List<ILogEntryBuilder> mainLogEntryBuilders,
+                              final String windowsConnectionStr,
                               final Path deDupeDir,
                               final Long startPosition,
                               final Long delay,
@@ -298,13 +298,13 @@ public final class FileLogCheckTail implements ILogCheckTail
             this.m_stopAfter = 0L;
         }
 
-        if( logFile != null )
+        if( windowsConnectionStr != null )
         {
-            this.m_logFile = logFile;
+            this.m_windowsConnectionStr = windowsConnectionStr;
         }
         else
         {
-            this.m_logFile = null;
+            this.m_windowsConnectionStr = null;
         }
 
         if( stateFile != null )
@@ -335,8 +335,8 @@ public final class FileLogCheckTail implements ILogCheckTail
         }
     }
 
-    public static FileLogCheckTail from( final List<ILogEntryBuilder> mainLogEntryBuilders,
-                                         final Path logFile,
+    public static WindowsEventTail from( final List<ILogEntryBuilder> mainLogEntryBuilders,
+                                         final String windowsConnectionStr,
                                          final Path deDupeDir,
                                          final Long startPosition,
                                          final Long delay,
@@ -372,8 +372,8 @@ public final class FileLogCheckTail implements ILogCheckTail
                                          final Pattern tailerBackupLogNameRegex,
                                          final Set<LCDebugFlag> debugFlags)
     {
-        FileLogCheckTail res = new FileLogCheckTail(mainLogEntryBuilders,
-                logFile,
+        WindowsEventTail res = new WindowsEventTail(mainLogEntryBuilders,
+                windowsConnectionStr,
                 deDupeDir,
                 startPosition,
                 delay,
@@ -419,8 +419,8 @@ public final class FileLogCheckTail implements ILogCheckTail
         {
             StringBuilder msg = new StringBuilder(100);
 
-            msg.append("\nFileLogCheckTail\n{\n");
-            msg.append(String.format("  Log File        : %s\n", m_logFile));
+            msg.append("\nWindowsEventTailTail\n{\n");
+            msg.append(String.format("  Windows Event   : %s\n", m_windowsConnectionStr));
             msg.append(String.format("  Start Pos       : %s\n", m_startPosition));
             msg.append(String.format("  Main Thread     : %b\n", m_mainThread));
             msg.append(String.format("  Read Prior Logs : %b\n", m_tailerBackupReadPriorLog));
@@ -454,12 +454,12 @@ public final class FileLogCheckTail implements ILogCheckTail
         final ScheduledExecutorService statsSchedulerExe;
         final ExecutorService watchBackupDirExe;
 
-        final BackupFileWatch currBackupFileWatch;
+        final BackupFileWatch currBackupFileWatch = null;
         final Future<Integer> watchBackupDirRes;
 
-        if( m_logFile == null )
+        if( StringUtils.isBlank(m_windowsConnectionStr) )
         {
-            throw new LogCheckException("Log File cannot be null.");
+            throw new LogCheckException("Windows Connection String.");
         }
 
         final AtomicReference<TailerStatistics> stats;
@@ -525,34 +525,7 @@ public final class FileLogCheckTail implements ILogCheckTail
             statsSchedulerExe = null;
         }
 
-        // Create the backup watch thread
-        if( currWatchBackupDirectory )
-        {
-            currBackupFileWatch = BackupFileWatch.from(
-                    Collections.singletonList(
-                            m_logFile.toAbsolutePath().getParent()),
-                    m_tailerBackupLogNameRegex,
-                    null, null, null);
-
-            BasicThreadFactory watchBackupDirFactory = new BasicThreadFactory.Builder()
-                    .namingPattern("watchBackupDirThread-%d")
-                    .daemon(true)
-                    .build();
-
-            watchBackupDirExe = Executors.newSingleThreadExecutor(
-                    watchBackupDirFactory);
-
-            watchBackupDirRes
-                    = watchBackupDirExe.submit(currBackupFileWatch);
-        }
-        else
-        {
-            currBackupFileWatch = null;
-            watchBackupDirExe = null;
-            watchBackupDirRes = null;
-        }
-
-        final AtomicReference<FileTailer> mainTailer = new AtomicReference<>();
+        final AtomicReference<WindowsEventTailer> mainTailer = new AtomicReference<>();
         final AtomicBoolean exitNow = new AtomicBoolean(false);
 
         final ScheduledExecutorService stopSchedulerExe;
@@ -570,14 +543,14 @@ public final class FileLogCheckTail implements ILogCheckTail
 
             stopSchedulerExe.schedule(() ->
             {
-                FileTailer currFileTailer = mainTailer.get();
-                if( currFileTailer == null )
+                WindowsEventTailer currWindowsEventTailer = mainTailer.get();
+                if( currWindowsEventTailer == null )
                 {
                     LOGGER.warn("Process Stop Scheduler called, but Tailer object is null.");
                 }
                 else
                 {
-                    currFileTailer.stop();
+                    currWindowsEventTailer.stop();
                     exitNow.set(true);
 
                     LOGGER.debug("Process Stop Scheduler called.");
@@ -679,31 +652,17 @@ public final class FileLogCheckTail implements ILogCheckTail
                     delayMainLog = true;
                 }
 
-                // Check if any new backup file have been created since we last
-                // processed all backup files
-                if( (currBackupFileWatch != null)
-                        && (currBackupFileWatch.getDetectedCreatePathCount() != currCreateFileEventCount) )
-                {
-                    // New files were created, so skip to the
-                    // VALIDATION_SKIPPED/FAILED processing
-                    LOGGER.debug(String.format("Skipping Main Log Tailer because. currCreateFileEventCount==%d"
-                            + "!= currBackupFileWatch.getDetectedCreatePathCount()== %d .",
-                            currCreateFileEventCount, currBackupFileWatch.getDetectedCreatePathCount()));
-
-                    skipMainLog = true;
-                }
-
                 if( skipMainLog || delayMainLog )
                 {
-                    LOGGER.debug("Skipping/Delaying the main FileTailer thread.");
+                    LOGGER.debug("Skipping/Delaying the main WindowsEventTailer thread.");
                 }
                 else
                 {
                     final CountDownLatch currCompletionLatch = new CountDownLatch(1);
 
                     // Create this iteration's File Tailer Object
-                    mainTailer.set(FileTailer.from(m_logFile,
-                            currPosition,
+                    mainTailer.set(WindowsEventTailer.from(m_windowsConnectionStr,
+                            null, // currPositions
                             Charset.defaultCharset(),
                             m_mainLogEntryBuilders,
                             currDelay * 1000, // Convert to milliseconds
@@ -759,8 +718,8 @@ public final class FileLogCheckTail implements ILogCheckTail
                         }
 
                         // New backup files cancel the running tailer task
-                        LOGGER.debug(String.format("Tailer cancelled for '%s'",
-                                m_logFile));
+//                        LOGGER.debug(String.format("Tailer cancelled for '%s'",
+//                                m_logFile));
 
                         // The result from the object directly
                         tailerRes = mainTailer.get().getFinalResult();
@@ -820,7 +779,7 @@ public final class FileLogCheckTail implements ILogCheckTail
                         if( BooleanUtils.isNotTrue(m_startPositionIgnoreError) )
                         {
                             String msg = String.format("FILE_TRUNCATED but 'Ignore Start Position Error' is false. Quiting. '%s'",
-                                    m_logFile);
+                                   ""); //m_logFile);
 
                             // We really just end processing at this point to avoid an infinite loop
                             LOGGER.debug(msg);
@@ -858,489 +817,15 @@ public final class FileLogCheckTail implements ILogCheckTail
                             currFileState = tailerRes.getState().getLogFile();
                         }
 
-                        ////////////////////////////////////////
-                        // Backup File Processing Loop
-                        ////////////////////////////////////////
-
-                        while( true )
-                        {
-                            Path newestBackupFile = null;
-                            Deque<Path> backupLogFilesQueue = new ArrayDeque<>(10);
-
-                            Deque<LogFileStatus> currSessionBackupFiles = null;
-
-                            /////////////////////////////////////////////////////
-                            // Backup File Listing Block
-                            /////////////////////////////////////////////////////
-                            {
-                                // Get the list of processed backup files if they are available on disk
-                                if( (statsProcessedLogFiles != null)
-                                        && (statsProcessedLogFiles.get() != null)
-                                        && (m_stateProcessedLogsFilePath != null)
-                                        && Files.exists(m_stateProcessedLogsFilePath) )
-                                {
-                                    LogCheckState currState = statsProcessedLogFiles.get().restore(
-                                            m_stateProcessedLogsFilePath,
-                                            m_deDupeDir,
-                                            m_readLogFileCount,
-                                            m_readMaxDeDupeEntries);
-
-                                    currSessionBackupFiles = currState.getCompletedLogFiles();
-                                }
-                                else
-                                {
-                                    if( (currSessionBackupFiles != null)
-                                            && (currSessionBackupFiles != sessionBackupFiles) )
-                                    {
-                                        LOGGER.warn("Changing pointer to the current Session Backup Files list.");
-                                    }
-
-                                    currSessionBackupFiles = sessionBackupFiles;
-                                }
-
-                                if( LOGGER.isDebugEnabled() )
-                                {
-                                    String msg = "Begin main BACKUP read loop. Backup Log Files :\n";
-
-                                    if( currSessionBackupFiles != null )
-                                    {
-                                        msg = String.format("%s    Session Backup File Cache Size : %d\n",
-                                                msg, currSessionBackupFiles.size());
-
-                                        StringBuilder sb = new StringBuilder(100);
-                                        for( LogFileStatus lfs : currSessionBackupFiles )
-                                        {
-                                            sb.append(String.format("    %s\n", lfs.getPath()));
-                                        }
-                                        msg = String.format("%s%s", msg, sb.toString());
-                                    }
-
-                                 //   LOGGER.debug(msg);
-                                }
-
-                                // Try to detect then read the backup logs
-
-                                if( currSessionBackupFiles == null )
-                                {
-                                    LOGGER.debug("Session Backup Files list is null.");
-                                }
-                                else if( currSessionBackupFiles.peekLast() != null )
-                                {
-                                    Optional<LogFileStatus> currStatus = currSessionBackupFiles.stream()
-                                            .sorted( (bk1, bk2) -> bk1.getProcessedStamp().compareTo(bk2.getProcessedStamp() ) )
-                                            .reduce( (bk1, bk2) -> bk2 );
-                                    if( currStatus.isPresent() )
-                                    {
-                                        newestBackupFile = currStatus.get().getPath();
-                                    }
-                                }
-
-                                LOGGER.debug(String.format("Newest Backup File is '%s'", newestBackupFile));
-
-                                Path currLastBackupFileProcessed = null;
-                                if( m_mainThread == false )
-                                {
-                                    // NB : This should not be reached often since we're not currently
-                                    //      validating on "Sub-call" threads.
-
-                                    // If not the main thread, the main log file is probably a
-                                    // backup file itself being processed.  Start with that file.
-                                    currLastBackupFileProcessed = m_logFile;
-                                }
-
-                                Path backupLogFile = null;
-                                //Path firstPartialBackupFile = null;
-
-                                // Save the backup file count as an indicator
-                                if( currBackupFileWatch != null )
-                                {
-                                    // FIXME : Small race between last backup check in the above loop and this count
-                                    currCreateFileEventCount
-                                            = currBackupFileWatch.getDetectedCreatePathCount();
-                                }
-
-                                ////////////////////////////////////////////////////
-                                // Find the number of backup files we need to check
-                                ////////////////////////////////////////////////////
-
-                                // If backup files were created will this loop runs,
-                                // then try again until that stops.
-
-                                Path currLastBackupFileProcessedTemp;
-                                Deque<Path> backupLogFilesQueueTemp;
-
-                                int prevNameCount = 0;
-                                do
-                                {
-                                    // Loop until we have accounted for all the backup
-                                    // logs.
-                                    LOGGER.debug(String.format("Before prevName() loop %d",
-                                            prevNameCount++));
-
-                                    // Reset some temp variables
-                                    currLastBackupFileProcessedTemp
-                                            = currLastBackupFileProcessed;
-                                    backupLogFilesQueueTemp
-                                            = new ArrayDeque<>(backupLogFilesQueue);
-                                    do
-                                    {
-                                        backupLogFile = LogCheckFileRotate.prevName(
-                                                m_logFile.toAbsolutePath().getParent(),
-                                                currLastBackupFileProcessedTemp,
-                                                m_tailerBackupLogNameRegex,
-                                                null,
-                                                m_tailerBackupLogNameComps,
-                                                true,
-                                                currTailerBackupReadLogReverse);
-
-                                        if( backupLogFile == null )
-                                        {
-                                            LOGGER.info("Could not find the previous backup file.");
-                                        }
-                                        else if( Files.notExists(backupLogFile) )
-                                        {
-                                            LOGGER.warn(String.format("Backup Log File '%s' not found", backupLogFile));
-                                        }
-                                        else
-                                        {
-                                            backupLogFilesQueueTemp.addLast(backupLogFile);
-                                        }
-
-                                        // Use to get the next backup file if any
-                                        if( backupLogFile != null )
-                                        {
-                                            currLastBackupFileProcessedTemp = backupLogFile;
-                                        }
-                                    }
-                                    while( backupLogFile != null );
-                                }
-                                while( (currBackupFileWatch != null)
-                                        && (currCreateFileEventCount
-                                        != currBackupFileWatch.getDetectedCreatePathCount()) );
-
-                                currLastBackupFileProcessed = currLastBackupFileProcessedTemp;
-                                backupLogFilesQueueTemp.forEach(backupLogFilesQueue::addFirst);
-
-                                // Add the new files to the session file cache
-                                if( currSessionBackupFiles == null )
-                                {
-                                    LOGGER.warn("Current Backup Files List is null.");
-                                }
-                                else
-                                {
-                                    for( Path path : backupLogFilesQueue )
-                                    {
-                                        boolean found = false;
-                                        for( LogFileStatus lfs : currSessionBackupFiles )
-                                        {
-                                            if( lfs.getPath().equals(path) )
-                                            {
-                                                found = true;
-                                            }
-                                        }
-
-                                        if( found == false )
-                                        {
-                                            currSessionBackupFiles.addLast(
-                                                    LogFileStatus.from(path, null, null, false));
-                                        }
-                                    }
-                                }
-
-                                // looping in reverse since our backups count up from oldest to newest
-                                // TODO : Make reversing a switch
-
-                                if( (backupLogFilesQueue.size() < 1)
-                                        || ((newestBackupFile != null)
-                                        && newestBackupFile.equals(backupLogFilesQueue.peekLast())) )
-                                {
-                                    // No [new] backup files found [since last run].
-                                    // Stop backup log processing loop
-
-                                    LOGGER.debug("Backup processing loop completed.  No new backup files found.");
-                                    break;
-                                }
-                            }
-
-//                            if( firstPartialBackupFile == null )
-//                            {
-//                                // The first backup file is most likely partially read.
-//                                // This only happens in a single backup file
-//                                firstPartialBackupFile = backupLogFilesQueue.peekFirst();
-//
-//                                LOGGER.debug(String.format("First Partial Backup File Selected : %s",
-//                                        firstPartialBackupFile));
-//                            }
-
-                            ////////////////////////////
-                            // Now loop the found files
-                            ////////////////////////////
-                            {
-                                boolean newestBackupFileSeen = false;
-
-                                BasicThreadFactory logCheckTailerFactory
-                                        = new BasicThreadFactory.Builder()
-                                        .namingPattern("tailerCompletionThread-%d")
-                                        .build();
-
-                                ExecutorService logCheckTailerExe
-                                        = Executors.newSingleThreadExecutor(logCheckTailerFactory);
-
-                                for( Path currBackupFile : backupLogFilesQueue )
-                                {
-                                    LOGGER.debug(String.format("Processing Backup Log File '%s'", currBackupFile));
-
-                                    if( (newestBackupFile != null) && (newestBackupFileSeen == false) )
-                                    {
-                                        // Should only happen on second search for backup files and after
-                                        if( currBackupFile.equals(newestBackupFile) )
-                                        {
-                                            // Skip all files that have already been processed
-                                            // FIXME : This will break with rotated logs, maybe?
-                                            newestBackupFileSeen = true;
-                                        }
-
-                                        continue;
-                                    }
-
-                                    if( Files.notExists(currBackupFile) )
-                                    {
-                                        LOGGER.warn(String.format("Backup Log File '%s' not found", currBackupFile));
-                                    }
-                                    else
-                                    {
-                                        try
-                                        {
-                                            // TODO : Support decompressing the backup file first
-
-                                            LOGGER.info(String.format("Processing found backup file '%s'", currBackupFile));
-
-                                            // FIXME : Check that the FIRST_BLOCK in this file matches
-                                            //         the current FIRST_BLOCK.  If it does, we check
-                                            //         dedupe logs for last logs.  This is only needed
-                                            //         for the first file.
-
-                                            Long currStartPos = 0L;
-                                            if( currFileState == null )
-                                            {
-                                                LOGGER.debug("No current Log File State.");
-                                            }
-                                            else
-                                            {
-                                                // Do we have the partial backup file in the file validate
-                                                // result.
-                                                Set<LCTailerResult> partBackupFile = null;
-
-                                                try
-                                                {
-                                                    partBackupFile = LogFileState.validateFileBlocks(currFileState,
-                                                            currBackupFile, true, LCFileBlockType.FIRSTBLOCK);
-                                                }
-                                                catch( LogCheckException ex )
-                                                {
-                                                    LOGGER.info(String.format("Validate File Block failed for '%s'",
-                                                            currBackupFile), ex);
-                                                }
-
-                                                if( (partBackupFile != null)
-                                                        && partBackupFile.contains(LCTailerResult.SUCCESS) )
-                                                {
-                                                    currStartPos = currFileState.getLastProcessedPosition();
-                                                    LOGGER.debug(String.format(
-                                                            "First Partial File Position %d for %s",
-                                                            currStartPos, currBackupFile));
-                                                }
-                                                else
-                                                {
-                                                    if( LOGGER.isDebugEnabled() )
-                                                    {
-                                                        String msg = ArrayUtils.toString(partBackupFile);
-
-                                                        LOGGER.debug(String.format("validateFileBlocks() returned '%s' on '%s'\n%s\n",
-                                                                msg, currBackupFile, currFileState));
-                                                    }
-                                                }
-                                            }
-
-                                            // Parse that backup file
-                                            FileLogCheckTail lct = FileLogCheckTail.from(m_mainLogEntryBuilders,
-                                                    currBackupFile,
-                                                    m_deDupeDir,
-                                                    currStartPos,
-                                                    0L,
-                                                    false, // continue
-                                                    false, // tail from end
-                                                    false, // reOpenOnChunk
-                                                    false, // saveState
-                                                    false, // startPosIgnoreError
-                                                    false,  // validate states
-                                                    false, // collectStats
-                                                    false, // watch backup dir
-                                                    m_tailerBackupReadLog,
-                                                    m_tailerBackupReadLogReverse,
-                                                    false, // tailerBackupReadPriorLog
-                                                    true, // stopOnEOF
-                                                    true, // readOnlyFileMode
-                                                    false,  // mainThread
-                                                    false, // statsReset
-                                                    null, // bufferSize
-                                                    m_readLogFileCount,
-                                                    m_readMaxDeDupeEntries,
-                                                    null, // stopAfter
-                                                    m_idBlockHash,
-                                                    m_idBlockSize,
-                                                    m_setName,
-                                                    m_stateFile,
-                                                    m_stateProcessedLogsFilePath,
-                                                    m_errorFile,
-                                                    m_tailerLogBackupDir,
-                                                    m_preferredDir,
-                                                    m_tailerBackupLogNameComps,
-                                                    m_tailerBackupLogCompression,
-                                                    m_tailerBackupLogNameRegex,
-                                                    m_debugFlags);
-
-                                            Future<LogCheckResult> fileTailFuture
-                                                    = logCheckTailerExe.submit(lct);
-
-                                            LogCheckResult fileTailRes = fileTailFuture.get();
-
-                                            // Mark the current backup file as processed
-                                            if( currSessionBackupFiles != null )
-                                            {
-                                                List<LogFileStatus> statusToAdd =
-                                                        new ArrayList<>();
-
-                                                for( Iterator<LogFileStatus> lfs
-                                                     = currSessionBackupFiles.iterator();
-                                                     lfs.hasNext(); )
-                                                {
-                                                    LogFileStatus currLFS = lfs.next();
-
-                                                    // FIXME : We should iterate by HASH instead or as an option
-
-                                                    if( currLFS.getPath().equals(currBackupFile) )
-                                                    {
-                                                        if( currLFS.isProcessed() )
-                                                        {
-                                                            LOGGER.debug(String.format("File is present and marked as processed '%s'",
-                                                                    currBackupFile));
-                                                        }
-
-                                                        lfs.remove();
-                                                        statusToAdd.add(LogFileStatus.from(
-                                                                currBackupFile, null, Instant.now(), true
-                                                        ));
-
-                                                    }
-                                                }
-
-                                                currSessionBackupFiles.addAll(statusToAdd);
-                                            }
-
-                                            // TODO : Find currBackupFile in currSessionBackupFiles, turn on the processed flag and save
-                                            if( (statsProcessedLogFiles != null)
-                                                    && (statsProcessedLogFiles.get() != null) )
-                                            {
-                                                LogCheckState currStats = null;
-                                                if( Files.exists(m_stateProcessedLogsFilePath) )
-                                                {
-                                                    // Merge the existing file list on disk with the current
-                                                    currStats = TailerStatistics.restore(
-                                                            m_stateProcessedLogsFilePath,
-                                                            m_deDupeDir,
-                                                            m_setName,
-                                                            m_readLogFileCount,
-                                                            m_readMaxDeDupeEntries);
-
-                                                    Set<Path> currPaths
-                                                            = currSessionBackupFiles.stream().map( i -> i.getPath() )
-                                                                .collect(Collectors.toSet());
-
-                                                    Set<Path> currPathsFromDisk
-                                                            = currStats.getCompletedLogFiles()
-                                                                    .stream().map( i -> i.getPath() )
-                                                            .collect(Collectors.toSet());
-
-                                                    currPaths.addAll(currPathsFromDisk);
-
-                                                    Deque<LogFileStatus> tempStatus = new ArrayDeque<>();
-
-                                                    // Add the Log File Statuses
-                                                    for( Path p : currPaths )
-                                                    {
-                                                        Optional<LogFileStatus> lfs =
-                                                                currSessionBackupFiles.stream()
-                                                                        .filter(i -> i.getPath().equals(p) )
-                                                                .findFirst();
-                                                        if( lfs.isPresent() )
-                                                        {
-                                                            tempStatus.add(lfs.get());
-                                                            continue;
-                                                        }
-
-                                                        lfs = currStats.getCompletedLogFiles().stream()
-                                                                        .filter(i -> i.getPath().equals(p) )
-                                                                        .findFirst();
-                                                        if( lfs.isPresent() )
-                                                        {
-                                                            tempStatus.add(lfs.get());
-                                                        }
-                                                    }
-
-                                                    currStats.getCompletedLogFiles().clear();
-                                                    currStats.getCompletedLogFiles().addAll(tempStatus);
-                                                }
-                                                else
-                                                {
-                                                    currStats = LogCheckState.from(null,
-                                                            UUID.randomUUID(),
-                                                            m_setName,
-                                                            null,
-                                                            null,
-                                                            Instant.now(),
-                                                            null,
-                                                            null,
-                                                            null,
-                                                            null,
-                                                            currSessionBackupFiles);
-                                                }
-
-                                                TailerStatistics.save(currStats, m_stateProcessedLogsFilePath,
-                                                        m_errorFile, false, true);
-                                            }
-
-                                            LOGGER.debug(String.format("Backup Completion Thread returned "
-                                                    + "result %s for backup file [ %s ]",
-                                                    currBackupFile, fileTailRes.getStatus()));
-                                        }
-                                        catch( ExecutionException ex )
-                                        {
-                                            String errMsg = "Error completing backup file";
-
-                                            LOGGER.debug(errMsg, ex);
-
-                                            throw ex;
-                                        }
-                                    }
-                                }
-                            }
-
-                            // Loop to re-check the FS for new backup files created in the short time
-                            // we were processing
-                        }
-
-                        // FIXME: New backup files created between here and next FileTailer instance will be lost/skipped
-
-                        // TODO : At this point VALIDATION_FAILED should now be fixed.
-
-                        // Signal a statistics reset the last read position on disk
-                        if( skipMainLog )
-                        {
-                            // FYI : We don't reset for delayMainLog
-                            nextStatsReset = true;
-                        }
+                    // TODO : At this point VALIDATION_FAILED should now be fixed.
+
+                    // Signal a statistics reset the last read position on disk
+                    if( skipMainLog )
+                    {
+                        // FYI : We don't reset for delayMainLog
+                        nextStatsReset = true;
                     }
+                }
 
                     LOGGER.debug("Validation fail fix branch completed.");
                 }

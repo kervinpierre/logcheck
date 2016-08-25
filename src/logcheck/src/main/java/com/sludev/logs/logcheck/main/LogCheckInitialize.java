@@ -21,7 +21,6 @@ import com.sludev.logs.logcheck.config.builders.LogCheckConfigBuilder;
 import com.sludev.logs.logcheck.config.entities.LogCheckConfig;
 import com.sludev.logs.logcheck.config.parsers.LogCheckConfigParser;
 import com.sludev.logs.logcheck.config.parsers.ParserUtil;
-import com.sludev.logs.logcheck.enums.FSSVerbosityEnum;
 import com.sludev.logs.logcheck.enums.LCDebugFlag;
 import com.sludev.logs.logcheck.enums.LCFileFormat;
 import com.sludev.logs.logcheck.enums.LCFileRegexComponent;
@@ -35,12 +34,10 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.LoggerContext;
-import org.apache.logging.log4j.core.impl.ExtendedClassInfo;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -48,15 +45,12 @@ import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Deque;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * Initialize the LogCheck application.
@@ -349,7 +343,7 @@ public class LogCheckInitialize
 
                             case "set-name":
                                 //
-                                currConfBuilder.setSetName(currOpt.getValue());
+                                currConfBuilder.setSetName(StringUtils.strip(currOpt.getValue(), "\""));
                                 break;
 
                             case "dedupe-dir-path":

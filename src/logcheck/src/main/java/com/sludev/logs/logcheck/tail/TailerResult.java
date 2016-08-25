@@ -18,7 +18,7 @@
 
 package com.sludev.logs.logcheck.tail;
 
-import com.sludev.logs.logcheck.config.entities.LogCheckState;
+import com.sludev.logs.logcheck.config.entities.impl.LogCheckState;
 import com.sludev.logs.logcheck.enums.LCTailerResult;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

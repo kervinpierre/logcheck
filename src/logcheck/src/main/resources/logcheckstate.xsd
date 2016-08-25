@@ -31,7 +31,14 @@ NOTICE:  All information contained herein is, and remains
                 <xs:element name="saveDate" type="xs:dateTime" minOccurs="1" maxOccurs="1" />
                 <xs:element name="id" type="xs:string" minOccurs="1" maxOccurs="1" />
                 <xs:element name="setName" type="xs:string" minOccurs="1" maxOccurs="1" />
+                <xs:element name="serverId" type="xs:string" minOccurs="0" maxOccurs="1" />
+                <xs:element name="sourceId" type="xs:string" minOccurs="0" maxOccurs="1" />
+                <xs:element name="recordId" type="xs:string" minOccurs="0" maxOccurs="1" />
+                <xs:element name="recordCount" type="xs:string" minOccurs="0" maxOccurs="1" />
+                <xs:element name="recordPosition" type="xs:string" minOccurs="0" maxOccurs="1" />
             </xs:choice>
+            <xs:attribute name="type" type="TypeType" use="required"/>
+
         </xs:complexType>
     </xs:element>
 
@@ -74,6 +81,13 @@ NOTICE:  All information contained herein is, and remains
             <xs:element name="sample" type="xs:string" minOccurs="0" maxOccurs="1" />
         </xs:choice>
     </xs:complexType>
+
+    <xs:simpleType name="TypeType">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="fileState"/>
+            <xs:enumeration value="windowsEventState"/>
+        </xs:restriction>
+    </xs:simpleType>
 
     <xs:simpleType name="HashType">
         <xs:restriction base="xs:string">

@@ -9,7 +9,7 @@ public enum LCLogSourceType
 {
     NONE,
     FILE_LOCAL,
-    WINDOWS_EVENTS,
+    WINDOWS_EVENT,
     SYSLOG;
 
     public static LCLogSourceType from(String type)
