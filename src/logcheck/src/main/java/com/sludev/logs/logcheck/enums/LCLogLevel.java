@@ -29,7 +29,7 @@ public enum LCLogLevel
     ALL,
     DEBUG,
     INFO,
-    INFORMATION,
+    INFORMATIONAL,
     WARN,
     WARNING,
     ERROR,
@@ -50,7 +50,7 @@ public enum LCLogLevel
                 res = WARN;
                 break;
 
-            case INFORMATION:
+            case INFORMATIONAL:
                 res = INFO;
                 break;
         }

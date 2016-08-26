@@ -107,27 +107,27 @@ public class ILogEntryStoreTest
 
         LogEntry currLE = LogEntry.from(null, LCLogLevel.ERROR, "com.example",
                 "Log message body. Error 01.", "Exception Stacktrace:",
-                currTime, "localhost");
+                currTime, "localhost", null);
         completedEntries.putLast(currLE);
 
         currLE = LogEntry.from(null, LCLogLevel.ERROR, "com.example",
                 "Log message body. Error 01.", "Exception Stacktrace:",
-                currTime, "localhost");
+                currTime, "localhost", null);
         completedEntries.putLast(currLE);
 
         currLE = LogEntry.from(null, LCLogLevel.ERROR, "com.example",
                 "Log message body. Error 01.", "Exception Stacktrace:",
-                currTime, "localhost");
+                currTime, "localhost", null);
         completedEntries.putLast(currLE);
 
         currLE = LogEntry.from(null, LCLogLevel.ERROR, "com.example",
                 "Log message body. Error 01.", "Exception Stacktrace:",
-                currTime, "localhost");
+                currTime, "localhost", null);
         completedEntries.putLast(currLE);
 
         currLE = LogEntry.from(null, LCLogLevel.ERROR, "com.example",
                 "Log message body. Error 01.", "Exception Stacktrace:",
-                currTime, "localhost");
+                currTime, "localhost", null);
         completedEntries.putLast(currLE);
 
         ILogEntryStore currStore = LogEntryConsole.from();
@@ -144,32 +144,32 @@ public class ILogEntryStoreTest
 
         currLE = LogEntry.from(null, LCLogLevel.ERROR, "com.example",
                 "Log message body. Error 01.", "Exception Stacktrace:",
-                currTime, "localhost");
+                currTime, "localhost", null);
         completedEntries.putLast(currLE);
 
         currLE = LogEntry.from(null, LCLogLevel.ERROR, "com.example",
                 "Log message body. Error 01.", "Exception Stacktrace:",
-                currTime, "localhost");
+                currTime, "localhost", null);
         completedEntries.putLast(currLE);
 
         currLE = LogEntry.from(null, LCLogLevel.ERROR, "com.example",
                 "Log message body. Error 01.", "Exception Stacktrace:",
-                currTime, "localhost");
+                currTime, "localhost", null);
         completedEntries.putLast(currLE);
 
         currLE = LogEntry.from(null, LCLogLevel.ERROR, "com.example",
                 "Log message body. Error 01.", "Exception Stacktrace:",
-                currTime, "localhost");
+                currTime, "localhost", null);
         completedEntries.putLast(currLE);
 
         currLE = LogEntry.from(null, LCLogLevel.ERROR, "com.example",
                 "Log message body. Error 01.", "Exception Stacktrace:",
-                currTime, "localhost");
+                currTime, "localhost", null);
         completedEntries.putLast(currLE);
 
         currLE = LogEntry.from(null, LCLogLevel.ERROR, "com.example",
                 "Log message body. Error 01.", "Exception Stacktrace:",
-                currTime, "localhost");
+                currTime, "localhost", null);
         completedEntries.putLast(currLE);
 
         res = ILogEntryStore.process(src, stores, deDupeDirPath,

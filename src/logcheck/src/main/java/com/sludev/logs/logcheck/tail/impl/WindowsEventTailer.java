@@ -17,7 +17,6 @@
  */
 package com.sludev.logs.logcheck.tail.impl;
 
-import com.google.common.collect.Lists;
 import com.sludev.logs.logcheck.config.entities.LogFileState;
 import com.sludev.logs.logcheck.config.entities.impl.LogCheckState;
 import com.sludev.logs.logcheck.config.entities.impl.WindowsEventLogCheckState;
@@ -35,7 +34,6 @@ import com.sun.jna.Pointer;
 import com.sun.jna.platform.win32.Advapi32;
 import com.sun.jna.platform.win32.Advapi32Util;
 import com.sun.jna.platform.win32.Kernel32;
-import com.sun.jna.platform.win32.W32Errors;
 import com.sun.jna.platform.win32.Win32Exception;
 import com.sun.jna.platform.win32.WinError;
 import com.sun.jna.platform.win32.WinNT;
@@ -49,8 +47,8 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.time.temporal.TemporalAccessor;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
@@ -560,10 +558,11 @@ public final class WindowsEventTailer implements ITail
 
         Advapi32Util.EventLogRecord ev = eventWrapper.getEvent();
 
-        res.append(String.format("{\"id\": \"%s\",", ev.getEventId()));
-        res.append(String.format("\"source\": \"%s\",", ev.getSource()));
-        res.append(String.format("\"statusCode\": \"%s\",", ev.getStatusCode()));
-        res.append(String.format("\"type\": \"%s\",", ev.getType()));
+        res.append(String.format("{\"source\": \"%s\",", ev.getSource()));
+        res.append(String.format("\"statusCode\": \"%d\",", ev.getStatusCode()));
+        res.append(String.format("\"channel\": \"%s\",", eventWrapper.getChannel()));
+        res.append(String.format("\"severity\": \"%s\",", ev.getType()));
+        res.append(String.format("\"recordNumber\": \"%d\",", ev.getRecordNumber()));
         res.append(String.format("\"computerName\": \"%s\",", eventWrapper.getComputerName()));
 
         WinNT.EVENTLOGRECORD currRec = ev.getRecord();
@@ -572,7 +571,8 @@ public final class WindowsEventTailer implements ITail
                 Instant.ofEpochSecond(currRec.TimeGenerated.intValue())));
 
         // FIXME : Treat the data as binary, even though it's usually text
-        res.append(String.format("\"data\": \"%s\"}", new String(ev.getData())));
+        res.append(String.format("\"dataStr\": \"%s\"}",
+                new String(ev.getData(), StandardCharsets.UTF_16LE )));
 
         return res.toString();
     }
@@ -662,7 +662,7 @@ public final class WindowsEventTailer implements ITail
                     }
 
                     List<LCWindowsEventWrapper> events
-                            = readEvents(reader, currReadFlags, currOffSet, 0);
+                            = readEvents(reader, currReadFlags, currOffSet, 0, src);
 
                     for( LCWindowsEventWrapper record : events )
                     {
@@ -727,7 +727,8 @@ public final class WindowsEventTailer implements ITail
     public static List<LCWindowsEventWrapper> readEvents( final WinNT.HANDLE reader,
                                                                 final int readFlags,
                                                                 final int offSet,
-                                                                final int maxReadCount)
+                                                                final int maxReadCount,
+                                                                final String source )
     {
         IntByReference pnBytesRead = new IntByReference();
         IntByReference pnMinNumberOfBytesNeeded = new IntByReference();
@@ -807,7 +808,7 @@ public final class WindowsEventTailer implements ITail
             }
             else
             {
-                res.add(LCWindowsEventWrapper.from(record, computerName));
+                res.add(LCWindowsEventWrapper.from(record, computerName, source));
 
                 if( maxReadCount > 0 && res.size() >= maxReadCount )
                 {
