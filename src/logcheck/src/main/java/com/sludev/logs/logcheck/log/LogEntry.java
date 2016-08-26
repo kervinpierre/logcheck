@@ -45,6 +45,17 @@ public final class LogEntry
     private LocalDateTime m_timeStamp;
     private String m_host;
 
+    private String m_jsonRaw;
+
+    private String m_appSource;
+    private String m_appStatusCode;
+    private String m_appChannel;
+    private String m_appType;
+    private String m_appRecordNumber;
+    private String m_appComputerName;
+    private String m_appTimeGenerated;
+    private String m_appDataStr;
+
     public LCLogLevel getLevel()
     {
         return m_level;
@@ -57,7 +68,7 @@ public final class LogEntry
 
     public void setLevel(String s)
     {
-        LCLogLevel l = LCLogLevel.valueOf(s);
+        LCLogLevel l = LCLogLevel.from(s);
         
         this.m_level = l;
     }
@@ -125,13 +136,109 @@ public final class LogEntry
         this.m_host = host;
     }
 
-    private LogEntry(   final String type,
-                        final LCLogLevel level,
-                        final String logger,
-                        final String message,
-                        final String exception,
-                        final LocalDateTime timeStamp,
-                        final String host)
+    public static Logger getLOGGER()
+    {
+        return LOGGER;
+    }
+
+    public String getJsonRaw()
+    {
+        return m_jsonRaw;
+    }
+
+    public void setJsonRaw( String jsonRaw )
+    {
+        this.m_jsonRaw = jsonRaw;
+    }
+
+    public String getAppSource()
+    {
+        return m_appSource;
+    }
+
+    public void setAppSource( String appSource )
+    {
+        this.m_appSource = appSource;
+    }
+
+    public String getAppStatusCode()
+    {
+        return m_appStatusCode;
+    }
+
+    public void setAppStatusCode( String appStatusCode )
+    {
+        this.m_appStatusCode = appStatusCode;
+    }
+
+    public String getAppChannel()
+    {
+        return m_appChannel;
+    }
+
+    public void setAppChannel( String appChannel )
+    {
+        this.m_appChannel = appChannel;
+    }
+
+    public String getAppType()
+    {
+        return m_appType;
+    }
+
+    public void setAppType( String appType )
+    {
+        this.m_appType = appType;
+    }
+
+    public String getAppRecordNumber()
+    {
+        return m_appRecordNumber;
+    }
+
+    public void setAppRecordNumber( String appRecordNumber )
+    {
+        this.m_appRecordNumber = appRecordNumber;
+    }
+
+    public String getAppComputerName()
+    {
+        return m_appComputerName;
+    }
+
+    public void setAppComputerName( String appComputerName )
+    {
+        this.m_appComputerName = appComputerName;
+    }
+
+    public String getAppTimeGenerated()
+    {
+        return m_appTimeGenerated;
+    }
+
+    public void setAppTimeGenerated( String appTimeGenerated )
+    {
+        this.m_appTimeGenerated = appTimeGenerated;
+    }
+
+    public String getAppDataStr()
+    {
+        return m_appDataStr;
+    }
+
+    public void setAppDataStr( String appDataStr )
+    {
+        this.m_appDataStr = appDataStr;
+    }
+
+    private LogEntry( final String type,
+                      final LCLogLevel level,
+                      final String logger,
+                      final String message,
+                      final String exception,
+                      final LocalDateTime timeStamp,
+                      final String host,
+                      final String jsonRaw )
     {
         if( type != null )
         {
@@ -148,6 +255,7 @@ public final class LogEntry
         this.m_exception = exception;
         this.m_timeStamp = timeStamp;
         this.m_host = host;
+        this.m_jsonRaw = jsonRaw;
     }
 
     public static LogEntry from(final String type,
@@ -156,10 +264,12 @@ public final class LogEntry
                                 final String message,
                                 final String exception,
                                 final LocalDateTime timeStamp,
-                                final String host)
+                                final String host,
+                                final String jsonRaw
+    )
     {
         LogEntry logEntry = new LogEntry(type, level, logger, message,
-                                            exception, timeStamp, host);
+                                            exception, timeStamp, host, jsonRaw);
 
         return logEntry;
     }
@@ -167,7 +277,7 @@ public final class LogEntry
     public static LogEntry from(final String type)
     {
         LogEntry logEntry = LogEntry.from(type, null, null, null,
-                                            null, null, null);
+                                            null, null, null, null);
 
         return logEntry;
     }

@@ -5,8 +5,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sludev.logs.logcheck.log.ILogEntryBuilder;
 import com.sludev.logs.logcheck.log.ILogEntrySink;
 import com.sludev.logs.logcheck.log.LogEntry;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
-import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -17,6 +20,9 @@ import java.util.regex.Pattern;
  */
 public class WindowsEventBuilder implements ILogEntryBuilder
 {
+    private static final Logger LOGGER
+                            = LogManager.getLogger(WindowsEventBuilder.class);
+
     private final List<Pattern> ignoreLinePatternList;
     private final ILogEntrySink completionCallback;
 
@@ -52,18 +58,84 @@ public class WindowsEventBuilder implements ILogEntryBuilder
         {
             rootArray = jsonMapper.readTree(currLineStr);
         }
-        catch( IOException ex )
+        catch( Exception ex )
         {
-            ;
+            LOGGER.debug(String.format("Invalid JSON...\n========\n'%s'\n========\n", currLineStr));
         }
-
-        String currVal = rootArray.get("id").textValue();
 
         LogEntry currentLogEntry = LogEntry.from("WindowsEvent");
 
-        // setId() ??
-        
-        currentLogEntry.setMessage(currLineStr);
+        // source
+        JsonNode currNode = rootArray.get("source");
+        if( currNode != null )
+        {
+            currentLogEntry.setAppSource(
+                    rootArray.get("source").textValue());
+        }
+
+        // statusCode
+        currNode = rootArray.get("statusCode");
+        if( currNode != null )
+        {
+            currentLogEntry.setAppStatusCode(
+                    rootArray.get("statusCode").textValue());
+        }
+
+        // channel
+        currNode = rootArray.get("channel");
+        if( currNode != null )
+        {
+            currentLogEntry.setAppChannel(
+                    rootArray.get("channel").textValue());
+        }
+
+        // severity
+        currNode = rootArray.get("severity");
+        if( currNode != null )
+        {
+            currentLogEntry.setLevel(
+                    rootArray.get("severity").textValue());
+        }
+
+        // recordNumber
+        currNode = rootArray.get("recordNumber");
+        if( currNode != null )
+        {
+            currentLogEntry.setAppRecordNumber(
+                    rootArray.get("recordNumber").textValue());
+        }
+
+        // timestamp
+        currNode = rootArray.get("timeGenerated");
+        if( currNode != null )
+        {
+            currentLogEntry.setAppTimeGenerated(
+                    rootArray.get("timeGenerated").textValue());
+
+            currentLogEntry.setTimeStamp(LocalDateTime.parse(
+                    currentLogEntry.getAppTimeGenerated(),
+                    DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'")));
+        }
+
+        // data
+        currNode = rootArray.get("dataStr");
+        if( currNode != null )
+        {
+            currentLogEntry.setAppDataStr(
+                    rootArray.get("dataStr").textValue());
+            currentLogEntry.setMessage(currentLogEntry.getAppDataStr());
+        }
+
+        // host
+        currNode = rootArray.get("computerName");
+        if( currNode != null )
+        {
+            currentLogEntry.setAppComputerName(
+                    rootArray.get("computerName").textValue());
+            currentLogEntry.setHost(currentLogEntry.getAppComputerName());
+        }
+
+        currentLogEntry.setJsonRaw(currLineStr);
 
         // Marks a row end
         if(completionCallback != null)
