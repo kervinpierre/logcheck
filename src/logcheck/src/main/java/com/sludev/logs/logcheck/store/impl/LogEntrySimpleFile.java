@@ -40,7 +40,7 @@ import java.nio.file.StandardOpenOption;
  */
 public final class LogEntrySimpleFile implements ILogEntryStore
 {
-    private static final Logger log = LogManager.getLogger(LogEntrySimpleFile.class);
+    private static final Logger LOGGER = LogManager.getLogger(LogEntrySimpleFile.class);
 
     private final Path logOutputFile;
     private final Boolean reOpenFile;
@@ -87,9 +87,9 @@ public final class LogEntrySimpleFile implements ILogEntryStore
         }
         catch( IOException ex )
         {
-            String errMsg = String.format("Error opening log file '%s'", logOutputFile);
+            String errMsg = String.format("Error opening LOGGER file '%s'", logOutputFile);
 
-            log.debug(errMsg, ex);
+            LOGGER.debug(errMsg, ex);
 
             throw new LogCheckException(errMsg, ex);
         }
@@ -106,9 +106,9 @@ public final class LogEntrySimpleFile implements ILogEntryStore
             }
             catch( IOException ex )
             {
-                String errMsg = String.format("Error closing log file '%s'", logOutputFile);
+                String errMsg = String.format("Error closing LOGGER file '%s'", logOutputFile);
 
-                log.debug(errMsg, ex);
+                LOGGER.debug(errMsg, ex);
 
                 throw new LogCheckException(errMsg, ex);
             }
@@ -136,9 +136,9 @@ public final class LogEntrySimpleFile implements ILogEntryStore
             }
             catch( IOException ex )
             {
-                String errMsg = String.format("Error opening log file '%s'", logOutputFile);
+                String errMsg = String.format("Error opening LOGGER file '%s'", logOutputFile);
 
-                log.debug(errMsg, ex);
+                LOGGER.debug(errMsg, ex);
 
                 throw new LogCheckException(errMsg, ex);
             }
@@ -157,7 +157,7 @@ public final class LogEntrySimpleFile implements ILogEntryStore
         }
         catch( IOException ex )
         {
-            log.debug("Error writing to log file", ex);
+            LOGGER.debug("Error writing to LOGGER file", ex);
         }
         finally
         {
@@ -169,7 +169,7 @@ public final class LogEntrySimpleFile implements ILogEntryStore
                 }
                 catch( IOException ex )
                 {
-                    log.debug("Error closing log file", ex);
+                    LOGGER.debug("Error closing LOGGER file", ex);
                 }
             }
         }

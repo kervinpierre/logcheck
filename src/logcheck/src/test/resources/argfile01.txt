@@ -115,6 +115,7 @@
   --monitor-url=file://c:/windows/temp/mon.dat \
     # Stop after 60 seconds
   --stop-after=600                              \
+  --preferred-dir=c:/windows/temp               \
 --config=1                                     \
   --set-name="First monitored file"            \
   --continue                                   \
@@ -123,12 +124,13 @@
   --tailer-validate-log-file                   \
   --print-logs                                 \
   --log-source=file-local                      \
-  --log-file c:/windows/temp/logcheck-sample-app-output1.txt \
+  --log-file c:/windows/temp/logcheck-sample-app-output-01.txt \
   --log-entry-builder-type=singleline            \
   --log-entry-store-type=console,simplefile      \
   --store-log-file c:/windows/temp/store-log.txt            \
   --save-state                                   \
   --state-file c:/windows/temp/current-state01.xml            \
+  --processed-logs-state-file c:/windows/temp/current-processed-state01.xml            \
   --dedupe-dir-path c:/windows/temp/dedupe                  \
   --dedupe-max-before-write=5                    \
   --dedupe-log-per-file 10                       \
@@ -141,12 +143,13 @@
   --tailer-validate-log-file                   \
   --print-logs                                 \
   --log-source=file-local                      \
-  --log-file c:/windows/temp/logcheck-sample-app-output2.txt \
+  --log-file c:/windows/temp/logcheck-sample-app-output-02.txt \
   --log-entry-builder-type=singleline            \
   --log-entry-store-type=console,simplefile      \
   --store-log-file c:/windows/temp/store-log.txt            \
   --save-state                                   \
   --state-file c:/windows/temp/current-state02.xml            \
+  --processed-logs-state-file c:/windows/temp/current-processed-state02.xml  \
   --dedupe-dir-path c:/windows/temp/dedupe                  \
   --dedupe-max-before-write=5                    \
   --dedupe-log-per-file 10                       \

@@ -93,8 +93,18 @@ public class WindowsEventBuilder implements ILogEntryBuilder
         currNode = rootArray.get("severity");
         if( currNode != null )
         {
-            currentLogEntry.setLevel(
-                    rootArray.get("severity").textValue());
+            String currLevel = null;
+            try
+            {
+                currLevel = rootArray.get("severity").textValue();
+
+                currentLogEntry.setLevel( currLevel );
+            }
+            catch( Exception ex )
+            {
+                LOGGER.debug(String.format("handleLogLine() : error parsing unknown Level '%s'",
+                        currLevel), ex);
+            }
         }
 
         // recordNumber
@@ -103,6 +113,14 @@ public class WindowsEventBuilder implements ILogEntryBuilder
         {
             currentLogEntry.setAppRecordNumber(
                     rootArray.get("recordNumber").textValue());
+        }
+
+        // eventId
+        currNode = rootArray.get("eventId");
+        if( currNode != null )
+        {
+            currentLogEntry.setAppEventId(
+                    rootArray.get("eventId").textValue());
         }
 
         // timestamp

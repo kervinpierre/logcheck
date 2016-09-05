@@ -1,5 +1,7 @@
 package com.sludev.logs.logcheck.config.entities;
 
+import com.sludev.logs.logcheck.enums.LCLogCheckStateType;
+import com.sludev.logs.logcheck.enums.LCLogSourceType;
 import com.sludev.logs.logcheck.exceptions.LogCheckException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -7,7 +9,9 @@ import org.apache.logging.log4j.Logger;
 
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.List;
 import java.util.UUID;
 
@@ -19,15 +23,13 @@ public abstract class LogCheckStateBase
     private static final Logger LOGGER
             = LogManager.getLogger(LogCheckStateBase.class);
 
+    private final LCLogCheckStateType m_type;
+
     private final UUID m_id;
     private final String m_setName;
     private final Instant m_saveDate;
-    private final String m_serverId;
-    private final String m_sourceId;
-    private final String m_recordId;
-    private final Integer m_recordPosition;
-    private final Integer m_recordCount;
     private final List<LogCheckError> m_errors;
+    private final Deque<LogCheckStateStatusBase> m_completedStatuses;
 
     // MUTABLE
     private volatile boolean m_pendingSave = false;
@@ -70,24 +72,24 @@ public abstract class LogCheckStateBase
         return res;
     }
 
+    public Deque<LogCheckStateStatusBase> getCompletedStatuses()
+    {
+        return m_completedStatuses;
+    }
+
     public String getSetName()
     {
         return m_setName;
     }
 
-    public String getServerId()
-    {
-        return m_serverId;
-    }
-
-    public String getSourceId()
-    {
-        return m_sourceId;
-    }
-
     public Instant getSaveDate()
     {
         return m_saveDate;
+    }
+
+    public LCLogCheckStateType getLCType()
+    {
+        return m_type;
     }
 
     public static Instant getSaveDate(String sd)
@@ -113,66 +115,6 @@ public abstract class LogCheckStateBase
         return res;
     }
 
-    public String getRecordId()
-    {
-        return m_recordId;
-    }
-
-    public Integer getRecordPosition()
-    {
-        return m_recordPosition;
-    }
-
-    public static Integer getRecordPosition(final String rp)
-            throws LogCheckException
-    {
-        Integer res = null;
-
-        if( StringUtils.isNoneBlank(rp) )
-        {
-            try
-            {
-                res = Integer.parseInt(rp);
-            }
-            catch( NumberFormatException ex )
-            {
-                String errMsg = String.format("Invalid number for Record Position '%s'", rp);
-                LOGGER.debug(errMsg, ex);
-
-                throw new LogCheckException(errMsg, ex);
-            }
-        }
-
-        return res;
-    }
-
-    public static Integer getRecordCount(final String rc)
-            throws LogCheckException
-    {
-        Integer res = null;
-
-        if( StringUtils.isNoneBlank(rc) )
-        {
-            try
-            {
-                res = Integer.parseInt(rc);
-            }
-            catch( NumberFormatException ex )
-            {
-                String errMsg = String.format("Invalid number for Record Count '%s'", rc);
-                LOGGER.debug(errMsg, ex);
-
-                throw new LogCheckException(errMsg, ex);
-            }
-        }
-
-        return res;
-    }
-
-    public Integer getRecordCount()
-    {
-        return m_recordCount;
-    }
 
     public List<LogCheckError> getErrors()
     {
@@ -180,15 +122,13 @@ public abstract class LogCheckStateBase
     }
 
     protected LogCheckStateBase( final UUID id,
+                                 final LCLogCheckStateType type,
                                  final String setName,
-                                 final String serverId,
-                                 final String sourceId,
                                  final Instant saveDate,
-                                 final String recordId,
-                                 final Integer recordPosition,
-                                 final Integer recordCount,
-                                 final List<LogCheckError> errors)
+                                 final List<LogCheckError> errors,
+                                 final Deque<LogCheckStateStatusBase> statuses)
     {
+
         if( id != null )
         {
             this.m_id = id;
@@ -196,6 +136,15 @@ public abstract class LogCheckStateBase
         else
         {
             this.m_id = null;
+        }
+
+        if( type != null )
+        {
+            this.m_type = type;
+        }
+        else
+        {
+            this.m_type = null;
         }
 
         if( StringUtils.isNoneBlank(setName) )
@@ -207,24 +156,6 @@ public abstract class LogCheckStateBase
             this.m_setName = null;
         }
 
-        if( StringUtils.isNoneBlank(serverId) )
-        {
-            this.m_serverId = serverId;
-        }
-        else
-        {
-            this.m_serverId = null;
-        }
-
-        if( StringUtils.isNoneBlank(sourceId) )
-        {
-            this.m_sourceId = sourceId;
-        }
-        else
-        {
-            this.m_sourceId = null;
-        }
-
         if( saveDate != null )
         {
             this.m_saveDate = saveDate;
@@ -234,33 +165,6 @@ public abstract class LogCheckStateBase
             this.m_saveDate = null;
         }
 
-        if( StringUtils.isNoneBlank(recordId) )
-        {
-            this.m_recordId = recordId;
-        }
-        else
-        {
-            this.m_recordId = null;
-        }
-
-        if( recordPosition != null && recordPosition >= 0 )
-        {
-            this.m_recordPosition = recordPosition;
-        }
-        else
-        {
-            this.m_recordPosition = null;
-        }
-
-        if( recordCount != null && recordCount >= 0 )
-        {
-            this.m_recordCount = recordCount;
-        }
-        else
-        {
-            this.m_recordCount = null;
-        }
-
         if( errors != null )
         {
             this.m_errors = errors;
@@ -268,6 +172,15 @@ public abstract class LogCheckStateBase
         else
         {
             this.m_errors = new ArrayList<>();
+        }
+
+        if( statuses != null )
+        {
+            this.m_completedStatuses = statuses;
+        }
+        else
+        {
+            this.m_completedStatuses = new ArrayDeque<>();
         }
     }
 

@@ -40,7 +40,6 @@ import com.sludev.logs.logcheck.store.impl.LogEntrySimpleFile;
 import com.sludev.logs.logcheck.tail.ILogCheckTail;
 import com.sludev.logs.logcheck.tail.impl.FileLogCheckTail;
 import com.sludev.logs.logcheck.tail.impl.WindowsEventTail;
-import com.sludev.logs.logcheck.tail.impl.WindowsEventTailer;
 import com.sludev.logs.logcheck.utils.LogCheckConstants;
 import com.sludev.logs.logcheck.utils.LogCheckResult;
 import com.sludev.logs.logcheck.exceptions.LogCheckException;
@@ -362,7 +361,7 @@ public class LogCheckRun implements Callable<Map<Integer, LogCheckResult>>
                     WindowsEventTail lct = WindowsEventTail.from(logBuilderMap.get(confKey),
                             currConfig.getWindowsEventConnection(),
                             currDeDupeDirPath,
-                            null, // startPosition
+                            null, // starting State
                             currConfig.getPollIntervalSeconds(),
                             currConfig.willContinueState(),
                             currConfig.isTailFromEnd(),
@@ -371,12 +370,7 @@ public class LogCheckRun implements Callable<Map<Integer, LogCheckResult>>
                             currConfig.willIgnoreStartPositionError(),
                             currConfig.willValidateTailerStats(),
                             currConfig.willCollectState(),
-                            true, // watch backup directory
-                            currConfig.willTailerBackupReadLog(),
-                            currConfig.willTailerBackupReadLogReverse(),
-                            currConfig.willTailerBackupReadPriorLog(),
                             currConfig.willStopOnEOF(),
-                            currConfig.isReadOnlyFileMode(),
                             true, // Is main thread?
                             false, // Reset statistics?
                             null, // bufferSize
@@ -387,13 +381,8 @@ public class LogCheckRun implements Callable<Map<Integer, LogCheckResult>>
                             currConfig.getIdBlockSize(),
                             currConfig.getSetName(),
                             currConfig.fixPathWithPreferred(currConfig.getStateFilePath()),
-                            currConfig.fixPathWithPreferred(currConfig.getStateProcessedLogsFilePath()),
                             currConfig.fixPathWithPreferred(currConfig.getErrorFilePath()),
-                            currConfig.fixPathWithPreferred(currConfig.getTailerLogBackupDir()),
                             currConfig.getPreferredDir(),
-                            currConfig.getTailerBackupLogNameComps(),
-                            currConfig.getTailerBackupLogCompression(),
-                            currConfig.getTailerBackupLogNameRegex(),
                             currConfig.getDebugFlags());
 
                     tailerMap.put(confKey, lct);
@@ -479,9 +468,30 @@ public class LogCheckRun implements Callable<Map<Integer, LogCheckResult>>
                 currStores = defaultStores;
             }
 
-            if( currStores == null )
+            // We have no log stores
+            if( currStores == null || currStores.isEmpty() )
             {
-                throw new LogCheckException("No valid log store found");
+                if( confKey == 0 )
+                {
+                    // Main configuration is allowed to not have
+                    // log stores, since it may just hold defaults.
+                    if( m_configs.size() > 1 )
+                    {
+                        continue;
+                    }
+                    else
+                    {
+                        // Looks like we just had main config, with no stores
+                        // That's an error
+                        throw new LogCheckException("No valid log store found; with only 1 config");
+                    }
+                }
+                else
+                {
+                    throw new LogCheckException(String.format(
+                            "No valid log store found for config '%d'",
+                            confKey));
+                }
             }
 
             LogEntryStore storeWrapper = LogEntryStore.from(logSourceMap.get(confKey),

@@ -29,29 +29,38 @@ public enum LCLogLevel
     ALL,
     DEBUG,
     INFO,
-    INFORMATIONAL,
     WARN,
-    WARNING,
     ERROR,
-    FAILUREAUDIT,
-    SUCCESSAUDIT;
+    AUDIT_FAILURE,
+    AUDIT_SUCCESS;
 
     public static LCLogLevel from( String s )
     {
         LCLogLevel res;
 
-        res = LCLogLevel.valueOf(
-                StringUtils.upperCase(
-                        StringUtils.trim(s)));
+        String val = StringUtils.upperCase(
+                        StringUtils.trim(s));
 
-        switch( res )
+        switch( val )
         {
-            case WARNING:
+            case "INFORMATIONAL":
+                res = INFO;
+                break;
+
+            case "WARNING":
                 res = WARN;
                 break;
 
-            case INFORMATIONAL:
-                res = INFO;
+            case "AUDITFAILURE":
+                res = AUDIT_FAILURE;
+                break;
+
+            case "AUDITSUCCESS":
+                res = AUDIT_SUCCESS;
+                break;
+
+            default:
+                res = LCLogLevel.valueOf(val);
                 break;
         }
 

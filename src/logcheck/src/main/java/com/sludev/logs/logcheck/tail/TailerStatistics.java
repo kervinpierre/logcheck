@@ -20,15 +20,16 @@ package com.sludev.logs.logcheck.tail;
 
 import com.sludev.logs.logcheck.config.entities.LogCheckStateBase;
 import com.sludev.logs.logcheck.config.entities.LogCheckDeDupeLog;
-import com.sludev.logs.logcheck.config.entities.LogCheckStateBase;
 import com.sludev.logs.logcheck.config.entities.impl.LogCheckState;
 import com.sludev.logs.logcheck.config.entities.LogEntryDeDupe;
 import com.sludev.logs.logcheck.config.entities.LogFileState;
+import com.sludev.logs.logcheck.config.entities.impl.WindowsEventLogCheckState;
 import com.sludev.logs.logcheck.config.parsers.LogCheckStateParser;
 import com.sludev.logs.logcheck.config.parsers.ParserUtil;
 import com.sludev.logs.logcheck.config.writers.LogCheckStateWriter;
 import com.sludev.logs.logcheck.dedupe.ContinueUtil;
 import com.sludev.logs.logcheck.enums.LCFileFormat;
+import com.sludev.logs.logcheck.enums.LCLogCheckStateType;
 import com.sludev.logs.logcheck.exceptions.LogCheckException;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -180,6 +181,16 @@ public final class TailerStatistics
         save(currState, resetPosition, ignoreMissingLogFile);
     }
 
+    public synchronized void savePending(  final boolean resetPosition,
+                                    final boolean ignoreMissingLogFile )
+            throws LogCheckException, InterruptedException
+    {
+        for( LogCheckStateBase stat : m_pendingSaveStates )
+        {
+            ;
+        }
+    }
+
     public synchronized void save(  final LogCheckStateBase currState,
                                     final boolean resetPosition,
                                     final boolean ignoreMissingLogFile )
@@ -289,38 +300,54 @@ public final class TailerStatistics
 
     }
 
-    public synchronized LogCheckState restore(final Path deDupeDir,
-                                              final Integer logFileCount,
-                                              final Integer maxLogEntries) throws LogCheckException, InterruptedException
-    {
-        LogCheckState res;
-
-        res = restore(m_stateFile, deDupeDir, logFileCount, maxLogEntries);
-
-        m_restoredStates.putFirst(res);
-
-        return res;
-    }
-
-    public synchronized LogCheckState restore(final Path stateFile,
+    public synchronized LogCheckStateBase restore(final LCLogCheckStateType type,
+                                                  final Path stateFile,
                                               final Path deDupeDir,
                                  final Integer logFileCount,
                                  final Integer maxLogEntries) throws LogCheckException, InterruptedException
     {
-        LogCheckState res;
+        LogCheckStateBase res;
 
-        res = restore(stateFile, deDupeDir, m_setName, logFileCount, maxLogEntries);
+        res = restore(type, stateFile, deDupeDir, m_setName, logFileCount, maxLogEntries);
 
         m_restoredStates.putFirst(res);
 
         return res;
     }
 
-    public static synchronized LogCheckState restore(final Path stateFile,
-                                                     final Path deDupeDir,
-                                                     final String setName,
-                                                     final Integer logFileCount,
-                                                     final Integer maxLogEntries) throws LogCheckException
+    public synchronized WindowsEventLogCheckState restoreWindowsEventState(final Path stateFile,
+                                                  final Path deDupeDir,
+                                                  final Integer logFileCount,
+                                                  final Integer maxLogEntries) throws LogCheckException, InterruptedException
+    {
+        WindowsEventLogCheckState res;
+
+        res = restoreWindowsEventState(stateFile, deDupeDir, m_setName, logFileCount, maxLogEntries);
+
+        m_restoredStates.putFirst(res);
+
+        return res;
+    }
+
+    public synchronized LogCheckState restoreFileState(final Path stateFile,
+                                                           final Path deDupeDir,
+                                                           final Integer logFileCount,
+                                                           final Integer maxLogEntries ) throws LogCheckException, InterruptedException
+    {
+        LogCheckState res;
+
+        res = restoreFileState(stateFile, deDupeDir, m_setName, logFileCount, maxLogEntries);
+
+        m_restoredStates.putFirst(res);
+
+        return res;
+    }
+
+    public static synchronized WindowsEventLogCheckState restoreWindowsEventState ( final Path stateFile,
+                                                                final Path deDupeDir,
+                                                                final String setName,
+                                                                final Integer logFileCount,
+                                                                final Integer maxLogEntries) throws LogCheckException
     {
         // Read the last run's deduplication logs
         List<LogCheckDeDupeLog> ddLogs
@@ -333,10 +360,21 @@ public final class TailerStatistics
                 = ContinueUtil.lastLogEntryDeDupes(ddLogs, maxLogEntries);
 
         // Read state file for information about the last run
-        LogCheckState lcConf = LogCheckStateParser.readConfig(
-                ParserUtil.readConfig(stateFile,
-                        LCFileFormat.LCSTATE));
+        WindowsEventLogCheckState lcConf = null;
 
+        try
+        {
+            lcConf = LogCheckStateParser.readConfig(
+                                ParserUtil.readConfig(stateFile,
+                                                        LCFileFormat.LCSTATE));
+        }
+        catch( ClassCastException ex )
+        {
+            String errMsg = String.format("Error casting Windows Event config from file '%s'", stateFile );
+
+            LOGGER.debug(errMsg, ex);
+            throw new LogCheckException(errMsg, ex);
+        }
 
         if( LOGGER.isDebugEnabled() )
         {
@@ -345,15 +383,71 @@ public final class TailerStatistics
 //                LOGGER.debug(String.format("restore()'ed :\n%s\n", new String(Files.readAllBytes(stateFile))));
 //            }
 //            catch( IOException ex )
+//
+//                LOGGER.debug("Error dumping State File", ex);
+//            }
+
+            if( ((lcConf.getCompletedStatuses() == null)
+                    || lcConf.getCompletedStatuses().isEmpty()) )
+            {
+                LOGGER.debug("getCompletedStatuses() is also null.");
+            }
+        }
+
+        // TODO : Allow 'look back' support to allow using the deduplication logs for confirming the file pointer's accuracy
+
+        return lcConf;
+    }
+
+    public static synchronized LogCheckState restoreFileState ( final Path stateFile,
+                                                          final Path deDupeDir,
+                                                          final String setName,
+                                                          final Integer logFileCount,
+                                                          final Integer maxLogEntries) throws LogCheckException
+    {
+        // Read the last run's deduplication logs
+        List<LogCheckDeDupeLog> ddLogs
+                = ContinueUtil.readLastDeDupeLogs(deDupeDir,
+                setName,
+                null,
+                logFileCount);
+
+        List<LogEntryDeDupe> ddObjs
+                = ContinueUtil.lastLogEntryDeDupes(ddLogs, maxLogEntries);
+
+        // Read state file for information about the last run
+        LogCheckState lcConf = null;
+
+        try
+        {
+            lcConf = LogCheckStateParser.readConfig(
+                            ParserUtil.readConfig(stateFile,
+                                LCFileFormat.LCSTATE));
+        }
+        catch( ClassCastException ex )
+        {
+            String errMsg = String.format("Error casting File config from file '%s'", stateFile );
+
+            LOGGER.debug(errMsg, ex);
+            throw new LogCheckException(errMsg, ex);
+        }
+
+        if( LOGGER.isDebugEnabled() )
+        {
+//            try
 //            {
+//                LOGGER.debug(String.format("restore()'ed :\n%s\n", new String(Files.readAllBytes(stateFile))));
+//            }
+//            catch( IOException ex )
+//
 //                LOGGER.debug("Error dumping State File", ex);
 //            }
 
             if( (lcConf.getLogFile() == null)
-                    && ((lcConf.getCompletedLogFiles() == null)
-                                    || lcConf.getCompletedLogFiles().isEmpty()) )
+                    && ((lcConf.getCompletedStatuses() == null)
+                    || lcConf.getCompletedStatuses().isEmpty()) )
             {
-                LOGGER.debug("restore() : getLogFile() returned null and getCompletedLogFiles() is also null.");
+                LOGGER.debug("restore() : getLogFile() returned null and getCompletedStatuses() is also null.");
             }
             else if( (lcConf.getLogFile() != null) && (lcConf.getLogFile().getLastProcessedPosition() < 1) )
             {
@@ -365,6 +459,32 @@ public final class TailerStatistics
         // TODO : Allow 'look back' support to allow using the deduplication logs for confirming the file pointer's accuracy
 
         return lcConf;
+    }
+
+    public static synchronized LogCheckStateBase restore( final LCLogCheckStateType type,
+                                                          final Path stateFile,
+                                                          final Path deDupeDir,
+                                                          final String setName,
+                                                          final Integer logFileCount,
+                                                          final Integer maxLogEntries) throws LogCheckException
+    {
+        LogCheckStateBase res = null;
+
+        switch( type )
+        {
+            case FILE_STATE:
+                res = restoreFileState(stateFile, deDupeDir, setName, logFileCount, maxLogEntries);
+                break;
+
+            case WINDOWS_EVENT_STATE:
+                res = restoreWindowsEventState(stateFile, deDupeDir, setName, logFileCount, maxLogEntries);
+                break;
+
+            default:
+                break;
+        }
+
+        return res;
     }
 
     @Override

@@ -16,8 +16,10 @@
  * from SLU Dev Inc.
  */
 
-package com.sludev.logs.logcheck.config.entities;
+package com.sludev.logs.logcheck.config.entities.impl;
 
+import com.sludev.logs.logcheck.config.entities.LogCheckStateStatusBase;
+import com.sludev.logs.logcheck.config.entities.LogFileBlock;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -29,19 +31,13 @@ import java.time.Instant;
  * file data as more log files are being processed
  * Created by kervin on 2016-03-18.
  */
-public final class LogFileStatus
+public final class LogFileStatus extends LogCheckStateStatusBase
 {
     private static final Logger LOGGER = LogManager.getLogger(LogFileStatus.class);
 
     private final Path m_path;
     private final LogFileBlock m_fullFileBlock;
-    private final Instant m_processedStamp;
-    private final Boolean m_processed;
 
-    public Boolean isProcessed()
-    {
-        return m_processed;
-    }
 
     public LogFileBlock getFullFileBlock()
     {
@@ -53,20 +49,15 @@ public final class LogFileStatus
         return m_path;
     }
 
-    public Instant getProcessedStamp()
-    {
-        return m_processedStamp;
-    }
-
     private LogFileStatus(final Path path,
                           final LogFileBlock fullFileBlock,
                           final Instant processedStamp,
                           final Boolean processed)
     {
+        super(processedStamp, processed);
+
         this.m_path = path;
         this.m_fullFileBlock = fullFileBlock;
-        this.m_processedStamp = processedStamp;
-        this.m_processed = processed;
     }
 
     public static LogFileStatus from(final Path path,
