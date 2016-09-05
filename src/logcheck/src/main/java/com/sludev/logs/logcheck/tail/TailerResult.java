@@ -18,7 +18,7 @@
 
 package com.sludev.logs.logcheck.tail;
 
-import com.sludev.logs.logcheck.config.entities.impl.LogCheckState;
+import com.sludev.logs.logcheck.config.entities.LogCheckStateBase;
 import com.sludev.logs.logcheck.enums.LCTailerResult;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -34,20 +34,20 @@ public final class TailerResult
     private static final Logger LOGGER = LogManager.getLogger(TailerResult.class);
 
     private final Set<LCTailerResult> m_result;
-    private final LogCheckState m_state;
+    private final LogCheckStateBase m_state;
 
     public Set<LCTailerResult> getResultSet()
     {
         return m_result;
     }
 
-    public LogCheckState getState()
+    public LogCheckStateBase getState()
     {
         return m_state;
     }
 
     private TailerResult( final Set<LCTailerResult> result,
-                          final LogCheckState state)
+                          final LogCheckStateBase state)
     {
         if( result == null )
         {
@@ -62,7 +62,7 @@ public final class TailerResult
     }
 
     public static TailerResult from( final Set<LCTailerResult> result,
-                                     final LogCheckState state)
+                                     final LogCheckStateBase state)
     {
         TailerResult res = new TailerResult(result,
                                                     state);

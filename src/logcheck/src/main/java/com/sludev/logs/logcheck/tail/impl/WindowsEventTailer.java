@@ -17,9 +17,10 @@
  */
 package com.sludev.logs.logcheck.tail.impl;
 
-import com.sludev.logs.logcheck.config.entities.LogFileState;
-import com.sludev.logs.logcheck.config.entities.impl.LogCheckState;
+import com.sludev.logs.logcheck.config.entities.LogCheckStateBase;
+import com.sludev.logs.logcheck.config.entities.LogCheckStateStatusBase;
 import com.sludev.logs.logcheck.config.entities.impl.WindowsEventLogCheckState;
+import com.sludev.logs.logcheck.config.entities.impl.WindowsEventSourceStatus;
 import com.sludev.logs.logcheck.enums.LCDebugFlag;
 import com.sludev.logs.logcheck.enums.LCHashType;
 import com.sludev.logs.logcheck.enums.LCTailerResult;
@@ -38,6 +39,7 @@ import com.sun.jna.platform.win32.Win32Exception;
 import com.sun.jna.platform.win32.WinError;
 import com.sun.jna.platform.win32.WinNT;
 import com.sun.jna.ptr.IntByReference;
+import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.concurrent.BasicThreadFactory;
 import org.apache.logging.log4j.LogManager;
@@ -49,13 +51,16 @@ import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Deque;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
@@ -63,6 +68,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
 /**
  * Simple implementation of tailing Windows Events
@@ -125,6 +131,8 @@ public final class WindowsEventTailer implements ITail
 
     private final TailerStatistics m_statistics;
 
+    private final WindowsEventLogCheckState m_startingState;
+
     private final LCHashType m_hashType;
     private final Integer m_idBlockSize;
     private final String m_setName;
@@ -183,6 +191,7 @@ public final class WindowsEventTailer implements ITail
                                 final int bufSize,
                                 final int saveTimerSeconds,
                                 final TailerStatistics stats,
+                                final WindowsEventLogCheckState startingState,
                                 final LCHashType hashType,
                                 final Integer idBlockSize,
                                 final String setName,
@@ -202,6 +211,7 @@ public final class WindowsEventTailer implements ITail
         this.m_statsReset = statsReset;
         this.m_cset = cset;
         this.m_statistics = stats;
+        this.m_startingState = startingState;
 
         this.m_hashType = hashType;
         this.m_idBlockSize = idBlockSize;
@@ -237,6 +247,7 @@ public final class WindowsEventTailer implements ITail
                                            final int bufSize,
                                            final int saveTimerSeconds,
                                            final TailerStatistics stats,
+                                           final WindowsEventLogCheckState startingState,
                                            final LCHashType hashType,
                                            final Integer idBlockSize,
                                            final String setName,
@@ -258,6 +269,7 @@ public final class WindowsEventTailer implements ITail
                 bufSize,
                 saveTimerSeconds,
                 stats,
+                startingState,
                 hashType,
                 idBlockSize,
                 setName,
@@ -303,8 +315,6 @@ public final class WindowsEventTailer implements ITail
 
         TailerResult res = TailerResult.from(null, null);
         Map<String,List<String>> readers = null;
-        int flags = 0;
-        long position = 0; // position within the file
 
         if( m_reOpen )
         {
@@ -341,24 +351,69 @@ public final class WindowsEventTailer implements ITail
 
             String[] WECToks = m_windowsEventConnection.split(":");
 
-            String currServerName = WECToks[0];
+            String currServerName    = WECToks[0];
             String currSourceNameStr = WECToks[1];
-            String[] currSources = currSourceNameStr.split(",");
+            String[] currSources     = currSourceNameStr.split(",");
 
             readers = new HashMap<>();
 
             readers.put(currServerName, Arrays.asList(currSources));
 
+            WindowsEventLogCheckState firstState = m_startingState;
+
+            // Cache the log handles for the entire run.
+            // This helps because we have to re-read the entire log whenever we re-open it
+            // because SEEK flag does not work reliably
+            Map<String, Map<String, WinNT.HANDLE>> handleMaps = new HashMap<>();
+
+            Map<String, Integer> readFlags = new HashMap<>();
+
             // Now loop the log events
             while( m_run && (readers != null) && readers.isEmpty()==false )
             {
+                if( m_statsValidate && (m_statsReset == false) )
+                {
+                    LogCheckStateBase lastStateOrig = m_statistics.getRestoredStates().peekFirst();
+                    WindowsEventLogCheckState lastState = null;
 
-                // FIXME : If the log file is rotated between validation above
-                //         and here it is possible to lose the tail logs in that
-                //         file.
+                    if( lastStateOrig != null )
+                    {
+                        if( lastStateOrig instanceof WindowsEventLogCheckState )
+                        {
+                            lastState = (WindowsEventLogCheckState) lastStateOrig;
+                        }else
+                        {
+                            LOGGER.warn("Restored a lastStateOrig that was not WindowsEventLogCheckState.");
+                        }
+                    }
 
-                // FIXME : ID the FIRST_BLOCK on the file here, before reading.
-                //         If this ID fails we don't bother with the log builders
+                    if( m_lastLCState != null )
+                    {
+                        // Use the last state if we have it.
+                        lastState = m_lastLCState;
+                    }
+
+                    if( lastState == null )
+                    {
+                        LOGGER.debug("call() : Validating state but no 'LAST_STATE' value.");
+                    }
+                    else
+                    {
+                        // FIXME : Validate does not work because Event Log SEEK is not functional.
+
+                        // Use the validate state to simply loop and ignore all prior events
+
+//                        Set<LCTailerResult> valRes = validateStatistics(lastState);
+//                        if( valRes.contains( LCTailerResult.SUCCESS ) == false )
+//                        {
+//                            // Statistics validation from disk failed.
+//                            res = TailerResult.from(res.getResultSet(), lastState);
+//                            res.getResultSet().addAll(valRes);
+//                            stop();
+//                            break;
+//                        }
+                    }
+                }
 
                 // Final check for a log rotate before reading the log file
                 // This is really the last time we can try for now.
@@ -371,9 +426,6 @@ public final class WindowsEventTailer implements ITail
                     res.getResultSet().add(LCTailerResult.INTERRUPTED);
                 }
 
-                Map<String, Integer> readFlags = new HashMap<>();
-                Map<String, Integer> offsets = new HashMap<>();
-
                 for( String svrK : readers.keySet() )
                 {
                     List<String> srcs = readers.get(svrK);
@@ -382,18 +434,15 @@ public final class WindowsEventTailer implements ITail
                         // https://support.microsoft.com/en-us/kb/177199
                         // SEEK flag fails with Error 87
                         readFlags.put(src, WinNT.EVENTLOG_SEQUENTIAL_READ | WinNT.EVENTLOG_FORWARDS_READ);
-                        offsets.put(src, 0);
                     }
                 }
 
                 // Read the events in the Event database
-                readLines(readers, readFlags, offsets);
+                readLines(readers, handleMaps, readFlags, firstState);
 
-                // TODO : Confirm FIRST_BLOCK here, and ID LAST_BLOCK from read data
-                //        Detects 'Log swap while tailing'
+                // 'startingState' is really only used on the first iteration
 
-                // FIXME : Statistics thread should NOT ID file blocks.
-                //         This causes lots of races
+                firstState = null;
 
                 // Save the last state if it hasn't been for specific
                 // result codes.  Don't save the state if there was a
@@ -563,16 +612,39 @@ public final class WindowsEventTailer implements ITail
         res.append(String.format("\"channel\": \"%s\",", eventWrapper.getChannel()));
         res.append(String.format("\"severity\": \"%s\",", ev.getType()));
         res.append(String.format("\"recordNumber\": \"%d\",", ev.getRecordNumber()));
-        res.append(String.format("\"computerName\": \"%s\",", eventWrapper.getComputerName()));
+        res.append(String.format("\"eventId\": \"%d\",", ev.getEventId()));
+        res.append(String.format("\"computerName\": \"%s\",",
+                StringEscapeUtils.escapeJson(eventWrapper.getComputerName())));
+
+        if ( ev.getStrings() != null && ev.getStrings().length > 0 )
+        {
+            StringBuilder strs = new StringBuilder();
+
+            for( String s : ev.getStrings() )
+            {
+                strs.append(String.format("%s\n", s));
+            }
+
+            res.append(String.format("\"exception\": \"%s\",",
+                    StringEscapeUtils.escapeJson(strs.toString())));
+        }
 
         WinNT.EVENTLOGRECORD currRec = ev.getRecord();
 
-        res.append(String.format("\"timeGenerated\": \"%s\",",
-                Instant.ofEpochSecond(currRec.TimeGenerated.intValue())));
-
         // FIXME : Treat the data as binary, even though it's usually text
-        res.append(String.format("\"dataStr\": \"%s\"}",
-                new String(ev.getData(), StandardCharsets.UTF_16LE )));
+        if( ev.getData() == null )
+        {
+            LOGGER.debug("ev2str() : event's getData() returned null");
+        }
+        else
+        {
+            res.append(String.format("\"dataStr\": \"%s\",",
+                    StringEscapeUtils.escapeJson(
+                            new String(ev.getData(), StandardCharsets.UTF_16LE))));
+        }
+
+        res.append(String.format("\"timeGenerated\": \"%s\" }",
+                Instant.ofEpochSecond(currRec.TimeGenerated.intValue())));
 
         return res.toString();
     }
@@ -584,8 +656,9 @@ public final class WindowsEventTailer implements ITail
      * @throws IOException if an I/O error occurs.
      */
     private void readLines( final Map<String, List<String>> readers,
+                            final Map<String, Map<String, WinNT.HANDLE>> handleMaps,
                             final Map<String, Integer> readFlags,
-                            final Map<String, Integer> offSet)
+                            final WindowsEventLogCheckState startingState)
             throws IOException, LogCheckException, InterruptedException
     {
         if( LOGGER.isDebugEnabled() )
@@ -600,8 +673,8 @@ public final class WindowsEventTailer implements ITail
 
                 for( String src : srcs )
                 {
-                    sb.append(String.format("    source : '%s'\n        readFlags : '%d'\n        offset : '%s'\n",
-                            src, readFlags.get(src), offSet.get(src)));
+                    sb.append(String.format("    source : '%s'\n        readFlags : '%d'\n ",
+                            src, readFlags.get(src)));
                 }
             }
 
@@ -613,19 +686,17 @@ public final class WindowsEventTailer implements ITail
             throw new Win32Exception(Kernel32.INSTANCE.GetLastError());
         }
 
-        String lastSvr = null;
-        String lastSrc = null;
         String lastRecId = null;
-        Integer lastRecPos = null;
+        Integer lastRecNum = null;
         Integer lastRecCount = null;
 
-        Map<String, Map<String, WinNT.HANDLE>> handleMaps = new HashMap<>();
+        // Clear all pending state saves before starting
+        m_statistics.clearPendingSaveState();
 
-        int runCount = 0;
-        boolean firstLoop = true;
-
-        while( m_run )
+        Deque<LogCheckStateStatusBase> statuses = new ArrayDeque<>();
+        try
         {
+            // Walk the server list
             for( String svrK : readers.keySet() )
             {
                 List<String> sources = readers.get(svrK);
@@ -640,29 +711,37 @@ public final class WindowsEventTailer implements ITail
                     handleMaps.put(svrK, serverMap);
                 }
 
+                // Walk the sources
                 for( String src : sources )
                 {
                     WinNT.HANDLE reader;
                     Integer currReadFlags = readFlags.get(src);
-                    Integer currOffSet = 0;
-
-                    if( firstLoop )
-                    {
-                        currOffSet = offSet.get(src);
-                    }
 
                     if( serverMap.containsKey(src) )
                     {
                         reader = serverMap.get(src);
-                    }
-                    else
+                    }else
                     {
                         reader = Advapi32.INSTANCE.OpenEventLog(svrK, src);
                         serverMap.put(src, reader);
                     }
 
+                    WindowsEventSourceStatus currStatus = null;
+                    if( startingState != null )
+                    {
+                        Optional<WindowsEventSourceStatus> currStateOpt = startingState.getCompletedStatuses().stream()
+                                .map(i -> (WindowsEventSourceStatus) i)
+                                .filter(i -> i.getServerId().equals(svrK) && i.getSourceId().equals(src))
+                                .findFirst();
+
+                        if( currStateOpt.isPresent() )
+                        {
+                            currStatus = currStateOpt.get();
+                        }
+                    }
+
                     List<LCWindowsEventWrapper> events
-                            = readEvents(reader, currReadFlags, currOffSet, 0, src);
+                            = readEvents(reader, currReadFlags, currStatus, 0, src);
 
                     for( LCWindowsEventWrapper record : events )
                     {
@@ -680,53 +759,49 @@ public final class WindowsEventTailer implements ITail
 
                     if( events != null && events.isEmpty() == false )
                     {
-                        lastRecId = Objects.toString( events.get(events.size()-1)
-                                                            .getEvent().getEventId());
-                        lastRecPos = events.get(events.size()-1)
-                                                            .getEvent().getRecordNumber();
-                    }
+                        lastRecId = Objects.toString(events.get(events.size() - 1)
+                                .getEvent().getEventId());
+                        lastRecNum = events.get(events.size() - 1)
+                                .getEvent().getRecordNumber();
 
-                    lastSvr = svrK;
-                    lastSrc = src;
+                        // Collect and save source statistics
+                        if( m_statsCollect && m_doCollectStats )
+                        {
+                            statuses.add( WindowsEventSourceStatus.from(svrK, src, lastRecId,
+                                    lastRecNum, lastRecCount, Instant.now(), true) );
+
+                            // m_doCollectStats = false;
+                        }
+                    }
                 }
             }
-
-            firstLoop = false;
         }
-
-        // Collect statistics
-        if( m_statsCollect && m_doCollectStats && (runCount++ % 10 == 0) )
+        finally
         {
-            //m_statistics.setLastProcessedPosition(reader.position());
-
-            try
+            // Collect and save source statistics
+            if( m_statsCollect && m_doCollectStats )
             {
-                m_lastLCState = getState(m_setName,
-                        lastSvr, lastSrc,
-                        lastRecId, lastRecPos, lastRecCount,
-                        Instant.now());
+                try
+                {
+                    m_lastLCState = getState(m_setName,
+                            Instant.now(),
+                            statuses);
 
-                m_statistics.putPendingSaveState(m_lastLCState);
+                    m_statistics.putPendingSaveState(m_lastLCState);
+                    m_statistics.saveLastPending(true, true, true);
+                }
+                catch( InterruptedException ex )
+                {
+                    // Let's not stop processing over a Save State interrupt
+                    LOGGER.info("readLines() : putPendingSaveState() interrupted.");
+                }
             }
-            catch( InterruptedException ex )
-            {
-                // Let's not stop processing over a Save State interrupt
-                LOGGER.info("readLines() : putPendingSaveState() interrupted.");
-            }
-
-            m_doCollectStats = false;
-        }
-
-        if( m_run == false )
-        {
-            // We've been asked to stop running
-            LOGGER.debug("Tailer process stopping by request.");
         }
     }
 
     public static List<LCWindowsEventWrapper> readEvents( final WinNT.HANDLE reader,
                                                                 final int readFlags,
-                                                                final int offSet,
+                                                                final WindowsEventSourceStatus status,
                                                                 final int maxReadCount,
                                                                 final String source )
     {
@@ -737,6 +812,7 @@ public final class WindowsEventTailer implements ITail
         List<LCWindowsEventWrapper> res = new ArrayList<>();
 
         int rc = 0;
+        boolean firstEventRead = true;
         for(int i=0;;i++)
         {
             if( Advapi32.INSTANCE
@@ -802,12 +878,26 @@ public final class WindowsEventTailer implements ITail
                 computerName = splits[1];
             }
 
-            if( offSet > 0 && i < offSet )
+            if( status != null && status.getRecordNumber() != null
+                    && status.getRecordNumber() > 0
+                    && i < status.getRecordNumber() )
             {
-                LOGGER.debug(String.format("Skipping entry number %d", i));
+                // Skipping due to lower record number
+                ;
             }
             else
             {
+                if( firstEventRead && status != null )
+                {
+                    if( i > 0 )
+                    {
+                        LOGGER.debug(
+                                String.format("readEvents() : Skipped %d entries due to record number lower than %d",
+                                                    i, status.getRecordNumber()));
+                    }
+                    firstEventRead = false;
+                }
+
                 res.add(LCWindowsEventWrapper.from(record, computerName, source));
 
                 if( maxReadCount > 0 && res.size() >= maxReadCount )
@@ -821,32 +911,35 @@ public final class WindowsEventTailer implements ITail
     }
 
     public static WindowsEventLogCheckState getState( final String setName,
-                                          final String serverId,
-                                          final String sourceId,
-                                          final String recordId,
-                                          final Integer recordPosition,
-                                          final Integer recordCount,
-                                          final Instant lastProcessedTimeStart) throws LogCheckException, IOException
+                                                        final Instant lastProcessedTimeStart,
+                                                      final Deque<LogCheckStateStatusBase> stats)
+            throws LogCheckException, IOException
     {
         WindowsEventLogCheckState res = null;
 
-        LOGGER.debug(String.format("getState() : Called on %s;%s", serverId, sourceId));
+        LOGGER.debug(String.format("getState() : Called on '%s' set", setName));
 
         // FIXME : We're resetting the processed file list
         res = WindowsEventLogCheckState.from(UUID.randomUUID(),
                 setName,
-                serverId,
-                sourceId,
                 lastProcessedTimeStart,
-                recordId,
-                recordPosition,
-                recordCount,
-                null);
+                null,
+                stats);
 
         return res;
     }
 
-    public static Set<LCTailerResult> validateStatistics(LogCheckState state) throws LogCheckException
+    /**
+     * Validates all the 'Source Statuses' in a state file.
+     *
+     * Currently not very useful since we need to walk the entire Event Log to validate
+     * a 'Source Status'.
+     *
+     * @param state
+     * @return
+     * @throws LogCheckException
+     */
+    public static Set<LCTailerResult> validateStatistics(final WindowsEventLogCheckState state) throws LogCheckException
     {
         Set<LCTailerResult> res = EnumSet.noneOf(LCTailerResult.class);
 
@@ -857,24 +950,37 @@ public final class WindowsEventTailer implements ITail
 
         // Validate start and stop blocks are correct?
        // LogCheckState state = getState(true);
-        LogFileState currFState = state.getLogFile();
-        if( currFState != null )
+        Deque<LogCheckStateStatusBase> currStatus = state.getCompletedStatuses();
+
+        List<WindowsEventSourceStatus> currWinStatus = currStatus.stream().map(s -> (WindowsEventSourceStatus) s)
+                                        .collect(Collectors.toList());
+
+        if( currWinStatus != null  && currWinStatus.isEmpty() == false )
         {
-            try
+            for( WindowsEventSourceStatus s : currWinStatus )
             {
-                res.addAll( LogFileState.validateFileBlocks(currFState, null, true) );
-            }
-            catch( LogCheckException ex )
-            {
-                LOGGER.warn("Error validating file block", ex);
+                try
+                {
+                    res.addAll(WindowsEventSourceStatus.validateStatus(s));
+                }
+                catch( LogCheckException ex )
+                {
+                    LOGGER.warn("Error validating file block", ex);
 
-                res.add(LCTailerResult.VALIDATION_ERROR);
-            }
+                    res.add(LCTailerResult.VALIDATION_ERROR);
+                }
 
-            if( res.contains( LCTailerResult.SUCCESS ) == false)
-            {
-                LOGGER.debug("Log Check File Block VALIDATION_FAIL or VALIDATION_ERROR.");
+                if( res.contains(LCTailerResult.SUCCESS) == false )
+                {
+                    LOGGER.debug("Log Check File Block VALIDATION_FAIL or VALIDATION_ERROR.");
+                }
             }
+        }
+        else
+        {
+            LOGGER.debug(
+                    String.format(
+                            "validateStatistics() : There were no statuses in state object '%s'", state));
         }
 
         LOGGER.debug(String.format("Log Check File Block Validation result is %s", res));

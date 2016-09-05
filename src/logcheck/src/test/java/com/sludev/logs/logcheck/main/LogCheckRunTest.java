@@ -1123,6 +1123,46 @@ public class LogCheckRunTest
                         .get("exception")
                         .textValue();
 
+                String currJsonRaw = currHit.get("_source")
+                        .get("jsonRaw")
+                        .textValue();
+
+                String currAppSource = currHit.get("_source")
+                        .get("appSource")
+                        .textValue();
+
+                String currAppStatusCode = currHit.get("_source")
+                        .get("appStatusCode")
+                        .textValue();
+
+                String currAppChannel = currHit.get("_source")
+                        .get("appChannel")
+                        .textValue();
+
+                String currAppType = currHit.get("_source")
+                        .get("exception")
+                        .textValue();
+
+                String currAppRecordNumber = currHit.get("_source")
+                        .get("appRecordNumber")
+                        .textValue();
+
+                String currAppEventId = currHit.get("_source")
+                        .get("appEventId")
+                        .textValue();
+
+                String currAppComputerName = currHit.get("_source")
+                        .get("appComputerName")
+                        .textValue();
+
+                String currAppTimeGenerated = currHit.get("_source")
+                        .get("appTimeGenerated")
+                        .textValue();
+
+                String currAppDataStr = currHit.get("_source")
+                        .get("appDataStr")
+                        .textValue();
+
                 LogEntryVO currVO
                         = LogEntryVO.from( currLevel,
                                             currLogger,
@@ -1130,7 +1170,17 @@ public class LogCheckRunTest
                                             currException,
                                             currTimestamp,
                                             currType,
-                                            currHost );
+                                            currHost,
+                                            currJsonRaw,
+                                            currAppSource,
+                                            currAppStatusCode,
+                                            currAppChannel,
+                                            currAppType,
+                                            currAppRecordNumber,
+                                            currAppEventId,
+                                            currAppComputerName,
+                                            currAppTimeGenerated,
+                                            currAppDataStr);
                 esLogEntries.add(currVO);
             }
         }
@@ -1211,7 +1261,8 @@ public class LogCheckRunTest
                                 String currHost = matcher.group(4);
 
                                 LogEntryVO currVO = LogEntryVO.from(currLevel, currLogger, null, null,
-                                        currTimestamp, null, currHost);
+                                        currTimestamp, null, currHost, null, null, null, null, null, null, null,
+                                        null, null, null);
                                 fsLogEntries.add(currVO);
 
                                 if( (fsLogEntries.size() > 0) && ((fsLogEntries.size() % 1000) == 0) )

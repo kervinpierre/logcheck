@@ -17,29 +17,20 @@
  */
 package com.sludev.logs.logcheck.tail.impl;
 
-import com.sludev.logs.logcheck.config.entities.impl.LogCheckState;
 import com.sludev.logs.logcheck.config.entities.LogFileState;
-import com.sludev.logs.logcheck.config.entities.LogFileStatus;
-import com.sludev.logs.logcheck.config.parsers.LogCheckStateParser;
-import com.sludev.logs.logcheck.config.parsers.ParserUtil;
-import com.sludev.logs.logcheck.enums.LCCompressionType;
+import com.sludev.logs.logcheck.config.entities.impl.LogCheckState;
+import com.sludev.logs.logcheck.config.entities.impl.WindowsEventLogCheckState;
 import com.sludev.logs.logcheck.enums.LCDebugFlag;
-import com.sludev.logs.logcheck.enums.LCFileBlockType;
-import com.sludev.logs.logcheck.enums.LCFileFormat;
-import com.sludev.logs.logcheck.enums.LCFileRegexComponent;
 import com.sludev.logs.logcheck.enums.LCHashType;
 import com.sludev.logs.logcheck.enums.LCResultStatus;
 import com.sludev.logs.logcheck.enums.LCTailerResult;
 import com.sludev.logs.logcheck.exceptions.LogCheckException;
-import com.sludev.logs.logcheck.fs.BackupFileWatch;
 import com.sludev.logs.logcheck.log.ILogEntryBuilder;
-import com.sludev.logs.logcheck.tail.TailerResult;
 import com.sludev.logs.logcheck.tail.ILogCheckTail;
+import com.sludev.logs.logcheck.tail.TailerResult;
 import com.sludev.logs.logcheck.tail.TailerStatistics;
 import com.sludev.logs.logcheck.utils.LogCheckConstants;
-import com.sludev.logs.logcheck.utils.LogCheckFileRotate;
 import com.sludev.logs.logcheck.utils.LogCheckResult;
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.concurrent.BasicThreadFactory;
@@ -52,15 +43,9 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Deque;
 import java.util.EnumSet;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
@@ -71,7 +56,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -82,18 +66,16 @@ import java.util.stream.Collectors;
 public final class WindowsEventTail implements ILogCheckTail
 {
     private static final Logger LOGGER
-            = LogManager.getLogger(WindowsEventTail.class);
+                                    = LogManager.getLogger(WindowsEventTail.class);
 
     private final List<ILogEntryBuilder> m_mainLogEntryBuilders;
 
     private final String m_windowsConnectionStr;
     private final Path m_deDupeDir;
     private final Path m_stateFile;
-    private final Path m_stateProcessedLogsFilePath;
+    private final WindowsEventLogCheckState m_startingState;
     private final Path m_errorFile;
-    private final Path m_tailerLogBackupDir;
     private final Path m_preferredDir;
-    private final Long m_startPosition;
     private final Long m_delay;
     private final Boolean m_tailFromEnd;
     private final Boolean m_reOpenLogFile;
@@ -102,12 +84,7 @@ public final class WindowsEventTail implements ILogCheckTail
     private final Boolean m_startPositionIgnoreError;
     private final Boolean m_validateTailerStatistics;
     private final Boolean m_collectTailerStatistics;
-    private final Boolean m_watchBackupDirectory;
-    private final Boolean m_tailerBackupReadLog;
-    private final Boolean m_tailerBackupReadLogReverse;
-    private final Boolean m_tailerBackupReadPriorLog;
     private final Boolean m_stopOnEOF;
-    private final Boolean m_readOnlyFileMode;
     private final Boolean m_mainThread;
     private final Boolean m_statsReset;
     private final Integer m_bufferSize;
@@ -117,15 +94,12 @@ public final class WindowsEventTail implements ILogCheckTail
     private final LCHashType m_idBlockHash;
     private final Integer m_idBlockSize;
     private final String m_setName;
-    private final List<LCFileRegexComponent> m_tailerBackupLogNameComps;
-    private final LCCompressionType m_tailerBackupLogCompression;
-    private final Pattern m_tailerBackupLogNameRegex;
     private final Set<LCDebugFlag> m_debugFlags;
 
     private WindowsEventTail( final List<ILogEntryBuilder> mainLogEntryBuilders,
                               final String windowsConnectionStr,
                               final Path deDupeDir,
-                              final Long startPosition,
+                              final WindowsEventLogCheckState startingState,
                               final Long delay,
                               final Boolean continueState,
                               final Boolean tailFromEnd,
@@ -134,12 +108,7 @@ public final class WindowsEventTail implements ILogCheckTail
                               final Boolean startPosIgnoreError,
                               final Boolean validateTailerStatistics,
                               final Boolean collectTailerStatistics,
-                              final Boolean watchBackupDirectory,
-                              final Boolean tailerBackupReadLog,
-                              final Boolean tailerBackupReadLogReverse,
-                              final Boolean tailerBackupReadPriorLog,
                               final Boolean stopOnEOF,
-                              final Boolean readOnlyFileMode,
                               final Boolean mainThread,
                               final Boolean statsReset,
                               final Integer bufferSize,
@@ -150,13 +119,8 @@ public final class WindowsEventTail implements ILogCheckTail
                               final Integer idBlockSize,
                               final String setName,
                               final Path stateFile,
-                              final Path stateProcessedLogsFilePath,
                               final Path errorFile,
-                              final Path tailerLogBackupDir,
                               final Path preferredDir,
-                              final List<LCFileRegexComponent> tailerBackupLogNameComps,
-                              final LCCompressionType tailerBackupLogCompression,
-                              final Pattern tailerBackupLogNameRegex,
                               final Set<LCDebugFlag> debugFlags)
     {
         this.m_mainLogEntryBuilders = mainLogEntryBuilders;
@@ -168,16 +132,14 @@ public final class WindowsEventTail implements ILogCheckTail
         this.m_readLogFileCount = readLogFileCount;
         this.m_readMaxDeDupeEntries = readMaxDeDupeEntries;
         this.m_validateTailerStatistics = validateTailerStatistics;
-        this.m_watchBackupDirectory = watchBackupDirectory;
         this.m_collectTailerStatistics = collectTailerStatistics;
-        this.m_tailerLogBackupDir = tailerLogBackupDir;
         this.m_stopOnEOF = stopOnEOF;
-        this.m_readOnlyFileMode = readOnlyFileMode;
         this.m_mainThread = mainThread;
-        this.m_startPosition = startPosition;
         this.m_debugFlags = debugFlags;
         this.m_statsReset = statsReset;
         this.m_preferredDir = preferredDir;
+
+        this.m_startingState = startingState;
 
         // Don't bother with logs we missed earlier
 
@@ -188,60 +150,6 @@ public final class WindowsEventTail implements ILogCheckTail
         else
         {
             this.m_tailFromEnd = true;
-        }
-
-        if( tailerBackupReadLog != null )
-        {
-            this.m_tailerBackupReadLog = tailerBackupReadLog;
-        }
-        else
-        {
-            this.m_tailerBackupReadLog = true;
-        }
-
-        if( tailerBackupReadLogReverse != null )
-        {
-            this.m_tailerBackupReadLogReverse = tailerBackupReadLogReverse;
-        }
-        else
-        {
-            this.m_tailerBackupReadLogReverse = true;
-        }
-
-        if( tailerBackupReadPriorLog != null )
-        {
-            this.m_tailerBackupReadPriorLog = tailerBackupReadPriorLog;
-        }
-        else
-        {
-            this.m_tailerBackupReadPriorLog = false;
-        }
-
-        if( tailerBackupLogNameComps != null )
-        {
-            this.m_tailerBackupLogNameComps = tailerBackupLogNameComps;
-        }
-        else
-        {
-            this.m_tailerBackupLogNameComps = new ArrayList<>(10);
-        }
-
-        if( tailerBackupLogCompression != null )
-        {
-            this.m_tailerBackupLogCompression = tailerBackupLogCompression;
-        }
-        else
-        {
-            this.m_tailerBackupLogCompression = null;
-        }
-
-        if( tailerBackupLogNameRegex != null )
-        {
-            this.m_tailerBackupLogNameRegex = tailerBackupLogNameRegex;
-        }
-        else
-        {
-            this.m_tailerBackupLogNameRegex = null;
         }
 
         if( saveState != null )
@@ -316,15 +224,6 @@ public final class WindowsEventTail implements ILogCheckTail
             this.m_stateFile = null;
         }
 
-        if( stateProcessedLogsFilePath != null )
-        {
-            this.m_stateProcessedLogsFilePath = stateProcessedLogsFilePath;
-        }
-        else
-        {
-            this.m_stateProcessedLogsFilePath = null;
-        }
-
         if( errorFile != null )
         {
             this.m_errorFile = errorFile;
@@ -338,7 +237,7 @@ public final class WindowsEventTail implements ILogCheckTail
     public static WindowsEventTail from( final List<ILogEntryBuilder> mainLogEntryBuilders,
                                          final String windowsConnectionStr,
                                          final Path deDupeDir,
-                                         final Long startPosition,
+                                         final WindowsEventLogCheckState startingState,
                                          final Long delay,
                                          final Boolean continueState,
                                          final Boolean tailFromEnd,
@@ -347,12 +246,7 @@ public final class WindowsEventTail implements ILogCheckTail
                                          final Boolean startPosIgnoreError,
                                          final Boolean validateTailerStatistics,
                                          final Boolean collectTailerStatistics,
-                                         final Boolean watchBackupDirectory,
-                                         final Boolean tailerBackupReadLog,
-                                         final Boolean tailerBackupReadLogReverse,
-                                         final Boolean tailerBackupReadPriorLog,
                                          final Boolean stopOnEOF,
-                                         final Boolean readOnlyFileMode,
                                          final Boolean mainThread,
                                          final Boolean statsReset,
                                          final Integer bufferSize,
@@ -363,19 +257,14 @@ public final class WindowsEventTail implements ILogCheckTail
                                          final Integer idBlockSize,
                                          final String setName,
                                          final Path stateFile,
-                                         final Path stateProcessedLogsFilePath,
                                          final Path errorFile,
-                                         final Path tailerLogBackupDir,
                                          final Path preferredDir,
-                                         final List<LCFileRegexComponent> tailerBackupLogNameComps,
-                                         final LCCompressionType tailerBackupLogCompression,
-                                         final Pattern tailerBackupLogNameRegex,
                                          final Set<LCDebugFlag> debugFlags)
     {
         WindowsEventTail res = new WindowsEventTail(mainLogEntryBuilders,
                 windowsConnectionStr,
                 deDupeDir,
-                startPosition,
+                startingState,
                 delay,
                 continueState,
                 tailFromEnd,
@@ -384,12 +273,7 @@ public final class WindowsEventTail implements ILogCheckTail
                 startPosIgnoreError,
                 validateTailerStatistics,
                 collectTailerStatistics,
-                watchBackupDirectory,
-                tailerBackupReadLog,
-                tailerBackupReadLogReverse,
-                tailerBackupReadPriorLog,
                 stopOnEOF,
-                readOnlyFileMode,
                 mainThread,
                 statsReset,
                 bufferSize,
@@ -400,13 +284,8 @@ public final class WindowsEventTail implements ILogCheckTail
                 idBlockSize,
                 setName,
                 stateFile,
-                stateProcessedLogsFilePath,
                 errorFile,
-                tailerLogBackupDir,
                 preferredDir,
-                tailerBackupLogNameComps,
-                tailerBackupLogCompression,
-                tailerBackupLogNameRegex,
                 debugFlags);
 
         return res;
@@ -421,10 +300,7 @@ public final class WindowsEventTail implements ILogCheckTail
 
             msg.append("\nWindowsEventTailTail\n{\n");
             msg.append(String.format("  Windows Event   : %s\n", m_windowsConnectionStr));
-            msg.append(String.format("  Start Pos       : %s\n", m_startPosition));
             msg.append(String.format("  Main Thread     : %b\n", m_mainThread));
-            msg.append(String.format("  Read Prior Logs : %b\n", m_tailerBackupReadPriorLog));
-            msg.append(String.format("  Watch Logs Dir  : %b\n", m_watchBackupDirectory));
             msg.append("}\n");
 
             LOGGER.debug(msg.toString());
@@ -435,27 +311,15 @@ public final class WindowsEventTail implements ILogCheckTail
         long currDelay = (m_delay == null) ? 0 : m_delay;
         boolean currTailFromEnd = BooleanUtils.isNotFalse(m_tailFromEnd);
 
-        Long currPosition = m_startPosition;
-
         boolean currReOpen = BooleanUtils.isTrue(m_reOpenLogFile);
         boolean currStartPosIgrErr = BooleanUtils.isTrue(m_startPositionIgnoreError);
         boolean currStatsValidate = BooleanUtils.isTrue(m_validateTailerStatistics);
         boolean currStatsCollect = BooleanUtils.isNotFalse(m_collectTailerStatistics);
-        boolean currTailerBackupReadLog = BooleanUtils.isTrue(m_tailerBackupReadLog);
-        boolean currTailerBackupReadLogReverse = BooleanUtils.isTrue(m_tailerBackupReadLogReverse);
         boolean currStopOnEOF = BooleanUtils.isTrue(m_stopOnEOF);
         boolean currSaveState = BooleanUtils.isNotFalse(m_saveState);
         boolean currStatsReset = BooleanUtils.isTrue(m_statsReset);
 
-        // Watch for backup files *only* if we are checking backup logs at all
-        boolean currWatchBackupDirectory
-                = BooleanUtils.isTrue(m_watchBackupDirectory) && currTailerBackupReadLog;
-
         final ScheduledExecutorService statsSchedulerExe;
-        final ExecutorService watchBackupDirExe;
-
-        final BackupFileWatch currBackupFileWatch = null;
-        final Future<Integer> watchBackupDirRes;
 
         if( StringUtils.isBlank(m_windowsConnectionStr) )
         {
@@ -463,7 +327,6 @@ public final class WindowsEventTail implements ILogCheckTail
         }
 
         final AtomicReference<TailerStatistics> stats;
-        final AtomicReference<TailerStatistics> statsProcessedLogFiles;
 
         // Check to see if we're allowed to collect stats at all
         if( currStatsCollect )
@@ -472,25 +335,19 @@ public final class WindowsEventTail implements ILogCheckTail
                     m_errorFile,
                     m_setName));
 
-            statsProcessedLogFiles = new AtomicReference<>(
-                    TailerStatistics.from(m_stateProcessedLogsFilePath,
-                                            m_errorFile,
-                                            m_setName));
-
             Instant currNow = Instant.now();
             stats.get().setLastProcessedTimeStart(currNow);
-            statsProcessedLogFiles.get().setLastProcessedTimeStart(currNow);
 
             // Create the statistics thread
             if( currSaveState )
             {
-                if( (m_stateFile == null) || (m_stateProcessedLogsFilePath == null) )
+                if( m_stateFile == null )
                 {
                     LOGGER.warn("SAVE_STATE option set but at least one state file option is missing.");
                 }
 
                 BasicThreadFactory tailerSaveFactory = new BasicThreadFactory.Builder()
-                        .namingPattern("tailerSaveThread-%d")
+                        .namingPattern("windowsEventTailerSaveThread-%d")
                         .build();
 
                 statsSchedulerExe = Executors.newScheduledThreadPool(1, tailerSaveFactory);
@@ -521,7 +378,6 @@ public final class WindowsEventTail implements ILogCheckTail
         else
         {
             stats = null;
-            statsProcessedLogFiles = null;
             statsSchedulerExe = null;
         }
 
@@ -535,7 +391,7 @@ public final class WindowsEventTail implements ILogCheckTail
                 && (m_stopAfter > 0) )
         {
             BasicThreadFactory scheduleFactory = new BasicThreadFactory.Builder()
-                    .namingPattern("tailerScheduleThread-%d")
+                    .namingPattern("windowsEventTailerScheduleThread-%d")
                     .daemon(true)
                     .build();
 
@@ -567,7 +423,7 @@ public final class WindowsEventTail implements ILogCheckTail
         }
 
         BasicThreadFactory tailerFactory = new BasicThreadFactory.Builder()
-                .namingPattern("tailerThread-%d")
+                .namingPattern("windowsEventTailerThread-%d")
                 .build();
 
         ExecutorService tailerExe = Executors.newSingleThreadExecutor(tailerFactory);
@@ -580,13 +436,12 @@ public final class WindowsEventTail implements ILogCheckTail
             // Keeps track of the last backup file that has been processed
             // FIXME : Last backup file that has been processed should be stored/restored on/from disk.  Maybe with DeDupe files?
             //Path newestBackupFile = null;
-            Deque<LogFileStatus> sessionBackupFiles = new ArrayDeque<>(10);
 
             Set<LCTailerResult> currTailerResults = null;
 
             boolean nextStatsReset = currStatsReset;
 
-            long currCreateFileEventCount = 0;
+            WindowsEventLogCheckState currPosition = m_startingState;
 
             ////////////////////////////////////
             // Main Tailer Loop
@@ -617,121 +472,83 @@ public final class WindowsEventTail implements ILogCheckTail
                     else if( stats.get() != null )
                     {
                         // Done every time before the Tailer thread starts.
-                        LogCheckState currState = stats.get().restore(m_stateFile,
+                        WindowsEventLogCheckState currState = stats.get().restoreWindowsEventState( m_stateFile,
                                 m_deDupeDir,
                                 m_readLogFileCount,
-                                m_readMaxDeDupeEntries);
+                                m_readMaxDeDupeEntries );
 
                         // If we haven't been given a position, get one from disk
-                        Long storedPosition = LogFileState.positionFromLogFile(currState.getLogFile());
-                        if( (currPosition == null) || (currPosition < 1) )
+                        if( currPosition == null )
                         {
-                            currPosition = storedPosition;
-                        }
-                        else if( (storedPosition != null) && (storedPosition > 0) )
-                        {
-                            LOGGER.info(String.format("Current Position of %d used instead of restored"
-                                    + " position of %d", currPosition, storedPosition));
+                            currPosition = currState;
                         }
                     }
                 }
 
-                // Skips the main Log Tailer completely.  No making up.  Stats on disk are reset.
-                boolean skipMainLog = false;
-                // Skips the main Log Tailer for a single loop cycle.  The main Log Tailer is run again
-                // next loop cycle.
-                boolean delayMainLog = false;
+                final CountDownLatch currCompletionLatch = new CountDownLatch(1);
 
-                if( (passCount.compareTo(BigInteger.ZERO) <= 0)
-                        && m_tailerBackupReadPriorLog )
+                // Create this iteration's File Tailer Object
+                mainTailer.set(WindowsEventTailer.from(m_windowsConnectionStr,
+                        null, // currPositions
+                        Charset.defaultCharset(),
+                        m_mainLogEntryBuilders,
+                        currDelay * 1000, // Convert to milliseconds
+                        currTailFromEnd,
+                        currReOpen,
+                        currStartPosIgrErr,
+                        currStatsValidate,
+                        currStatsCollect,
+                        nextStatsReset,
+                        currStopOnEOF,
+                        m_bufferSize,
+                        currStatsCollect ? 2 : 0,
+                        (stats == null) ? null : stats.get(),
+                        currPosition,
+                        m_idBlockHash,
+                        m_idBlockSize,
+                        m_setName,
+                        m_debugFlags,
+                        currCompletionLatch));
+
+                // Reset the current position to zero
+                // for the next iteration.  Otherwise BUG
+                currPosition = null;
+
+                // Use the reset value, then return it to the
+                // default of FALSE
+                nextStatsReset = false;
+
+                Future<TailerResult> tailerExeRes = tailerExe.submit(mainTailer.get());
+
+                // Wait until Tailer thread has completed.
+                try
                 {
-                    // Read the backups *before* starting with the main log,
-                    // TODO : But *only* if there are unprocessed backups.  This means we should figure this out first.
-                    LOGGER.debug("Delaying Main Log Tailer because passCount <= 0 and 'Backup Read Prior Log' is true."
-                                    + "  Attempt to process backup logs first.");
-                    delayMainLog = true;
+                    tailerRes = tailerExeRes.get();
                 }
-
-                if( skipMainLog || delayMainLog )
+                catch( CancellationException ex )
                 {
-                    LOGGER.debug("Skipping/Delaying the main WindowsEventTailer thread.");
-                }
-                else
-                {
-                    final CountDownLatch currCompletionLatch = new CountDownLatch(1);
-
-                    // Create this iteration's File Tailer Object
-                    mainTailer.set(WindowsEventTailer.from(m_windowsConnectionStr,
-                            null, // currPositions
-                            Charset.defaultCharset(),
-                            m_mainLogEntryBuilders,
-                            currDelay * 1000, // Convert to milliseconds
-                            currTailFromEnd,
-                            currReOpen,
-                            currStartPosIgrErr,
-                            currStatsValidate,
-                            currStatsCollect,
-                            nextStatsReset,
-                            currStopOnEOF,
-                            m_bufferSize,
-                            currStatsCollect ? 2 : 0,
-                            (stats == null) ? null : stats.get(),
-                            m_idBlockHash,
-                            m_idBlockSize,
-                            m_setName,
-                            m_debugFlags,
-                            currCompletionLatch));
-
-                    // Reset the current position to zero
-                    // for the next iteration.  Otherwise BUG
-                    currPosition = null;
-
-                    // Use the reset value, then return it to the
-                    // default of FALSE
-                    nextStatsReset = false;
-
-                    Future<TailerResult> tailerExeRes = tailerExe.submit(mainTailer.get());
-
-                    if( currBackupFileWatch != null )
+                    if( currCompletionLatch != null )
                     {
-                        currBackupFileWatch.addWatchOnTask(tailerExeRes);
+                        // Wait to be signalled by the Tailer thread before continuing
+                        LOGGER.debug("Waiting for tailer to complete.");
+
+                        currCompletionLatch.await();
                     }
 
-                    // Wait until Tailer thread has completed.
-                    try
-                    {
-                        tailerRes = tailerExeRes.get();
-                    }
-                    catch( CancellationException ex )
-                    {
-                        if( currBackupFileWatch != null )
-                        {
-                            // Wait for the Backup File Watch object
-                            // to signal us.
-                            currCompletionLatch.await();
-                        }
-                        else
-                        {
-                            LOGGER.error("Cancelled, but there's no Backup File Watch object.");
-
-                            throw ex;
-                        }
-
-                        // New backup files cancel the running tailer task
+                    // New backup files cancel the running tailer task
 //                        LOGGER.debug(String.format("Tailer cancelled for '%s'",
 //                                m_logFile));
 
-                        // The result from the object directly
-                        tailerRes = mainTailer.get().getFinalResult();
-                        if( tailerRes == null )
-                        {
-                            LOGGER.debug("Tailer cancelled and its result is null.");
-                        }
+                    // The result from the object directly
+                    tailerRes = mainTailer.get().getFinalResult();
+                    if( tailerRes == null )
+                    {
+                        LOGGER.debug("Tailer cancelled and its result is null.");
                     }
-
-                    // FIXME : Set tail from end to be true or false based on Tailer result.
-                    // This should help implement log-rotate support
                 }
+
+                // FIXME : Set tail from end to be true or false based on Tailer result.
+                // This should help implement log-rotate support
 
                 if( tailerRes != null )
                 {
@@ -745,12 +562,6 @@ public final class WindowsEventTail implements ILogCheckTail
                     {
                         // Main loop needs this flag to continue
                         currTailerResults.add(LCTailerResult.REOPEN);
-                    }
-
-                    if( skipMainLog || delayMainLog )
-                    {
-                        // Needed to process backup logs
-                        currTailerResults.add(LCTailerResult.VALIDATION_SKIPPED);
                     }
                 }
 
@@ -792,40 +603,6 @@ public final class WindowsEventTail implements ILogCheckTail
                     {
                         nextStatsReset = true;
                     }
-
-                    // Read the log backup files on disk
-                    if( m_tailerBackupReadLog )
-                    {
-                        LogFileState currFileState = null;
-
-                        if( (tailerRes == null) || (tailerRes.getState() == null) )
-                        {
-                            LOGGER.debug("File Tailer Result : Log Check State is null. Restoring from disk.");
-
-                            // Use the Log File State on disk
-                            if( Files.exists(m_stateFile) )
-                            {
-                                LogCheckState lcs = LogCheckStateParser.readConfig(
-                                        ParserUtil.readConfig(m_stateFile,
-                                                LCFileFormat.LCSTATE));
-
-                                currFileState = lcs.getLogFile();
-                            }
-                        }
-                        else
-                        {
-                            currFileState = tailerRes.getState().getLogFile();
-                        }
-
-                    // TODO : At this point VALIDATION_FAILED should now be fixed.
-
-                    // Signal a statistics reset the last read position on disk
-                    if( skipMainLog )
-                    {
-                        // FYI : We don't reset for delayMainLog
-                        nextStatsReset = true;
-                    }
-                }
 
                     LOGGER.debug("Validation fail fix branch completed.");
                 }

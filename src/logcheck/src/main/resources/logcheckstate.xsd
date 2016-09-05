@@ -28,17 +28,12 @@ NOTICE:  All information contained herein is, and remains
             <xs:choice minOccurs="0" maxOccurs="unbounded">
                 <xs:element name="logFile" type="LogFileStateType" minOccurs="0" maxOccurs="1" />
                 <xs:element name="fileStatuses" type="LogFileStatusListType" minOccurs="0" maxOccurs="1" />
+                <xs:element name="windowsEventSourceStatuses" type="WindowsEventSourceListType" minOccurs="0" maxOccurs="1" />
                 <xs:element name="saveDate" type="xs:dateTime" minOccurs="1" maxOccurs="1" />
                 <xs:element name="id" type="xs:string" minOccurs="1" maxOccurs="1" />
                 <xs:element name="setName" type="xs:string" minOccurs="1" maxOccurs="1" />
-                <xs:element name="serverId" type="xs:string" minOccurs="0" maxOccurs="1" />
-                <xs:element name="sourceId" type="xs:string" minOccurs="0" maxOccurs="1" />
-                <xs:element name="recordId" type="xs:string" minOccurs="0" maxOccurs="1" />
-                <xs:element name="recordCount" type="xs:string" minOccurs="0" maxOccurs="1" />
-                <xs:element name="recordPosition" type="xs:string" minOccurs="0" maxOccurs="1" />
             </xs:choice>
             <xs:attribute name="type" type="TypeType" use="required"/>
-
         </xs:complexType>
     </xs:element>
 
@@ -58,6 +53,24 @@ NOTICE:  All information contained herein is, and remains
     <xs:complexType name="LogFileStatusListType">
         <xs:choice minOccurs="0" maxOccurs="unbounded">
             <xs:element name="fileStatus" type="LogFileStatusType" minOccurs="0" maxOccurs="unbounded" />
+        </xs:choice>
+    </xs:complexType>
+
+    <xs:complexType name="WindowsEventStatusType">
+        <xs:choice minOccurs="0" maxOccurs="unbounded">
+            <xs:element name="serverId" type="xs:string" minOccurs="0" maxOccurs="1" />
+            <xs:element name="sourceId" type="xs:string" minOccurs="0" maxOccurs="1" />
+            <xs:element name="recordId" type="xs:string" minOccurs="0" maxOccurs="1" />
+            <xs:element name="recordCount" type="xs:string" minOccurs="0" maxOccurs="1" />
+            <xs:element name="recordPosition" type="xs:string" minOccurs="0" maxOccurs="1" />
+            <xs:element name="processedStamp" type="xs:dateTime" minOccurs="0" maxOccurs="1" />
+            <xs:element name="processed" type="xs:boolean" minOccurs="0" maxOccurs="1" />
+        </xs:choice>
+    </xs:complexType>
+
+    <xs:complexType name="WindowsEventSourceListType">
+        <xs:choice minOccurs="0" maxOccurs="unbounded">
+            <xs:element name="windowsEventStatus" type="WindowsEventStatusType" minOccurs="0" maxOccurs="unbounded" />
         </xs:choice>
     </xs:complexType>
 
@@ -84,8 +97,8 @@ NOTICE:  All information contained herein is, and remains
 
     <xs:simpleType name="TypeType">
         <xs:restriction base="xs:string">
-            <xs:enumeration value="fileState"/>
-            <xs:enumeration value="windowsEventState"/>
+            <xs:enumeration value="file-state"/>
+            <xs:enumeration value="windows-event-state"/>
         </xs:restriction>
     </xs:simpleType>
 

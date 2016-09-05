@@ -19,11 +19,13 @@
 package com.sludev.logs.logcheck.config.parsers;
 
 import com.sludev.logs.logcheck.config.entities.LogCheckStateBase;
+import com.sludev.logs.logcheck.config.entities.LogCheckStateStatusBase;
 import com.sludev.logs.logcheck.config.entities.impl.LogCheckState;
 import com.sludev.logs.logcheck.config.entities.LogFileBlock;
 import com.sludev.logs.logcheck.config.entities.LogFileState;
-import com.sludev.logs.logcheck.config.entities.LogFileStatus;
+import com.sludev.logs.logcheck.config.entities.impl.LogFileStatus;
 import com.sludev.logs.logcheck.config.entities.impl.WindowsEventLogCheckState;
+import com.sludev.logs.logcheck.config.entities.impl.WindowsEventSourceStatus;
 import com.sludev.logs.logcheck.exceptions.LogCheckException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -41,6 +43,7 @@ import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.Objects;
 
 /**
  *
@@ -53,7 +56,7 @@ public final class LogCheckStateParser
     @SuppressWarnings("unchecked")
     public static <T extends LogCheckStateBase> T readConfig( Document doc) throws LogCheckException
     {
-        T res;
+        T res = null;
 
         Element rootEl;
 
@@ -62,15 +65,10 @@ public final class LogCheckStateParser
         XPathFactory currXPathfactory = XPathFactory.newInstance();
         XPath currXPath = currXPathfactory.newXPath();
         String saveDateStr = null;
-        String recordPositionStr = null;
-        String recordCountStr = null;
-        String recordIdStr = null;
         String setNameStr = null;
-        String serverIdStr = null;
-        String sourceIdStr = null;
         String idStr = null;
         LogFileState logFile = null;
-        Deque<LogFileStatus> statuses = null;
+        Deque<LogCheckStateStatusBase> statuses = null;
 
         try
         {
@@ -93,51 +91,6 @@ public final class LogCheckStateParser
         try
         {
             idStr = currXPath.compile("./id").evaluate(rootEl);
-        }
-        catch (XPathExpressionException ex)
-        {
-            LOGGER.debug("configuration parsing error.", ex);
-        }
-
-        try
-        {
-            serverIdStr = currXPath.compile("./serverId").evaluate(rootEl);
-        }
-        catch (XPathExpressionException ex)
-        {
-            LOGGER.debug("configuration parsing error.", ex);
-        }
-
-        try
-        {
-            sourceIdStr = currXPath.compile("./sourceId").evaluate(rootEl);
-        }
-        catch (XPathExpressionException ex)
-        {
-            LOGGER.debug("configuration parsing error.", ex);
-        }
-
-        try
-        {
-            recordIdStr = currXPath.compile("./recordId").evaluate(rootEl);
-        }
-        catch (XPathExpressionException ex)
-        {
-            LOGGER.debug("configuration parsing error.", ex);
-        }
-
-        try
-        {
-            recordCountStr = currXPath.compile("./recordCount").evaluate(rootEl);
-        }
-        catch (XPathExpressionException ex)
-        {
-            LOGGER.debug("configuration parsing error.", ex);
-        }
-
-        try
-        {
-            recordPositionStr = currXPath.compile("./recordPosition").evaluate(rootEl);
         }
         catch (XPathExpressionException ex)
         {
@@ -184,13 +137,40 @@ public final class LogCheckStateParser
             LOGGER.debug("configuration parsing error <fileStatuses>.", ex);
         }
 
+        try
+        {
+            NodeList currElList = (NodeList)currXPath.compile("./windowsEventSourceStatuses/windowsEventStatus").evaluate(
+                    rootEl, XPathConstants.NODESET);
+
+            if( (currElList != null) && (currElList.getLength() > 0) )
+            {
+                statuses = new ArrayDeque<>();
+                for(int i=0; i<currElList.getLength(); i++)
+                {
+                    Element tempEl = (Element)currElList.item(i);
+
+                    WindowsEventSourceStatus currStat = readConfigWindowsEventStatus(tempEl);
+                    if( currStat != null )
+                    {
+                        statuses.add(currStat);
+                    }
+                }
+            }
+        }
+        catch (XPathExpressionException ex)
+        {
+            LOGGER.debug("configuration parsing error <windowsEventSourceStatuses>.", ex);
+        }
+
         String type = null;
         try
         {
             String tempStr = currXPath.compile("./@type").evaluate(rootEl);
             if( StringUtils.isNoneBlank(tempStr) )
             {
-                type = StringUtils.upperCase(tempStr);
+                type = StringUtils.upperCase(
+                        StringUtils.replace(
+                            StringUtils.trim(tempStr), "-", ""));
             }
         }
         catch (XPathExpressionException ex)
@@ -210,32 +190,139 @@ public final class LogCheckStateParser
                     res = (T) WindowsEventLogCheckState.from(
                             idStr,
                             setNameStr,
-                            serverIdStr,
-                            sourceIdStr,
                             saveDateStr,
-                            recordIdStr,
-                            recordPositionStr,
-                            recordCountStr,
-                            null);
+                            null,
+                            statuses);
                 }
                 break;
 
-            default:
+            case "FILESTATE":
                 {
                     res = (T)LogCheckState.from(logFile,
                             idStr,
                             setNameStr,
-                            serverIdStr,
-                            sourceIdStr,
                             saveDateStr,
-                            recordIdStr,
-                            recordPositionStr,
-                            recordCountStr,
                             null,
-                            null);
+                            statuses);
                 }
                 break;
+
+            default:
+                LOGGER.debug(String.format("Invalid state type '%s'", type));
+                break;
         }
+
+        return res;
+    }
+
+    public static WindowsEventSourceStatus readConfigWindowsEventStatus( Element rootElem)
+            throws LogCheckException
+    {
+        WindowsEventSourceStatus res = null;
+        Element currEl = rootElem;
+
+        String recordPositionStr = null;
+        String recordCountStr = null;
+        String recordIdStr = null;
+        String serverIdStr = null;
+        String sourceIdStr = null;
+
+        XPathFactory currXPathfactory = XPathFactory.newInstance();
+        XPath currXPath = currXPathfactory.newXPath();
+        Instant processedStamp = null;
+        Boolean processed = null;
+
+        try
+        {
+            serverIdStr = currXPath.compile("./serverId").evaluate(rootElem);
+        }
+        catch (XPathExpressionException ex)
+        {
+            LOGGER.debug("configuration parsing error.", ex);
+        }
+
+        try
+        {
+            sourceIdStr = currXPath.compile("./sourceId").evaluate(rootElem);
+        }
+        catch (XPathExpressionException ex)
+        {
+            LOGGER.debug("configuration parsing error.", ex);
+        }
+
+        try
+        {
+            recordIdStr = currXPath.compile("./recordId").evaluate(rootElem);
+        }
+        catch (XPathExpressionException ex)
+        {
+            LOGGER.debug("configuration parsing error.", ex);
+        }
+
+        try
+        {
+            recordCountStr = currXPath.compile("./recordCount").evaluate(rootElem);
+        }
+        catch (XPathExpressionException ex)
+        {
+            LOGGER.debug("configuration parsing error.", ex);
+        }
+
+        try
+        {
+            recordPositionStr = currXPath.compile("./recordPosition").evaluate(rootElem);
+        }
+        catch (XPathExpressionException ex)
+        {
+            LOGGER.debug("configuration parsing error.", ex);
+        }
+
+        try
+        {
+            String processedStampStr = currXPath.compile("./processedStamp").evaluate(currEl);
+            if( StringUtils.isNoneBlank(processedStampStr) )
+            {
+                processedStamp = Instant.parse(processedStampStr);
+            }
+        }
+        catch( XPathExpressionException ex )
+        {
+            String errMsg = "Configuration parsing error. <processedStamp> tag.";
+
+            LOGGER.debug(errMsg, ex);
+
+            throw new LogCheckException(errMsg, ex);
+        }
+
+        try
+        {
+            String processedStr = StringUtils.trim(currXPath.compile("./processed").evaluate(currEl));
+
+            if( (StringUtils.equalsIgnoreCase(processedStr, "true") == false)
+                    && (StringUtils.equalsIgnoreCase(processedStr, "false") == false) )
+            {
+                LOGGER.warn(String.format("Tag <processed> does not have a true/false value '%s'",
+                        processedStr));
+            }
+
+            processed = Boolean.parseBoolean(processedStr);
+        }
+        catch( XPathExpressionException ex )
+        {
+            String errMsg = "Configuration parsing error. <processed> tag value '%s'.";
+
+            LOGGER.debug(errMsg, ex);
+
+            throw new LogCheckException(errMsg, ex);
+        }
+
+        res = WindowsEventSourceStatus.from(serverIdStr,
+                sourceIdStr,
+                recordIdStr,
+                recordPositionStr,
+                recordCountStr,
+                Objects.toString(processedStamp),
+                processed);
 
         return res;
     }

@@ -52,6 +52,7 @@ public final class LogEntry
     private String m_appChannel;
     private String m_appType;
     private String m_appRecordNumber;
+    private String m_appEventId;
     private String m_appComputerName;
     private String m_appTimeGenerated;
     private String m_appDataStr;
@@ -206,6 +207,16 @@ public final class LogEntry
         return m_appComputerName;
     }
 
+    public String getAppEventId()
+    {
+        return m_appEventId;
+    }
+
+    public void setAppEventId(String appEventId )
+    {
+        m_appEventId = appEventId;
+    }
+
     public void setAppComputerName( String appComputerName )
     {
         this.m_appComputerName = appComputerName;
@@ -307,7 +318,17 @@ public final class LogEntry
                 StringUtils.defaultIfBlank(le.getException(), ""),
                 StringUtils.defaultIfBlank((le.getTimeStamp() == null) ? null : le.getTimeStamp().toString(), ""),
                 StringUtils.defaultIfBlank(le.getType(), ""),
-                StringUtils.defaultIfBlank(le.getHost(), "")
+                StringUtils.defaultIfBlank(le.getHost(), ""),
+                StringUtils.defaultIfBlank(le.getJsonRaw(), ""),
+                StringUtils.defaultIfBlank(le.getAppSource(), ""),
+                StringUtils.defaultIfBlank(le.getAppStatusCode(), ""),
+                StringUtils.defaultIfBlank(le.getAppChannel(), ""),
+                StringUtils.defaultIfBlank(le.getAppType(), ""),
+                StringUtils.defaultIfBlank(le.getAppRecordNumber(), ""),
+                StringUtils.defaultIfBlank(le.getAppEventId(), ""),
+                StringUtils.defaultIfBlank(le.getAppComputerName(), ""),
+                StringUtils.defaultIfBlank(le.getAppTimeGenerated(), ""),
+                StringUtils.defaultIfBlank(le.getAppDataStr(), "")
         );
 
         return res;

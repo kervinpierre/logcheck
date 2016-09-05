@@ -17,9 +17,11 @@
  */
 package com.sludev.logs.logcheck.tail.impl;
 
+import com.sludev.logs.logcheck.config.entities.LogCheckStateBase;
+import com.sludev.logs.logcheck.config.entities.LogCheckStateStatusBase;
 import com.sludev.logs.logcheck.config.entities.impl.LogCheckState;
 import com.sludev.logs.logcheck.config.entities.LogFileState;
-import com.sludev.logs.logcheck.config.entities.LogFileStatus;
+import com.sludev.logs.logcheck.config.entities.impl.LogFileStatus;
 import com.sludev.logs.logcheck.config.parsers.LogCheckStateParser;
 import com.sludev.logs.logcheck.config.parsers.ParserUtil;
 import com.sludev.logs.logcheck.enums.LCCompressionType;
@@ -490,7 +492,7 @@ public final class FileLogCheckTail implements ILogCheckTail
                 }
 
                 BasicThreadFactory tailerSaveFactory = new BasicThreadFactory.Builder()
-                        .namingPattern("tailerSaveThread-%d")
+                        .namingPattern("fileLogCheckTailerSaveThread-%d")
                         .build();
 
                 statsSchedulerExe = Executors.newScheduledThreadPool(1, tailerSaveFactory);
@@ -607,7 +609,7 @@ public final class FileLogCheckTail implements ILogCheckTail
             // Keeps track of the last backup file that has been processed
             // FIXME : Last backup file that has been processed should be stored/restored on/from disk.  Maybe with DeDupe files?
             //Path newestBackupFile = null;
-            Deque<LogFileStatus> sessionBackupFiles = new ArrayDeque<>(10);
+            Deque<LogCheckStateStatusBase> sessionBackupFiles = new ArrayDeque<>(10);
 
             Set<LCTailerResult> currTailerResults = null;
 
@@ -644,7 +646,7 @@ public final class FileLogCheckTail implements ILogCheckTail
                     else if( stats.get() != null )
                     {
                         // Done every time before the Tailer thread starts.
-                        LogCheckState currState = stats.get().restore(m_stateFile,
+                        LogCheckState currState = stats.get().restoreFileState(m_stateFile,
                                 m_deDupeDir,
                                 m_readLogFileCount,
                                 m_readMaxDeDupeEntries);
@@ -855,7 +857,17 @@ public final class FileLogCheckTail implements ILogCheckTail
                         }
                         else
                         {
-                            currFileState = tailerRes.getState().getLogFile();
+                            try
+                            {
+                                currFileState = ((LogCheckState) tailerRes.getState()).getLogFile();
+                            }
+                            catch( Exception ex )
+                            {
+                                String msg = "Error casting LogCheckState";
+
+                                LOGGER.debug(msg);
+                                throw new LogCheckException(msg, ex);
+                            }
                         }
 
                         ////////////////////////////////////////
@@ -867,7 +879,7 @@ public final class FileLogCheckTail implements ILogCheckTail
                             Path newestBackupFile = null;
                             Deque<Path> backupLogFilesQueue = new ArrayDeque<>(10);
 
-                            Deque<LogFileStatus> currSessionBackupFiles = null;
+                            Deque<LogCheckStateStatusBase> currSessionBackupFiles = null;
 
                             /////////////////////////////////////////////////////
                             // Backup File Listing Block
@@ -879,13 +891,13 @@ public final class FileLogCheckTail implements ILogCheckTail
                                         && (m_stateProcessedLogsFilePath != null)
                                         && Files.exists(m_stateProcessedLogsFilePath) )
                                 {
-                                    LogCheckState currState = statsProcessedLogFiles.get().restore(
+                                    LogCheckState currState = statsProcessedLogFiles.get().restoreFileState(
                                             m_stateProcessedLogsFilePath,
                                             m_deDupeDir,
                                             m_readLogFileCount,
                                             m_readMaxDeDupeEntries);
 
-                                    currSessionBackupFiles = currState.getCompletedLogFiles();
+                                    currSessionBackupFiles = currState.getCompletedStatuses();
                                 }
                                 else
                                 {
@@ -908,9 +920,10 @@ public final class FileLogCheckTail implements ILogCheckTail
                                                 msg, currSessionBackupFiles.size());
 
                                         StringBuilder sb = new StringBuilder(100);
-                                        for( LogFileStatus lfs : currSessionBackupFiles )
+                                        for( LogCheckStateStatusBase lfs : currSessionBackupFiles )
                                         {
-                                            sb.append(String.format("    %s\n", lfs.getPath()));
+                                            LogFileStatus lf = (LogFileStatus)lfs;
+                                            sb.append(String.format("    %s\n", lf.getPath()));
                                         }
                                         msg = String.format("%s%s", msg, sb.toString());
                                     }
@@ -927,6 +940,7 @@ public final class FileLogCheckTail implements ILogCheckTail
                                 else if( currSessionBackupFiles.peekLast() != null )
                                 {
                                     Optional<LogFileStatus> currStatus = currSessionBackupFiles.stream()
+                                            .map( b -> (LogFileStatus)b )
                                             .sorted( (bk1, bk2) -> bk1.getProcessedStamp().compareTo(bk2.getProcessedStamp() ) )
                                             .reduce( (bk1, bk2) -> bk2 );
                                     if( currStatus.isPresent() )
@@ -1031,8 +1045,10 @@ public final class FileLogCheckTail implements ILogCheckTail
                                     for( Path path : backupLogFilesQueue )
                                     {
                                         boolean found = false;
-                                        for( LogFileStatus lfs : currSessionBackupFiles )
+                                        for( LogCheckStateStatusBase ls : currSessionBackupFiles )
                                         {
+                                            LogFileStatus lfs = (LogFileStatus)ls;
+
                                             if( lfs.getPath().equals(path) )
                                             {
                                                 found = true;
@@ -1211,11 +1227,11 @@ public final class FileLogCheckTail implements ILogCheckTail
                                                 List<LogFileStatus> statusToAdd =
                                                         new ArrayList<>();
 
-                                                for( Iterator<LogFileStatus> lfs
+                                                for( Iterator<LogCheckStateStatusBase> lfs
                                                      = currSessionBackupFiles.iterator();
                                                      lfs.hasNext(); )
                                                 {
-                                                    LogFileStatus currLFS = lfs.next();
+                                                    LogFileStatus currLFS = (LogFileStatus)lfs.next();
 
                                                     // FIXME : We should iterate by HASH instead or as an option
 
@@ -1246,7 +1262,7 @@ public final class FileLogCheckTail implements ILogCheckTail
                                                 if( Files.exists(m_stateProcessedLogsFilePath) )
                                                 {
                                                     // Merge the existing file list on disk with the current
-                                                    currStats = TailerStatistics.restore(
+                                                    currStats = TailerStatistics.restoreFileState(
                                                             m_stateProcessedLogsFilePath,
                                                             m_deDupeDir,
                                                             m_setName,
@@ -1254,11 +1270,13 @@ public final class FileLogCheckTail implements ILogCheckTail
                                                             m_readMaxDeDupeEntries);
 
                                                     Set<Path> currPaths
-                                                            = currSessionBackupFiles.stream().map( i -> i.getPath() )
+                                                            = currSessionBackupFiles.stream()
+                                                                .map( i -> (LogFileStatus)i )
+                                                                .map( i -> i.getPath() )
                                                                 .collect(Collectors.toSet());
 
                                                     Set<Path> currPathsFromDisk
-                                                            = currStats.getCompletedLogFiles()
+                                                            = currStats.getCompletedFileStatuses()
                                                                     .stream().map( i -> i.getPath() )
                                                             .collect(Collectors.toSet());
 
@@ -1271,6 +1289,7 @@ public final class FileLogCheckTail implements ILogCheckTail
                                                     {
                                                         Optional<LogFileStatus> lfs =
                                                                 currSessionBackupFiles.stream()
+                                                                        .map( i -> (LogFileStatus)i )
                                                                         .filter(i -> i.getPath().equals(p) )
                                                                 .findFirst();
                                                         if( lfs.isPresent() )
@@ -1279,7 +1298,7 @@ public final class FileLogCheckTail implements ILogCheckTail
                                                             continue;
                                                         }
 
-                                                        lfs = currStats.getCompletedLogFiles().stream()
+                                                        lfs = currStats.getCompletedFileStatuses().stream()
                                                                         .filter(i -> i.getPath().equals(p) )
                                                                         .findFirst();
                                                         if( lfs.isPresent() )
@@ -1288,20 +1307,15 @@ public final class FileLogCheckTail implements ILogCheckTail
                                                         }
                                                     }
 
-                                                    currStats.getCompletedLogFiles().clear();
-                                                    currStats.getCompletedLogFiles().addAll(tempStatus);
+                                                    currStats.getCompletedStatuses().clear();
+                                                    currStats.getCompletedStatuses().addAll(tempStatus);
                                                 }
                                                 else
                                                 {
                                                     currStats = LogCheckState.from(null,
                                                             UUID.randomUUID(),
                                                             m_setName,
-                                                            null,
-                                                            null,
                                                             Instant.now(),
-                                                            null,
-                                                            null,
-                                                            null,
                                                             null,
                                                             currSessionBackupFiles);
                                                 }

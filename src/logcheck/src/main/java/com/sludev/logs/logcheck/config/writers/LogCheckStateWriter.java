@@ -1,10 +1,14 @@
 package com.sludev.logs.logcheck.config.writers;
 
 import com.sludev.logs.logcheck.config.entities.LogCheckStateBase;
+import com.sludev.logs.logcheck.config.entities.LogCheckStateStatusBase;
 import com.sludev.logs.logcheck.config.entities.LogFileBlock;
 import com.sludev.logs.logcheck.config.entities.LogFileState;
-import com.sludev.logs.logcheck.config.entities.LogFileStatus;
+import com.sludev.logs.logcheck.config.entities.impl.LogFileStatus;
 import com.sludev.logs.logcheck.config.entities.impl.LogCheckState;
+import com.sludev.logs.logcheck.config.entities.impl.WindowsEventLogCheckState;
+import com.sludev.logs.logcheck.config.entities.impl.WindowsEventSourceStatus;
+import com.sludev.logs.logcheck.enums.LCLogCheckStateType;
 import com.sludev.logs.logcheck.exceptions.LogCheckException;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
@@ -138,12 +142,96 @@ public final class LogCheckStateWriter
         return Pair.of(resStateFile, resErrFile);
     }
 
+    public static Element toElement( Document doc, String elementName, WindowsEventSourceStatus wes ) throws LogCheckException
+    {
+        Element res = null;
+        Element currElem = null;
+
+        res = doc.createElement(elementName);
+
+        // server
+        String currStr = wes.getServerId();
+        if( currStr == null )
+        {
+            ; //throw new LogCheckException("Missing server ID");
+        }
+        else
+        {
+            currElem = doc.createElement("serverId");
+            currElem.appendChild(doc.createTextNode(currStr));
+            res.appendChild(currElem);
+        }
+
+        // source
+        currStr = wes.getSourceId();
+        if( currStr == null )
+        {
+            ; //throw new LogCheckException("Missing source ID");
+        }
+        else
+        {
+            currElem = doc.createElement("sourceId");
+            currElem.appendChild(doc.createTextNode(currStr));
+            res.appendChild(currElem);
+        }
+
+        // record id
+        currStr = wes.getEntryId();
+        if( currStr == null )
+        {
+            ; //throw new LogCheckException("Missing record ID");
+        }
+        else
+        {
+            currElem = doc.createElement("recordId");
+            currElem.appendChild(doc.createTextNode(currStr));
+            res.appendChild(currElem);
+        }
+
+        // record position
+        Integer currInt = wes.getRecordNumber();
+        if( currInt == null )
+        {
+            ; //throw new LogCheckException("Missing record position");
+        }
+        else
+        {
+            currElem = doc.createElement("recordPosition");
+            currElem.appendChild(doc.createTextNode(currInt.toString()));
+            res.appendChild(currElem);
+        }
+
+        // record count
+        currInt = wes.getRecordCount();
+        if( currInt == null )
+        {
+            ; //throw new LogCheckException("Missing record count");
+        }
+        else
+        {
+            currElem = doc.createElement("recordCount");
+            currElem.appendChild(doc.createTextNode(currInt.toString()));
+            res.appendChild(currElem);
+        }
+
+        return res;
+    }
+
     public static Element toElement( Document doc, String elementName, LogCheckStateBase lcs ) throws LogCheckException
     {
         Element res = null;
         Element currElem = null;
 
         res = doc.createElement(elementName);
+
+        // type Attribute
+        if( lcs.getLCType() == null )
+        {
+            LOGGER.debug("toElement() : Missing state's type attribute");
+        }else
+        {
+            res.setAttribute("type", LCLogCheckStateType.XMLName(lcs.getLCType()) );
+        }
 
         // ID
         UUID currId = lcs.getId();
@@ -165,70 +253,6 @@ public final class LogCheckStateWriter
         currElem.appendChild(doc.createTextNode( currStr ));
         res.appendChild(currElem);
 
-        // server
-        currStr = lcs.getServerId();
-        if( currStr == null )
-        {
-            ; //throw new LogCheckException("Missing server ID");
-        }
-        else
-        {
-            currElem = doc.createElement("serverId");
-            currElem.appendChild(doc.createTextNode(currStr));
-            res.appendChild(currElem);
-        }
-
-        // source
-        currStr = lcs.getSourceId();
-        if( currStr == null )
-        {
-            ; //throw new LogCheckException("Missing source ID");
-        }
-        else
-        {
-            currElem = doc.createElement("sourceId");
-            currElem.appendChild(doc.createTextNode(currStr));
-            res.appendChild(currElem);
-        }
-
-        // record id
-        currStr = lcs.getRecordId();
-        if( currStr == null )
-        {
-            ; //throw new LogCheckException("Missing record ID");
-        }
-        else
-        {
-            currElem = doc.createElement("recordId");
-            currElem.appendChild(doc.createTextNode(currStr));
-            res.appendChild(currElem);
-        }
-
-        // record position
-        Integer currInt = lcs.getRecordPosition();
-        if( currInt == null )
-        {
-            ; //throw new LogCheckException("Missing record position");
-        }
-        else
-        {
-            currElem = doc.createElement("recordPosition");
-            currElem.appendChild(doc.createTextNode(currInt.toString()));
-            res.appendChild(currElem);
-        }
-
-        // record count
-        currInt = lcs.getRecordCount();
-        if( currInt == null )
-        {
-            ; //throw new LogCheckException("Missing record count");
-        }
-        else
-        {
-            currElem = doc.createElement("recordCount");
-            currElem.appendChild(doc.createTextNode(currInt.toString()));
-            res.appendChild(currElem);
-        }
 
         // save date
         Instant currInst = lcs.getSaveDate();
@@ -253,13 +277,30 @@ public final class LogCheckStateWriter
             }
 
             // completed log files
-            Deque<LogFileStatus> currStatuses = lcsTemp.getCompletedLogFiles();
-            if( currStatuses != null )
+            Deque<LogCheckStateStatusBase> currStatuses = lcsTemp.getCompletedStatuses();
+            if( currStatuses != null && currStatuses.isEmpty() == false )
             {
                 Element statuses = doc.createElement("fileStatuses");
-                for( LogFileStatus status : currStatuses )
+                for( LogCheckStateStatusBase status : currStatuses )
                 {
-                    currElem = toElement(doc, "fileStatus", status);
+                    currElem = toElement(doc, "fileStatus", (LogFileStatus)status);
+                    statuses.appendChild(currElem);
+                }
+                res.appendChild(statuses);
+            }
+        }
+        else if( lcs instanceof WindowsEventLogCheckState )
+        {
+            WindowsEventLogCheckState lcsTemp = (WindowsEventLogCheckState)lcs;
+
+            // completed log files
+            Deque<LogCheckStateStatusBase> currStatuses = lcsTemp.getCompletedStatuses();
+            if( currStatuses != null && currStatuses.isEmpty() == false )
+            {
+                Element statuses = doc.createElement("fileStatuses");
+                for( LogCheckStateStatusBase status : currStatuses )
+                {
+                    currElem = toElement(doc, "windowsEventSourceStatuses", (WindowsEventSourceStatus) status);
                     statuses.appendChild(currElem);
                 }
                 res.appendChild(statuses);

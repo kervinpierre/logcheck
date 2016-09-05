@@ -19,8 +19,9 @@ package com.sludev.logs.logcheck.config.entities.impl;
 
 import com.sludev.logs.logcheck.config.entities.LogCheckError;
 import com.sludev.logs.logcheck.config.entities.LogCheckStateBase;
+import com.sludev.logs.logcheck.config.entities.LogCheckStateStatusBase;
 import com.sludev.logs.logcheck.config.entities.LogFileState;
-import com.sludev.logs.logcheck.config.entities.LogFileStatus;
+import com.sludev.logs.logcheck.enums.LCLogCheckStateType;
 import com.sludev.logs.logcheck.exceptions.LogCheckException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -42,12 +43,6 @@ public class LogCheckState extends LogCheckStateBase
             = LogManager.getLogger(LogCheckState.class);
 
     private final LogFileState m_logFile;
-    private final Deque<LogFileStatus> m_completedLogFiles;
-
-    public Deque<LogFileStatus> getCompletedLogFiles()
-    {
-        return m_completedLogFiles;
-    }
 
     public LogFileState getLogFile()
     {
@@ -57,58 +52,31 @@ public class LogCheckState extends LogCheckStateBase
     private LogCheckState( final LogFileState logFile,
                            final UUID id,
                            final String setName,
-                           final String serverId,
-                           final String sourceId,
                            final Instant saveDate,
-                           final String recordId,
-                           final Integer recordPosition,
-                           final Integer recordCount,
                            final List<LogCheckError> errors,
-                           final Deque<LogFileStatus> completedLogFiles)
+                           final Deque<LogCheckStateStatusBase> completedLogFiles)
     {
         super(id,
+                LCLogCheckStateType.FILE_STATE,
                 setName,
-                serverId,
-                sourceId,
                 saveDate,
-                recordId,
-                recordPosition,
-                recordCount,
-                errors);
+                errors,
+                completedLogFiles);
 
         this.m_logFile = logFile;
-
-        if( completedLogFiles == null )
-        {
-            this.m_completedLogFiles = new ArrayDeque<>(10);
-        }
-        else
-        {
-            this.m_completedLogFiles = completedLogFiles;
-        }
     }
 
     public static LogCheckState from( final LogFileState logFile,
                                       final UUID id,
                                       final String setName,
-                                      final String serverId,
-                                      final String sourceId,
                                       final Instant saveDate,
-                                      final String recordId,
-                                      final Integer recordPosition,
-                                      final Integer recordCount,
                                       final List<LogCheckError> errors,
-                                      final Deque<LogFileStatus> completedLogFiles )
+                                      final Deque<LogCheckStateStatusBase> completedLogFiles )
     {
         LogCheckState res = new LogCheckState(logFile,
                                     id,
                                     setName,
-                                    serverId,
-                                    sourceId,
                                     saveDate,
-                                    recordId,
-                                    recordPosition,
-                                    recordCount,
                                     errors,
                                     completedLogFiles);
 
@@ -118,14 +86,9 @@ public class LogCheckState extends LogCheckStateBase
     public static LogCheckState from( final LogFileState logFile,
                                       final String idStr,
                                       final String setName,
-                                      final String serverId,
-                                      final String sourceId,
                                       final String saveDateStr,
-                                      final String recordId,
-                                      final String recordPositionStr,
-                                      final String recordCountStr,
                                       final List<LogCheckError> errors,
-                                      final Deque<LogFileStatus> completedLogFiles) throws LogCheckException
+                                      final Deque<LogCheckStateStatusBase> completedLogFiles) throws LogCheckException
     {
         Instant saveDate = null;
         UUID id = null;
@@ -134,23 +97,30 @@ public class LogCheckState extends LogCheckStateBase
 
         saveDate = getSaveDate(saveDateStr);
         id = getId(idStr);
-        recordPosition = getRecordPosition(recordPositionStr);
-        recordCount = getRecordCount(recordCountStr);
 
         LogCheckState res = new LogCheckState(logFile,
                 id,
                 setName,
-                serverId,
-                sourceId,
                 saveDate,
-                recordId,
-                recordPosition,
-                recordCount,
                 errors,
                 completedLogFiles);
 
         return res;
     }
 
+    public Deque<LogFileStatus> getCompletedFileStatuses()
+    {
+        Deque<LogCheckStateStatusBase> stats = super.getCompletedStatuses();
+        Deque<LogFileStatus> res = new ArrayDeque<>();
 
+        for( LogCheckStateStatusBase stat : stats )
+        {
+            if( stat instanceof LogFileStatus )
+            {
+                res.push((LogFileStatus)stat);
+            }
+        }
+
+        return res;
+    }
 }

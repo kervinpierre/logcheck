@@ -944,12 +944,7 @@ public final class FileTailer implements ITail
         res = LogCheckState.from(currLogFile,
                 UUID.randomUUID(),
                 setName,
-                null,
-                null,
                 Instant.now(),
-                null,
-                null,
-                null,
                 null,
                 null);
 
@@ -1025,12 +1020,7 @@ public final class FileTailer implements ITail
         res = LogCheckState.from(currLogFile,
                 UUID.randomUUID(),
                 setName,
-                null,
-                null,
                 Instant.now(),
-                null,
-                null,
-                null,
                 null,
                 null);
 
