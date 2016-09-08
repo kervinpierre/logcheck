@@ -141,14 +141,16 @@ public class WindowsEventSourceStatus extends LogCheckStateStatusBase
         recordPosition = getRecordNumber(recordPositionStr);
         recordCount = getRecordCount(recordCountStr);
 
-
-        try
+        if( StringUtils.isNoneBlank(processedStampStr) )
         {
-            processedStamp = Instant.parse(processedStampStr);
-        }
-        catch( Exception ex )
-        {
-            LOGGER.debug(String.format("Error parsing '%s'", processedStampStr), ex);
+            try
+            {
+                processedStamp = Instant.parse(processedStampStr);
+            }
+            catch( Exception ex )
+            {
+                LOGGER.debug(String.format("Error parsing '%s'", processedStampStr), ex);
+            }
         }
 
         WindowsEventSourceStatus res = new WindowsEventSourceStatus(serverId,

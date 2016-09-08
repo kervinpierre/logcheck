@@ -185,7 +185,7 @@ public final class LogCheckStateParser
 
         switch( type )
         {
-            case "WINDOWSEVENTLOGCHECKSTATE":
+            case "WINDOWSEVENTSTATE":
                 {
                     res = (T) WindowsEventLogCheckState.from(
                             idStr,

@@ -297,10 +297,10 @@ public final class LogCheckStateWriter
             Deque<LogCheckStateStatusBase> currStatuses = lcsTemp.getCompletedStatuses();
             if( currStatuses != null && currStatuses.isEmpty() == false )
             {
-                Element statuses = doc.createElement("fileStatuses");
+                Element statuses = doc.createElement("windowsEventSourceStatuses");
                 for( LogCheckStateStatusBase status : currStatuses )
                 {
-                    currElem = toElement(doc, "windowsEventSourceStatuses", (WindowsEventSourceStatus) status);
+                    currElem = toElement(doc, "windowsEventStatus", (WindowsEventSourceStatus) status);
                     statuses.appendChild(currElem);
                 }
                 res.appendChild(statuses);

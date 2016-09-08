@@ -57,7 +57,7 @@ public class FSSLog4JConfiguration extends AbstractConfiguration
 
     /**
      */
-    private static final String PATTERN = "[%t|%d|%p|%c] %m%n";
+    private static final String PATTERN = "[%t|%d|%p|%c] %m\n";
     private static final String ROOTLOGGER = "com.sludev";
     private static final Level DEFAULT_LEVEL = Level.WARN;
     

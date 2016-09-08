@@ -49,7 +49,13 @@ public class LogCheckMain
     private static String[] s_staticArgs = null;
     private static ExecutorService s_mainThreadExe = null;
     private static volatile boolean s_run = true;
-    
+
+
+    static
+    {
+        System.setProperty("line.separator", "\n");
+    }
+
     /**
      * @param args the command line arguments
      */
@@ -221,7 +227,9 @@ public class LogCheckMain
                 try
                 {
                     resp = currTask.get();
-                    if( (resp != null) && (resp.get(0).getStatus() == LCResultStatus.FAIL) )
+                    if( (resp != null)
+                            && (resp.get(0) != null)
+                            && (resp.get(0).getStatus() == LCResultStatus.FAIL) )
                     {
                         String msg = String.format("Run task returned an error status '%s'",
                                 resp.get(0).getStatus());
