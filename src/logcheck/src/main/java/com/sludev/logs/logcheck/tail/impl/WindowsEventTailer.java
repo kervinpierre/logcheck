@@ -63,6 +63,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -97,8 +98,6 @@ public final class WindowsEventTailer implements ITail
      * The amount of time to wait for the m_file to be updated.
      */
     private final long m_delayMillis;
-
-    private final Map<String, Integer> m_startPosition;
 
     /**
      * Whether to tail from the end or start of m_file
@@ -177,7 +176,6 @@ public final class WindowsEventTailer implements ITail
      * @param bufSize Buffer size
      */
     private WindowsEventTailer( final String windowsEventConnection,
-                                final Map<String, Integer> startPosition,
                                 final Charset cset,
                                 final List<ILogEntryBuilder> builders,
                                 final long delayMillis,
@@ -219,8 +217,6 @@ public final class WindowsEventTailer implements ITail
 
         this.m_stopOnEOF = stopOnEOF;
 
-        this.m_startPosition = startPosition;
-
         this.lineRemainder = null;
         this.m_lastLCState = null;
 
@@ -233,7 +229,6 @@ public final class WindowsEventTailer implements ITail
     }
 
     public static WindowsEventTailer from( final String windowsEventConnection,
-                                           final Map<String, Integer> startPosition,
                                            final Charset cset,
                                            final List<ILogEntryBuilder> builders,
                                            final long delayMillis,
@@ -255,7 +250,6 @@ public final class WindowsEventTailer implements ITail
                                            final CountDownLatch completionLatch)
     {
         WindowsEventTailer res = new WindowsEventTailer(windowsEventConnection,
-                startPosition,
                 cset,
                 builders,
                 delayMillis,
@@ -577,7 +571,6 @@ public final class WindowsEventTailer implements ITail
         StringBuilder res = new StringBuilder(100);
 
         res.append("FileTailer\n{\n");
-        res.append(String.format("    Start Position  : '%s'\n", m_startPosition));
         res.append(String.format("    Run             : '%b'\n", m_run));
         res.append(String.format("    Re-open wait    : '%b'\n", m_reOpen));
         res.append(String.format("    Stats Collect   : '%b'\n", m_statsCollect));
@@ -783,9 +776,20 @@ public final class WindowsEventTailer implements ITail
             {
                 try
                 {
+                    Deque<LogCheckStateStatusBase> currStatuses = statuses;
+
+                    // Retrieved saved statuses from disk...
+                    WindowsEventLogCheckState ls = m_statistics.restoreWindowsEventState();
+                    if( ls != null )
+                    {
+                        currStatuses = WindowsEventLogCheckState.mergeStatuses(ls.getCompletedStatuses(),
+                                statuses);
+                    }
+
+                    // Only update the statuses that have changed
                     m_lastLCState = getState(m_setName,
                             Instant.now(),
-                            statuses);
+                            currStatuses);
 
                     m_statistics.putPendingSaveState(m_lastLCState);
                     m_statistics.saveLastPending(true, true, true);

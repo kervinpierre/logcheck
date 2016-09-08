@@ -489,7 +489,6 @@ public final class WindowsEventTail implements ILogCheckTail
 
                 // Create this iteration's File Tailer Object
                 mainTailer.set(WindowsEventTailer.from(m_windowsConnectionStr,
-                        null, // currPositions
                         Charset.defaultCharset(),
                         m_mainLogEntryBuilders,
                         currDelay * 1000, // Convert to milliseconds

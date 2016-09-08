@@ -329,6 +329,18 @@ public final class TailerStatistics
         return res;
     }
 
+    public synchronized WindowsEventLogCheckState restoreWindowsEventState( )
+                                                            throws LogCheckException, InterruptedException
+    {
+        WindowsEventLogCheckState res;
+
+        res = restoreWindowsEventState(m_stateFile, null, m_setName, null, null);
+
+        m_restoredStates.putFirst(res);
+
+        return res;
+    }
+
     public synchronized LogCheckState restoreFileState(final Path stateFile,
                                                            final Path deDupeDir,
                                                            final Integer logFileCount,
@@ -350,14 +362,17 @@ public final class TailerStatistics
                                                                 final Integer maxLogEntries) throws LogCheckException
     {
         // Read the last run's deduplication logs
-        List<LogCheckDeDupeLog> ddLogs
-                = ContinueUtil.readLastDeDupeLogs(deDupeDir,
-                setName,
-                null,
-                logFileCount);
+        if( deDupeDir != null )
+        {
+            List<LogCheckDeDupeLog> ddLogs
+                    = ContinueUtil.readLastDeDupeLogs(deDupeDir,
+                    setName,
+                    null,
+                    logFileCount);
 
-        List<LogEntryDeDupe> ddObjs
-                = ContinueUtil.lastLogEntryDeDupes(ddLogs, maxLogEntries);
+            List<LogEntryDeDupe> ddObjs
+                    = ContinueUtil.lastLogEntryDeDupes(ddLogs, maxLogEntries);
+        }
 
         // Read state file for information about the last run
         WindowsEventLogCheckState lcConf = null;
