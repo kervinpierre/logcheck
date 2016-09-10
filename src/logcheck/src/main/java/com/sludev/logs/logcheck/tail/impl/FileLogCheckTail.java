@@ -55,6 +55,7 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.EnumSet;
@@ -432,7 +433,7 @@ public final class FileLogCheckTail implements ILogCheckTail
             LOGGER.debug(msg.toString());
         }
 
-        LogCheckResult res = LogCheckResult.from(LCResultStatus.SUCCESS);
+        final LogCheckResult res = LogCheckResult.from(LCResultStatus.SUCCESS);
 
         long currDelay = (m_delay == null) ? 0 : m_delay;
         boolean currTailFromEnd = BooleanUtils.isNotFalse(m_tailFromEnd);
@@ -581,6 +582,7 @@ public final class FileLogCheckTail implements ILogCheckTail
                 {
                     currFileTailer.stop();
                     exitNow.set(true);
+                    res.getStatuses().add(LCResultStatus.TIMEDOUT);
 
                     LOGGER.debug("Process Stop Scheduler called.");
                 }
@@ -1326,7 +1328,8 @@ public final class FileLogCheckTail implements ILogCheckTail
 
                                             LOGGER.debug(String.format("Backup Completion Thread returned "
                                                     + "result %s for backup file [ %s ]",
-                                                    currBackupFile, fileTailRes.getStatus()));
+                                                    currBackupFile, Arrays.toString(
+                                                                    fileTailRes.getStatuses().toArray())));
                                         }
                                         catch( ExecutionException ex )
                                         {

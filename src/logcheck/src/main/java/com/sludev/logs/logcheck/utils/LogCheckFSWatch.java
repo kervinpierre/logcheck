@@ -42,7 +42,7 @@ import org.apache.logging.log4j.Logger;
  * 
  * @author Kervin Pierre
  */
-public final class LogCheckFSWatch
+public final class LogCheckFSWatch implements AutoCloseable
 {
     private static final Logger LOGGER = LogManager.getLogger(LogCheckFSWatch.class);
 
@@ -257,5 +257,15 @@ public final class LogCheckFSWatch
     public static LogCheckFSWatch from(final List<Path> dirs ) throws IOException
     {
         return from( dirs, false );
+    }
+
+    @Override
+    public void close()
+            throws Exception
+    {
+        if( m_watcher != null )
+        {
+            m_watcher.close();
+        }
     }
 }

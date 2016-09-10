@@ -140,7 +140,7 @@ public class ILogEntryStoreTest
                                                     1L, TimeUnit.MINUTES);
 
         Assert.assertNotNull(res);
-        Assert.assertEquals(res.getStatus(), LCResultStatus.TIMEDOUT);
+        Assert.assertTrue(res.getStatuses().contains(LCResultStatus.TIMEDOUT));
 
         currLE = LogEntry.from(null, LCLogLevel.ERROR, "com.example",
                 "Log message body. Error 01.", "Exception Stacktrace:",
@@ -179,6 +179,6 @@ public class ILogEntryStoreTest
                 1L, TimeUnit.MINUTES);
 
         Assert.assertNotNull(res);
-        Assert.assertEquals(res.getStatus(), LCResultStatus.BREAK);
+        Assert.assertTrue(res.getStatuses().contains(LCResultStatus.BREAK));
     }
 }

@@ -9,6 +9,9 @@ import com.sludev.logs.logcheck.enums.LCResultStatus;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Represents the state or status of a call or object.
  *
@@ -16,24 +19,49 @@ import org.apache.logging.log4j.Logger;
  */
 public final class LogCheckResult
 {
-    private static final Logger log 
+    private static final Logger LOGGER
                       = LogManager.getLogger(LogCheckResult.class);
     
-    private final LCResultStatus status;
+    private final List<LCResultStatus> statuses;
 
-    public LCResultStatus getStatus()
+    public List<LCResultStatus> getStatuses()
     {
-        return status;
+        return statuses;
     }
-    
-    private LogCheckResult(LCResultStatus status)
+
+
+    private LogCheckResult(List<LCResultStatus> statuses)
     {
-        this.status = status;
+        if( statuses == null )
+        {
+            this.statuses = new ArrayList<>();
+        }
+        else
+        {
+            this.statuses = statuses;
+        }
+    }
+
+    public static LogCheckResult from()
+    {
+        LogCheckResult res = new LogCheckResult(null);
+
+        return res;
+    }
+
+    public static LogCheckResult from(List<LCResultStatus> statuses)
+    {
+        LogCheckResult res = new LogCheckResult(statuses);
+
+        return res;
     }
 
     public static LogCheckResult from(LCResultStatus status)
     {
-        LogCheckResult res = new LogCheckResult(status);
+        List<LCResultStatus> statuses = new ArrayList<>();
+        statuses.add(status);
+
+        LogCheckResult res = new LogCheckResult(statuses);
 
         return res;
     }

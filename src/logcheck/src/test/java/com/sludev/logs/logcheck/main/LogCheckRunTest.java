@@ -267,7 +267,7 @@ public class LogCheckRunTest
         }
 
         Assert.assertNotNull(lcResult);
-        Assert.assertTrue(lcResult.get(0).getStatus() == LCResultStatus.SUCCESS);
+        Assert.assertTrue(lcResult.get(0).getStatuses().contains(LCResultStatus.SUCCESS));
 
         try(Stream<String> strm = Files.lines(logFile))
         {
@@ -389,7 +389,7 @@ public class LogCheckRunTest
         }
 
         Assert.assertNotNull(lcResult);
-        Assert.assertTrue(lcResult.get(0).getStatus() == LCResultStatus.SUCCESS);
+        Assert.assertTrue(lcResult.get(0).getStatuses().contains(LCResultStatus.SUCCESS));
 
         long storeFileCount;
         try(Stream<String> strm = Files.lines(storeLogFile))
@@ -649,7 +649,7 @@ public class LogCheckRunTest
         }
 
         Assert.assertNotNull(lcResult);
-        Assert.assertTrue(lcResult.get(0).getStatus() == LCResultStatus.SUCCESS);
+        Assert.assertTrue(lcResult.get(0).getStatuses().contains(LCResultStatus.SUCCESS));
 
         long currStoreFileCount;
         try(Stream<String> strm = Files.lines(storeLogFile))
@@ -859,7 +859,7 @@ public class LogCheckRunTest
         }
 
         Assert.assertNotNull(lcResult);
-        Assert.assertTrue(lcResult.get(0).getStatus() == LCResultStatus.SUCCESS);
+        Assert.assertTrue(lcResult.get(0).getStatuses().contains(LCResultStatus.SUCCESS));
 
         long currLogFileCount = Files.lines(logFile).count();
         long currStoreFileCount = Files.lines(storeLogFile).count();
@@ -1073,7 +1073,7 @@ public class LogCheckRunTest
         }
 
         Assert.assertNotNull(lcResult);
-        Assert.assertTrue(lcResult.get(0).getStatus() == LCResultStatus.SUCCESS);
+        Assert.assertTrue(lcResult.get(0).getStatuses().contains(LCResultStatus.SUCCESS));
 
         // Now download all data to a file
         EAScroll.doScroll(eaURL, indexes, outFile, false);

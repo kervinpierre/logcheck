@@ -199,6 +199,7 @@ public final class LogEntryStore implements Callable<LogCheckResult>
 
                 // Thread stop procedure : First set m_run to false then interrupt.
                 res = LogCheckResult.from(LCResultStatus.INTERRUPTED);
+                m_run = false;
             }
         }
         while( m_run );

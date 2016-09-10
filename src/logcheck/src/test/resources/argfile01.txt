@@ -114,7 +114,7 @@
     # Use local file for monitor IO
   --monitor-url=file://c:/windows/temp/mon.dat \
     # Stop after 60 seconds
-  --stop-after=600                              \
+  --stop-after=120                              \
   --preferred-dir=c:/windows/temp               \
 --config=1                                     \
   --set-name="First monitored file"            \

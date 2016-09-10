@@ -115,7 +115,7 @@ public class LogEntryElasticSearchTest
         
         LogCheckResult result = instance.putValueObj(LogEntry.toValueObject(le));
         Assert.assertNotNull(result);
-        Assert.assertTrue(result.getStatus()== LCResultStatus.SUCCESS);
+        Assert.assertTrue(result.getStatuses().contains(LCResultStatus.SUCCESS));
     }
 
     @Test
