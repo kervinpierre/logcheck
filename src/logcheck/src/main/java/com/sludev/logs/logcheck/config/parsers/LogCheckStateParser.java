@@ -27,6 +27,7 @@ import com.sludev.logs.logcheck.config.entities.impl.LogFileStatus;
 import com.sludev.logs.logcheck.config.entities.impl.WindowsEventLogCheckState;
 import com.sludev.logs.logcheck.config.entities.impl.WindowsEventSourceStatus;
 import com.sludev.logs.logcheck.exceptions.LogCheckException;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -226,10 +227,10 @@ public final class LogCheckStateParser
         String recordIdStr = null;
         String serverIdStr = null;
         String sourceIdStr = null;
+        String processedStampStr = null;
 
         XPathFactory currXPathfactory = XPathFactory.newInstance();
         XPath currXPath = currXPathfactory.newXPath();
-        Instant processedStamp = null;
         Boolean processed = null;
 
         try
@@ -279,11 +280,7 @@ public final class LogCheckStateParser
 
         try
         {
-            String processedStampStr = currXPath.compile("./processedStamp").evaluate(currEl);
-            if( StringUtils.isNoneBlank(processedStampStr) )
-            {
-                processedStamp = Instant.parse(processedStampStr);
-            }
+            processedStampStr = currXPath.compile("./processedStamp").evaluate(currEl);
         }
         catch( XPathExpressionException ex )
         {
@@ -298,14 +295,17 @@ public final class LogCheckStateParser
         {
             String processedStr = StringUtils.trim(currXPath.compile("./processed").evaluate(currEl));
 
-            if( (StringUtils.equalsIgnoreCase(processedStr, "true") == false)
-                    && (StringUtils.equalsIgnoreCase(processedStr, "false") == false) )
+            if( StringUtils.isNoneBlank(processedStr))
             {
-                LOGGER.warn(String.format("Tag <processed> does not have a true/false value '%s'",
-                        processedStr));
-            }
+                if( (StringUtils.equalsIgnoreCase(processedStr, "true") == false)
+                        && (StringUtils.equalsIgnoreCase(processedStr, "false") == false) )
+                {
+                    LOGGER.warn(String.format("Tag <processed> does not have a true/false value '%s'",
+                            processedStr));
+                }
 
-            processed = Boolean.parseBoolean(processedStr);
+                processed = Boolean.parseBoolean(processedStr);
+            }
         }
         catch( XPathExpressionException ex )
         {
@@ -321,7 +321,7 @@ public final class LogCheckStateParser
                 recordIdStr,
                 recordPositionStr,
                 recordCountStr,
-                Objects.toString(processedStamp),
+                processedStampStr,
                 processed);
 
         return res;

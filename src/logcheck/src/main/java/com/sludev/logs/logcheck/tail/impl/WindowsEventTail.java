@@ -408,6 +408,7 @@ public final class WindowsEventTail implements ILogCheckTail
                 {
                     currWindowsEventTailer.stop();
                     exitNow.set(true);
+                    res.getStatuses().add(LCResultStatus.TIMEDOUT);
 
                     LOGGER.debug("Process Stop Scheduler called.");
                 }

@@ -229,10 +229,11 @@ public class LogCheckMain
                     resp = currTask.get();
                     if( (resp != null)
                             && (resp.get(0) != null)
-                            && (resp.get(0).getStatus() == LCResultStatus.FAIL) )
+                            && (resp.get(0).getStatuses().contains(LCResultStatus.FAIL)
+                                    || resp.get(0).getStatuses().contains(LCResultStatus.TIMEDOUT)) )
                     {
                         String msg = String.format("Run task returned an error status '%s'",
-                                resp.get(0).getStatus());
+                                Arrays.toString(resp.get(0).getStatuses().toArray()));
 
                         LOGGER.debug(msg);
 

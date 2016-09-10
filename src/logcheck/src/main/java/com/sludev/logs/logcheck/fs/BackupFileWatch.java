@@ -150,12 +150,9 @@ public final class BackupFileWatch implements Callable<Integer>
     public Integer call() throws LogCheckException
     {
         Integer res = 0;
-        LogCheckFSWatch watch;
 
-        try
+        try(LogCheckFSWatch watch = LogCheckFSWatch.from(m_watchPaths) )
         {
-            watch = LogCheckFSWatch.from(m_watchPaths);
-
             if( m_action != null )
             {
                 watch.processEvents(m_action);
@@ -204,17 +201,17 @@ public final class BackupFileWatch implements Callable<Integer>
                 });
             }
         }
-        catch (IOException | LogCheckException ex)
+        catch (InterruptedException ex)
+        {
+            LOGGER.info(String.format("Interrupted watching backup directory...\n'%s'",
+                    StringUtils.join(m_watchPaths.toArray())), ex);
+        }
+        catch (Exception ex)
         {
             LOGGER.error(String.format("Error watching backup directory...\n'%s'",
                     StringUtils.join(m_watchPaths.toArray())), ex);
 
             return 1;
-        }
-        catch (InterruptedException ex)
-        {
-            LOGGER.info(String.format("Interrupted watching backup directory...\n'%s'",
-                    StringUtils.join(m_watchPaths.toArray())), ex);
         }
 
         return res;

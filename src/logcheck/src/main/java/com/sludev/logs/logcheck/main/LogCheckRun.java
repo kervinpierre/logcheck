@@ -596,7 +596,9 @@ public class LogCheckRun implements Callable<Map<Integer, LogCheckResult>>
 
                             // If Tailer thread is done, then cancel/interrupt the store thread
                             // E.g. useful for implementing the --stop-after feature
-                            if( currFuture.get().getStatus() == LCResultStatus.SUCCESS )
+                            if( currFuture.get()
+                                    .getStatuses()
+                                    .contains(LCResultStatus.SUCCESS) )
                             {
                                 LOGGER.debug("\n==============================\n"
                                         + "CANCELLING the Log Store thread because the Tailer thread was done first."
@@ -659,33 +661,44 @@ public class LogCheckRun implements Callable<Map<Integer, LogCheckResult>>
                 }
             }
 
+            LogCheckResult currRes = LogCheckResult.from();
+
             if( ((storeResList.isEmpty() == false)
                     && (storeResList.values().stream()
-                                    .anyMatch( s -> s.getStatus() == LCResultStatus.INTERRUPTED))
+                                    .anyMatch( s -> s.getStatuses().contains(LCResultStatus.INTERRUPTED)))
                     || (tailResList.values().stream()
-                                    .anyMatch( s -> s.getStatus() == LCResultStatus.INTERRUPTED)) ))
+                                    .anyMatch( s -> s.getStatuses().contains(LCResultStatus.INTERRUPTED))) ))
             {
                 // If either of the threads were interrupted, then mark as interrupted.
-                res.put(0, LogCheckResult.from(LCResultStatus.INTERRUPTED));
+                currRes.getStatuses().add(LCResultStatus.INTERRUPTED);
             }
             else
             {
                 if( ((storeResList.isEmpty() == false)
                         && (storeResList.values().stream()
-                        .anyMatch( s -> s.getStatus() == LCResultStatus.FAIL))
+                        .anyMatch( s -> s.getStatuses().contains(LCResultStatus.FAIL)))
                         || (tailResList.values().stream()
-                        .anyMatch( s -> s.getStatus() == LCResultStatus.FAIL)) ))
+                        .anyMatch( s -> s.getStatuses().contains(LCResultStatus.FAIL))) ))
                 {
                     // If either of the threads failed, then mark as failed
-                    res.put(0, LogCheckResult.from(LCResultStatus.FAIL));
+                    currRes.getStatuses().add(LCResultStatus.FAIL);
                 }
                 else if( tailResList.values().stream()
-                        .anyMatch( s -> s.getStatus() == LCResultStatus.FAIL) )
+                        .anyMatch( s -> s.getStatuses().contains(LCResultStatus.SUCCESS)) )
                 {
                     // if Tailer thread succeed, ignore the Log Store result
-                    res.put(0, LogCheckResult.from(LCResultStatus.SUCCESS));
+                    currRes.getStatuses().add(LCResultStatus.SUCCESS);
+                }
+
+                if( tailResList.values().stream()
+                        .anyMatch( s -> s.getStatuses().contains(LCResultStatus.TIMEDOUT)) )
+                {
+                    // if Tailer thread succeed, ignore the Log Store result
+                    currRes.getStatuses().add(LCResultStatus.TIMEDOUT);
                 }
             }
+
+            res.put(0, currRes);
         }
         catch (InterruptedException ex)
         {
