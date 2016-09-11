@@ -62,7 +62,7 @@ NOTICE:  All information contained herein is, and remains
             <xs:element name="sourceId" type="xs:string" minOccurs="0" maxOccurs="1" />
             <xs:element name="recordId" type="xs:string" minOccurs="0" maxOccurs="1" />
             <xs:element name="recordCount" type="xs:string" minOccurs="0" maxOccurs="1" />
-            <xs:element name="recordPosition" type="xs:string" minOccurs="0" maxOccurs="1" />
+            <xs:element name="recordNumber" type="xs:string" minOccurs="0" maxOccurs="1" />
             <xs:element name="processedStamp" type="xs:dateTime" minOccurs="0" maxOccurs="1" />
             <xs:element name="processed" type="xs:boolean" minOccurs="0" maxOccurs="1" />
         </xs:choice>

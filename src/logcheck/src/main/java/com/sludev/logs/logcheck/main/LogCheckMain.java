@@ -50,7 +50,6 @@ public class LogCheckMain
     private static ExecutorService s_mainThreadExe = null;
     private static volatile boolean s_run = true;
 
-
     static
     {
         System.setProperty("line.separator", "\n");
@@ -65,8 +64,7 @@ public class LogCheckMain
         
         commonStart(args);
     }
-    
-    
+
     /**
      * A common static method for all interfaces to us.  This interface is called
      * currently from the...
@@ -84,7 +82,6 @@ public class LogCheckMain
         // Initialize only.  Don't actually run or do anything else
         LinkedHashMap<Integer, LogCheckConfig> res = LogCheckInitialize.initialize(args);
         Map<Integer, LogCheckResult> procRes;
-
 
         try
         {
@@ -200,7 +197,8 @@ public class LogCheckMain
      * @return  
      * @throws LogCheckException
      */
-    public static Map<Integer, LogCheckResult> processStart(LinkedHashMap<Integer, LogCheckConfig> configs) throws LogCheckException
+    public static Map<Integer, LogCheckResult> processStart( final LinkedHashMap<Integer, LogCheckConfig> configs )
+                                                                throws LogCheckException
     {
         Map<Integer, LogCheckResult> resp = null;
         LogCheckRun currRun = new LogCheckRun(configs);

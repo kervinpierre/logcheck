@@ -196,7 +196,7 @@ public final class LogCheckStateWriter
         }
         else
         {
-            currElem = doc.createElement("recordPosition");
+            currElem = doc.createElement("recordNumber");
             currElem.appendChild(doc.createTextNode(currInt.toString()));
             res.appendChild(currElem);
         }

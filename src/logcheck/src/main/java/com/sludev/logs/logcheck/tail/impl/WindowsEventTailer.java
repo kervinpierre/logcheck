@@ -719,6 +719,10 @@ public final class WindowsEventTailer implements ITail
                         serverMap.put(src, reader);
                     }
 
+                    IntByReference n = new IntByReference();
+                    Advapi32.INSTANCE.GetNumberOfEventLogRecords(reader, n);
+                    LOGGER.debug(String.format("Source %s has %d records", src, n.getValue()));
+
                     WindowsEventSourceStatus currStatus = null;
                     if( startingState != null )
                     {
@@ -736,11 +740,32 @@ public final class WindowsEventTailer implements ITail
                     List<LCWindowsEventWrapper> events
                             = readEvents(reader, currReadFlags, currStatus, 0, src);
 
-                    for( LCWindowsEventWrapper record : events )
+                    // For now, sort the results by time.  Makes it more time-series like
+                    if( events != null )
                     {
-                        for( ILogEntryBuilder ib : m_builders )
+//                        events = events.stream().sorted(( a, b ) ->
+//                                Integer.compare(a.getEvent().getRecord().RecordNumber.intValue(),
+//                                        b.getEvent().getRecord().RecordNumber.intValue()))
+//                                .collect(Collectors.toList());
+//                        if( LOGGER.isDebugEnabled() )
+//                        {
+//                            int i = 0;
+//                            for( LCWindowsEventWrapper record : events )
+//                            {
+//                                LOGGER.debug(String.format("%d : Event Number %d : Generated %s : Written %s", i++,
+//                                        record.getEvent().getRecordNumber(),
+//                                        Instant.ofEpochSecond(record.getEvent().getRecord().TimeGenerated.intValue()),
+//                                        Instant.ofEpochSecond(record.getEvent().getRecord().TimeWritten.intValue())
+//                                ));
+//                            }
+//                        }
+
+                        for( LCWindowsEventWrapper record : events )
                         {
-                            ib.handleLogLine(ev2Str(record));
+                            for( ILogEntryBuilder ib : m_builders )
+                            {
+                                ib.handleLogLine(ev2Str(record));
+                            }
                         }
                     }
 
@@ -812,13 +837,17 @@ public final class WindowsEventTailer implements ITail
         IntByReference pnBytesRead = new IntByReference();
         IntByReference pnMinNumberOfBytesNeeded = new IntByReference();
 
-        Memory _buffer = new Memory(1024 * 64);
+       //Memory _buffer = new Memory(1024 * 64);
+        Memory _buffer = new Memory(1024 * 4);
         List<LCWindowsEventWrapper> res = new ArrayList<>();
 
-        int rc = 0;
+        int rc = 0, readCount = 0, eventCount = 0;
         boolean firstEventRead = true;
-        for(int i=0;;i++)
+
+        do
         {
+            readCount++;
+
             if( Advapi32.INSTANCE
                     .ReadEventLog(reader, readFlags,
                             0, _buffer, (int) _buffer.size(), pnBytesRead,
@@ -826,90 +855,99 @@ public final class WindowsEventTailer implements ITail
             {
                 rc = Kernel32.INSTANCE.GetLastError();
 
-                LOGGER.debug(String.format("ReadEventLog() : iteration %d : GetLastError() %d ( 0x%08X )",
-                        i, rc, rc & 0xFFFFFFFF));
-
-                switch(rc)
+                if( rc == WinError.ERROR_INSUFFICIENT_BUFFER )
                 {
                     // not enough bytes in the buffer, resize
-                    case WinError.ERROR_INSUFFICIENT_BUFFER:
-                    {
-                        _buffer = new Memory(pnMinNumberOfBytesNeeded.getValue());
+                    rc = WinError.ERROR_SUCCESS;
 
-                        if( !Advapi32.INSTANCE.ReadEventLog(reader,
-                                readFlags, 0,
-                                _buffer, (int) _buffer.size(), pnBytesRead,
-                                pnMinNumberOfBytesNeeded) )
-                        {
-                            throw new Win32Exception(
-                                    Kernel32.INSTANCE.GetLastError());
-                        }
+                    LOGGER.debug(String.format("ReadEventLog() : Handle Insufficient buffer at %d : GetLastError() %d ( 0x%08X )",
+                            readCount, rc, rc & 0xFFFFFFFF));
 
-                        rc = Kernel32.INSTANCE.GetLastError();
-                    }
+                    _buffer = new Memory(pnMinNumberOfBytesNeeded.getValue());
+                    continue;
+                }
+                else if( rc == WinError.ERROR_HANDLE_EOF )
+                {
+                    LOGGER.debug(String.format("ReadEventLog() : Handle EOF at %d : GetLastError() %d ( 0x%08X )",
+                            readCount, rc, rc & 0xFFFFFFFF));
                     break;
+                }
+                else if( rc == WinError.ERROR_IO_PENDING )
+                {
+                    // not enough bytes in the buffer, resize
+                    rc = WinError.ERROR_SUCCESS;
 
-                    case WinError.ERROR_HANDLE_EOF:
-                    {
-                        LOGGER.debug(String.format("ReadEventLog() : Handle EOF at %d : GetLastError() %d ( 0x%08X )",
-                                i, rc, rc & 0xFFFFFFFF));
-                    }
+                    Thread.yield();
+                    continue;
+                }
+                else
+                {
+                    LOGGER.warn(String.format("ReadEventLog() : %d : Unknown GetLastError() %d ( 0x%08X )",
+                            readCount, rc, rc & 0xFFFFFFFF));
                     break;
                 }
             }
 
-            if( rc != WinError.ERROR_SUCCESS )
-            {
-                break;
-            }
+            // Parse the buffer
 
-            Advapi32Util.EventLogRecord record = new Advapi32Util.EventLogRecord(_buffer);
-            String computerName = null;
+            int bufferRemainder = pnBytesRead.getValue();
+            Pointer pevlr = _buffer;
 
-            // Get the computer name
+            do
             {
-                Pointer pevlr = _buffer;
+                // Next event
+                eventCount++;
+                Advapi32Util.EventLogRecord record = new Advapi32Util.EventLogRecord(pevlr);
+
+                String computerName = null;
                 WinNT.EVENTLOGRECORD record2 = new WinNT.EVENTLOGRECORD(pevlr);
 
                 ByteBuffer names = pevlr.getByteBuffer(record2.size(),
                         (record2.UserSidLength.intValue() != 0
                                 ? record2.UserSidOffset.intValue()
-                                    : record2.StringOffset.intValue()) - record2.size());
+                                : record2.StringOffset.intValue()) - record2.size());
 
                 names.position(0);
                 CharBuffer namesBuf = names.asCharBuffer();
                 String[] splits = namesBuf.toString().split("\0");
                 computerName = splits[1];
-            }
 
-            if( status != null && status.getRecordNumber() != null
-                    && status.getRecordNumber() > 0
-                    && i < status.getRecordNumber() )
-            {
-                // Skipping due to lower record number
-                ;
-            }
-            else
-            {
-                if( firstEventRead && status != null )
+                if( status != null && status.getRecordNumber() != null
+                        && status.getRecordNumber() > 0
+                        && eventCount < status.getRecordNumber() )
                 {
-                    if( i > 0 )
+                    // Skipping due to lower record number
+                    LOGGER.debug( String.format("Skipping %d", eventCount) );
+                }
+                else
+                {
+                    if( firstEventRead && status != null )
                     {
-                        LOGGER.debug(
-                                String.format("readEvents() : Skipped %d entries due to record number lower than %d",
-                                                    i, status.getRecordNumber()));
+                        if( eventCount > 0 )
+                        {
+                            LOGGER.debug(
+                                    String.format("readEvents() : Skipped %d entries due to record number lower than %d",
+                                            eventCount, status.getRecordNumber()));
+                        }
+                        firstEventRead = false;
                     }
-                    firstEventRead = false;
+
+                    res.add(LCWindowsEventWrapper.from(record, computerName, source));
+
+                    if( maxReadCount > 0 && res.size() >= maxReadCount )
+                    {
+                        LOGGER.debug( String.format("Max read count reached %d", maxReadCount) );
+                        break;
+                    }
                 }
 
-                res.add(LCWindowsEventWrapper.from(record, computerName, source));
-
-                if( maxReadCount > 0 && res.size() >= maxReadCount )
-                {
-                    break;
-                }
+                bufferRemainder -= record.getLength();
+                pevlr = pevlr.share(record.getLength());
             }
+            while( bufferRemainder > 0 );
+
         }
+        while( rc == WinNT.ERROR_SUCCESS );
 
         return res;
     }
