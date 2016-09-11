@@ -222,7 +222,7 @@ public final class LogCheckStateParser
         WindowsEventSourceStatus res = null;
         Element currEl = rootElem;
 
-        String recordPositionStr = null;
+        String recordNumberStr = null;
         String recordCountStr = null;
         String recordIdStr = null;
         String serverIdStr = null;
@@ -271,7 +271,7 @@ public final class LogCheckStateParser
 
         try
         {
-            recordPositionStr = currXPath.compile("./recordPosition").evaluate(rootElem);
+            recordNumberStr = currXPath.compile("./recordNumber").evaluate(rootElem);
         }
         catch (XPathExpressionException ex)
         {
@@ -319,7 +319,7 @@ public final class LogCheckStateParser
         res = WindowsEventSourceStatus.from(serverIdStr,
                 sourceIdStr,
                 recordIdStr,
-                recordPositionStr,
+                recordNumberStr,
                 recordCountStr,
                 processedStampStr,
                 processed);
