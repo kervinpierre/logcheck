@@ -89,6 +89,14 @@ public class WindowsEventBuilder implements ILogEntryBuilder
                     rootArray.get("channel").textValue());
         }
 
+        // exception
+        currNode = rootArray.get("exception");
+        if( currNode != null )
+        {
+            currentLogEntry.setException(
+                    rootArray.get("exception").textValue());
+        }
+
         // severity
         currNode = rootArray.get("severity");
         if( currNode != null )
