@@ -374,6 +374,15 @@ public final class TailerStatistics
                     = ContinueUtil.lastLogEntryDeDupes(ddLogs, maxLogEntries);
         }
 
+        if( stateFile == null || Files.notExists(stateFile) )
+        {
+            String msg = String.format("restoreWindowsEventState() : State file does not exist '%s'", stateFile);
+
+            LOGGER.debug(msg);
+
+            throw new LogCheckException(msg);
+        }
+
         // Read state file for information about the last run
         WindowsEventLogCheckState lcConf = null;
 

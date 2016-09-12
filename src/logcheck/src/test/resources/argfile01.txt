@@ -114,7 +114,7 @@
     # Use local file for monitor IO
   --monitor-url=file://c:/windows/temp/mon.dat \
     # Stop after 60 seconds
-  --stop-after=120                              \
+  --stop-after=180                              \
   --preferred-dir=c:/windows/temp               \
 --config=1                                     \
   --set-name="First monitored file"            \
@@ -165,7 +165,8 @@
   --windows-event-connection=localhost:Application,Security,System,LogCheckTestAA \
   --log-entry-builder-type=windows-event         \
   --log-entry-builder-type=windows-event         \
-  --log-entry-store-type=console,simplefile      \
+  #--log-entry-store-type=console,simplefile      \
+  --log-entry-store-type=simplefile      \
   --store-log-file c:/windows/temp/store-log.txt            \
   --save-state                                   \
   --state-file c:/windows/temp/current-state03.xml            \

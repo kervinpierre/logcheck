@@ -229,9 +229,6 @@ public final class LogEntryVO implements Serializable
         js.append( String.format("\"exception\":\"%s\"",
                 StringEscapeUtils.escapeJson(entryVO.m_exception)) );
 
-        js.append( String.format("\"jsonRaw\":\"%s\"",
-                StringEscapeUtils.escapeJson(entryVO.m_jsonRaw)) );
-
         js.append( String.format("\"appSource\":\"%s\"",
                 StringEscapeUtils.escapeJson(entryVO.m_appSource)) );
         js.append( String.format("\"appStatusCode\":\"%s\"",
@@ -250,6 +247,9 @@ public final class LogEntryVO implements Serializable
                 StringEscapeUtils.escapeJson(entryVO.m_appTimeGenerated)) );
         js.append( String.format("\"appDataStr\":\"%s\"",
                 StringEscapeUtils.escapeJson(entryVO.m_appDataStr)) );
+
+        js.append( String.format("\"jsonRaw\":\"%s\"",
+                StringEscapeUtils.escapeJson(entryVO.m_jsonRaw)) );
 
         js.append("}");
 

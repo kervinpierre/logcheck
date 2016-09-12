@@ -627,7 +627,7 @@ public final class WindowsEventTailer implements ITail
         // FIXME : Treat the data as binary, even though it's usually text
         if( ev.getData() == null )
         {
-            LOGGER.debug("ev2str() : event's getData() returned null");
+            //LOGGER.debug("ev2str() : event's getData() returned null");
         }
         else
         {
@@ -799,12 +799,25 @@ public final class WindowsEventTailer implements ITail
             // Collect and save source statistics
             if( m_statsCollect && m_doCollectStats )
             {
+                // TODO : We're not using the independent thread, periodic saving as we do with FileLogCheckTailer
+                //         that may be a mistake, but for now we only save Windows Event state after it's all been
+                //         read.  If that proves to be problematic, refactor to save periodically.
                 try
                 {
                     Deque<LogCheckStateStatusBase> currStatuses = statuses;
 
                     // Retrieved saved statuses from disk...
-                    WindowsEventLogCheckState ls = m_statistics.restoreWindowsEventState();
+                    WindowsEventLogCheckState ls = null;
+
+                    try
+                    {
+                        ls = m_statistics.restoreWindowsEventState();
+                    }
+                    catch( LogCheckException ex )
+                    {
+                        LOGGER.debug("readLines() : restoreWindowEventState() before save failed");
+                    }
+
                     if( ls != null )
                     {
                         currStatuses = WindowsEventLogCheckState.mergeStatuses(ls.getCompletedStatuses(),
@@ -837,8 +850,7 @@ public final class WindowsEventTailer implements ITail
         IntByReference pnBytesRead = new IntByReference();
         IntByReference pnMinNumberOfBytesNeeded = new IntByReference();
 
-       //Memory _buffer = new Memory(1024 * 64);
-        Memory _buffer = new Memory(1024 * 4);
+        Memory _buffer = new Memory(1024 * 64);
         List<LCWindowsEventWrapper> res = new ArrayList<>();
 
         int rc = 0, readCount = 0, eventCount = 0;
@@ -914,10 +926,11 @@ public final class WindowsEventTailer implements ITail
 
                 if( status != null && status.getRecordNumber() != null
                         && status.getRecordNumber() > 0
-                        && eventCount < status.getRecordNumber() )
+                        // TODO : This test is not perfect by any means and should be fixed
+                        && record.getRecordNumber() <= status.getRecordNumber() )
                 {
                     // Skipping due to lower record number
-                    LOGGER.debug( String.format("Skipping %d", eventCount) );
+                    LOGGER.debug( String.format("Skipping '%s' : %d", source, eventCount) );
                 }
                 else
                 {
