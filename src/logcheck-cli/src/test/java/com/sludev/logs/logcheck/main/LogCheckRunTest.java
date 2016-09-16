@@ -192,6 +192,9 @@ public class LogCheckRunTest
 
         Files.createDirectory(dedupeDir);
 
+        // File system logging
+        argsList.add("--log-source=file-local");
+
         // Stop the test after 20 seconds
         argsList.add("--stop-after=20");
 
@@ -217,6 +220,7 @@ public class LogCheckRunTest
         argsList.add("--tailer-validate-log-file");
         argsList.add("--debug-flags=LOG_SOURCE_LC_APP");
         argsList.add("--verbosity=all");
+        argsList.add("--create-missing-dirs");
 
         args = FSSArgFile.getArgArray(argsList);
 
@@ -336,6 +340,9 @@ public class LogCheckRunTest
         Path dedupeDir = testDir.resolve("dedupe");
         Files.createDirectory(dedupeDir);
 
+        // File system logging
+        argsList.add("--log-source=file-local");
+
         argsList.add("--stop-after=30S");
         argsList.add(String.format("--log-file %s",
                 logFile.toString().replace("\\", "\\\\")));
@@ -358,6 +365,7 @@ public class LogCheckRunTest
         argsList.add("--tailer-validate-log-file");
         argsList.add("--debug-flags=LOG_SOURCE_LC_APP");
         argsList.add("--verbosity=all");
+        argsList.add("--create-missing-dirs");
         // argsList.add("--random-wait-max=1");
 
         args = FSSArgFile.getArgArray(argsList);
@@ -569,6 +577,9 @@ public class LogCheckRunTest
             Files.createDirectory(dedupeDir);
         }
 
+        // File system logging
+        argsList.add("--log-source=file-local");
+
         argsList.add("--stop-after=1m");
         argsList.add("--continue");
         argsList.add(String.format("--log-file %s",
@@ -599,6 +610,7 @@ public class LogCheckRunTest
         argsList.add("--tailer-backup-log-file-name-component=INTEGER_INC");
         argsList.add("--debug-flags=LOG_SOURCE_LC_APP");
         argsList.add("--verbosity=all");
+        argsList.add("--create-missing-dirs");
         argsList.add(String.format("--tailer-backup-log-dir %s",
                 testDir.toString().replace("\\", "\\\\")));
         argsList.add(String.format("--stdout-file %s",
@@ -758,6 +770,9 @@ public class LogCheckRunTest
         List<String> argsList = new ArrayList<>(20);
 
         Path logFile = testDir.resolve("logcheck-sample-app-output.txt");
+
+        // File system logging
+        argsList.add("--log-source=file-local");
 
         argsList.add(String.format("--output-file %s", logFile));
         argsList.add("--delete-logs");

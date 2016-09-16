@@ -31,7 +31,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -41,7 +40,7 @@ import java.util.stream.Stream;
  */
 public final class ContinueUtil
 {
-    private static final Logger log = LogManager.getLogger(ContinueUtil.class);
+    private static final Logger LOGGER = LogManager.getLogger(ContinueUtil.class);
 
     public static List<LogCheckDeDupeLog> readLastDeDupeLogs(final Path deDupeLogDir,
                                                              final String setName,
@@ -59,6 +58,15 @@ public final class ContinueUtil
             currSetDirPrefix = setName.replaceAll("[^a-zA-Z0-9.-]", "_").trim();
         }
 
+        if( Files.notExists(deDupeLogDir) )
+        {
+            String errMsg = String.format("De-duplication folder does not exist '%s'", deDupeLogDir);
+
+            LOGGER.debug(errMsg);
+
+            throw new LogCheckException(errMsg);
+        }
+
         List<Path> allFiles;
         try
         {
@@ -71,7 +79,7 @@ public final class ContinueUtil
         }
         catch( IOException ex )
         {
-            log.debug("Error listing Deduplication directory.", ex);
+            LOGGER.debug("Error listing Deduplication directory.", ex);
 
             throw new LogCheckException("Error listing Deduplication directory.", ex);
         }

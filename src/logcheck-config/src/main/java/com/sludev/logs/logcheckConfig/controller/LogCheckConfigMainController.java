@@ -1,5 +1,6 @@
 package com.sludev.logs.logcheckConfig.controller;
 
+import com.sludev.logs.logcheck.config.builders.LogCheckConfigBuilder;
 import com.sludev.logs.logcheck.config.entities.LogCheckConfig;
 import com.sludev.logs.logcheck.enums.LCDebugFlag;
 import com.sludev.logs.logcheck.enums.LCLogEntryBuilderType;
@@ -1477,74 +1478,66 @@ public final class LogCheckConfigMainController implements Initializable
 
         try
         {
-            res = LogCheckConfig.from(null,
-                    currService, // service,
-                    currEmailOnError, // emailOnError,
-                    currSmtpServer,
-                    currSmtpPort,
-                    currSmtpPass,
-                    currSmtpUser,
-                    currSmtpProto,
-                    currSetName,
-                    currDryRun,
-                    currShowVersion, // showVersion,
-                    currPrintLogs, // printLog,
-                    currTailFromEnd, // tailFromEnd,
-                    currReadReOpenLogFile, // reOpenLogFile
-                    currStoreReOpenLogFile, // --store-reopen-log-file
-                    currSaveState,  // saveState
-                    null, // collectState
-                    currContinue,
-                    currStartPositionIgnoreError,
-                    currValidateTailerStats,
-                    currTailerBackupReadLogs,
-                    currTailerBackupReadLogReverse,
-                    currTailerBackupReadPriorLogs,
-                    currStopOnEOF,
-                    currReadOnlyFileMode,
-                    currCreateMissingDirs,
-                    currLockFile,
-                    currLogPath,
-                    currStoreLogFile,
-                    currStatusFile,
-                    currStateFile,
-                    currProcessedLogsFile,
-                    currErrorFile,
-                    null, // configFilePath,
-                    null, // holdingDir
-                    currDeDupeDirPath,
-                    currTailerBackupLogDir,
-                    currPreferredDir,
-                    currStdOutFileStr,
-                    currElasticsearchUrl,
-                    null, // elasticsearchIndexName,
-                    null, // elasticsearchIndexPrefix,
-                    null, // elasticsearchLogType,
-                    null, // elasticsearchIndexNameFormat,
-                    currLogCutoffDate, // logCutoffDate,
-                    currLogCutoffDuration, // logCutoffDuration,
-                    currLogDeduplicationDuration, // logDeduplicationDuration,
-                    currPollIntervalSeconds,
-                    currStopAfter,
-                    currDeDupeIgnoreCountStr,
-                    currDeDupeSkipCountStr,
-                    currReadLogFileCount,
-                    currReadMaxDeDupeEntries,
-                    currIdBlockSize,
-                    currDeDupeMaxLogsBeforeWrite,
-                    currDeDupeMaxLogsPerFile,
-                    currDeDupeMaxLogFiles,
-                    null, // deDupeIgnorePercentStr
-                    null, // deDupeSkipPercentStr
-                    currDebugVerbosity,
-                    currDeDupeDefaultAction,
-                    currLEBuilderType,
-                    currLEStoreType,
-                    currTailerBackupLogNameComps,
-                    currIdBlockHashtype,
-                    currTailerBackupLogCompression,
-                    currTailerBackupLogNameRegex,
-                    currDebugFlags);
+            LogCheckConfigBuilder currConfBuilder = LogCheckConfigBuilder.from(0);
+
+            currConfBuilder.setService(currService);
+            currConfBuilder.setEmailOnError(currEmailOnError);
+            currConfBuilder.setSmtpServer(currSmtpServer);
+            currConfBuilder.setSmtpPort(currSmtpPort);
+            currConfBuilder.setSmtpPass(currSmtpPass);
+            currConfBuilder.setSmtpUser(currSmtpUser);
+            currConfBuilder.setSmtpProto(currSmtpProto);
+            currConfBuilder.setSetName(currSetName);
+            currConfBuilder.setDryRun(currDryRun);
+            currConfBuilder.setShowVersion(currShowVersion);
+            currConfBuilder.setPrintLog(currPrintLogs);
+            currConfBuilder.setTailFromEnd(currTailFromEnd);
+            currConfBuilder.setReadReOpenLogFile(currReadReOpenLogFile);
+            currConfBuilder.setStoreReOpenLogFile(currStoreReOpenLogFile);
+            currConfBuilder.setSaveState(currSaveState);
+            currConfBuilder.setContinueState(currContinue);
+            currConfBuilder.setStartPositionIgnoreError(currStartPositionIgnoreError);
+            currConfBuilder.setValidateTailerStats(currValidateTailerStats);
+            currConfBuilder.setTailerBackupReadLog(currTailerBackupReadLogs);
+            currConfBuilder.setTailerBackupReadLogReverse(currTailerBackupReadLogReverse);
+            currConfBuilder.setStopOnEOF(currStopOnEOF);
+            currConfBuilder.setReadOnlyFileMode(currReadOnlyFileMode);
+            currConfBuilder.setCreateMissingDirs(currCreateMissingDirs);
+            currConfBuilder.setLockFilePath(currLockFile);
+            currConfBuilder.setLogPath(currLogPath);
+            currConfBuilder.setStoreLogPath(currStoreLogFile);
+            currConfBuilder.setStatusFilePath(currStatusFile);
+            currConfBuilder.setStateFilePath(currStateFile);
+            currConfBuilder.setStateProcessedLogsFilePath(currProcessedLogsFile);
+            currConfBuilder.setErrorFilePath(currErrorFile);
+            currConfBuilder.setDeDupeDirPath(currDeDupeDirPath);
+            currConfBuilder.setTailerLogBackupDir(currTailerBackupLogDir);
+            currConfBuilder.setPreferredDir(currPreferredDir);
+            currConfBuilder.setStdOutFile(currStdOutFileStr);
+            currConfBuilder.setElasticsearchURL(currElasticsearchUrl);
+            currConfBuilder.setLogCutoffDate(currLogCutoffDate);
+            currConfBuilder.setLogCutoffDuration(currLogCutoffDuration);
+            currConfBuilder.setLogDeduplicationDuration(currLogDeduplicationDuration);
+            currConfBuilder.setPollIntervalSeconds(currPollIntervalSeconds);
+            currConfBuilder.setDeDupeIgnoreCount(currDeDupeIgnoreCountStr);
+            currConfBuilder.setDeDupeSkipCount(currDeDupeSkipCountStr);
+            currConfBuilder.setReadLogFileCount(currReadLogFileCount);
+            currConfBuilder.setReadMaxDeDupeEntries(currReadMaxDeDupeEntries);
+            currConfBuilder.setIdBlockSize(currIdBlockSize);
+            currConfBuilder.setDeDupeMaxLogsBeforeWrite(currDeDupeMaxLogsBeforeWrite);
+            currConfBuilder.setDeDupeMaxLogsPerFile(currDeDupeMaxLogsPerFile);
+            currConfBuilder.setDeDupeMaxLogFiles(currDeDupeMaxLogFiles);
+            currConfBuilder.setVerbosity(currDebugVerbosity);
+            currConfBuilder.setDeDupeDefaultAction(currDeDupeDefaultAction);
+            currConfBuilder.setLogEntryBuilderStrs(currLEBuilderType);
+            currConfBuilder.setLogEntryStoreStrs(currLEStoreType);
+            currConfBuilder.setTailerBackupLogNameCompStrs(currTailerBackupLogNameComps);
+            currConfBuilder.setIdBlockHashType(currIdBlockHashtype);
+            currConfBuilder.setTailerBackupLogCompression(currTailerBackupLogCompression);
+            currConfBuilder.setTailerBackupLogNameRegex(currTailerBackupLogNameRegex);
+            currConfBuilder.setDebugFlagStrs(currDebugFlags);
+
+            res = currConfBuilder.toConfig(null);
         }
         catch( LogCheckException ex )
         {

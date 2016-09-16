@@ -38,7 +38,6 @@
     <orderEntry type="library" name="Maven: commons-logging:commons-logging:1.2" level="project" />
     <orderEntry type="library" name="Maven: commons-codec:commons-codec:1.9" level="project" />
     <orderEntry type="library" name="Maven: org.apache.httpcomponents:httpasyncclient:4.1.1" level="project" />
-    <orderEntry type="module" module-name="logcheck-sample-app" scope="TEST" />
     <orderEntry type="module" module-name="elasticsearch-app" scope="TEST" />
     <orderEntry type="library" scope="TEST" name="Maven: org.elasticsearch:elasticsearch:2.2.1" level="project" />
     <orderEntry type="library" scope="TEST" name="Maven: org.apache.lucene:lucene-core:5.4.1" level="project" />
@@ -75,6 +74,7 @@
     <orderEntry type="library" name="Maven: com.fasterxml.jackson.core:jackson-databind:2.6.2" level="project" />
     <orderEntry type="library" name="Maven: com.fasterxml.jackson.core:jackson-annotations:2.6.0" level="project" />
     <orderEntry type="library" name="Maven: com.fasterxml.jackson.core:jackson-core:2.6.2" level="project" />
+    <orderEntry type="module" module-name="logcheck-sample-app" scope="TEST" />
     <orderEntry type="library" name="Maven: org.apache.logging.log4j:log4j-api:2.6.2" level="project" />
     <orderEntry type="library" name="Maven: org.apache.logging.log4j:log4j-core:2.6.2" level="project" />
     <orderEntry type="library" name="Maven: org.slf4j:slf4j-api:1.7.21" level="project" />

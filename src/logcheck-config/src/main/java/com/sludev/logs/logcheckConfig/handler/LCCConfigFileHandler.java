@@ -30,6 +30,9 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.time.Instant;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -76,9 +79,20 @@ public final class LCCConfigFileHandler
         {
             try
             {
-                LogCheckConfig config = LogCheckConfigParser.readConfig(
+                LogCheckConfig config = null;
+
+                LinkedHashMap<Integer, LogCheckConfig> configList = LogCheckConfigParser.readConfig(
                         ParserUtil.readConfig(confFilePath,
                                 LCFileFormat.LCCONFIG));
+
+                if( configList != null && configList.isEmpty() == false )
+                {
+                    Optional<LogCheckConfig> configOpt = configList.values().stream().findFirst();
+                    if( configOpt.isPresent() )
+                    {
+                        config = configOpt.get();
+                    }
+                }
 
                 app.getAppState().setConfig(config);
 
@@ -142,7 +156,10 @@ public final class LCCConfigFileHandler
 
         try
         {
-            LogCheckConfigWriter.write(conf, file);
+            Map<Integer, LogCheckConfig> configMap = new HashMap<>();
+            configMap.put(0, conf);
+
+            LogCheckConfigWriter.write(configMap, file);
         }
         catch( LogCheckException ex )
         {

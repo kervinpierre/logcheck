@@ -4,14 +4,13 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.sludev.logs</groupId>
     <artifactId>logcheck-config</artifactId>
-    <version>0.9</version>
-    <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.source>1.8</maven.compiler.source>
-        <maven.compiler.target>1.8</maven.compiler.target>
-    </properties>
+
+    <parent>
+        <groupId>com.sludev.logs</groupId>
+        <artifactId>logcheck-parent</artifactId>
+        <version>0.9</version>
+    </parent>
 
     <build>
         <plugins>
@@ -48,31 +47,21 @@
             <artifactId>commons-cli</artifactId>
             <version>LATEST</version>
         </dependency>
-        
-        <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-api</artifactId>
-            <version>LATEST</version>
-        </dependency>
 
         <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-core</artifactId>
-            <version>LATEST</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-lang3</artifactId>
-            <version>LATEST</version>
-            <type>jar</type>
+            <groupId>com.sludev.logs</groupId>
+            <artifactId>logcheck-cli</artifactId>
         </dependency>
 
         <dependency>
             <groupId>com.sludev.logs</groupId>
-            <artifactId>logcheck</artifactId>
-            <version>0.9</version>
-            <scope>compile</scope>
+            <artifactId>logcheck-cli</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.sludev.logs</groupId>
+            <artifactId>logcheck-cli</artifactId>
+            <version>${project.parent.version}</version>
         </dependency>
 
     </dependencies>

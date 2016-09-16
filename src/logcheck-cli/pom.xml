@@ -13,14 +13,7 @@
 
     <build>
         <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-dependency-plugin</artifactId>
-                <version>2.10</version>
-                <configuration>
-                    <outputDirectory>${project.build.directory}/dependencies</outputDirectory>
-                </configuration>
-            </plugin>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
@@ -65,14 +58,6 @@
             </plugin>
             -->
 
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.5.1</version>
-                <configuration>
-                    <showDeprecation>true</showDeprecation>
-                </configuration>
-            </plugin>
         </plugins>
     </build>
     
@@ -131,18 +116,9 @@
         </dependency>
 -->
 
-
-        <dependency>
-            <groupId>com.sludev.logs</groupId>
-            <artifactId>logcheck-sample-app</artifactId>
-            <version>0.9</version>
-            <scope>test</scope>
-        </dependency>
-
         <dependency>
             <groupId>com.sludev.logs</groupId>
             <artifactId>elasticsearch-app</artifactId>
-            <version>0.9</version>
             <scope>test</scope>
         </dependency>
 
@@ -151,15 +127,31 @@
             <artifactId>opencsv</artifactId>
             <version>3.8</version>
         </dependency>
+
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
             <version>2.6.2</version>
         </dependency>
+
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
             <version>2.6.2</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.sludev.logs</groupId>
+            <artifactId>elasticsearch-app</artifactId>
+            <version>${project.parent.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.sludev.logs</groupId>
+            <artifactId>logcheck-sample-app</artifactId>
+            <version>${project.parent.version}</version>
+            <scope>test</scope>
         </dependency>
 
     </dependencies>

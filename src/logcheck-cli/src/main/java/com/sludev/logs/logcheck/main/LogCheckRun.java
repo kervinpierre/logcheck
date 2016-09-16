@@ -269,6 +269,12 @@ public class LogCheckRun implements Callable<Map<Integer, LogCheckResult>>
 
         }
 
+        if( logSourceMap == null
+                || logSourceMap.isEmpty() )
+        {
+            throw new LogCheckException("We can't continue without any log sources. See '--log-source'");
+        }
+
         Map<Integer, ILogCheckTail> tailerMap = new HashMap<>(10);
         for( Integer confKey : logSourceTypeMap.keySet() )
         {
