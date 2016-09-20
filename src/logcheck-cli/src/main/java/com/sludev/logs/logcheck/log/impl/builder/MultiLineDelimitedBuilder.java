@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.sludev.logs.logcheck.enums.LCLogEntryBuilderType;
 import com.sludev.logs.logcheck.log.ILogEntryBuilder;
 import com.sludev.logs.logcheck.log.ILogEntrySink;
 import com.sludev.logs.logcheck.log.LogEntry;
@@ -48,9 +49,12 @@ public final class MultiLineDelimitedBuilder implements ILogEntryBuilder
     private final StringBuilder m_columnStrBuild;
     private final ILogEntrySink m_completionCallback;
 
+    private static final LCLogEntryBuilderType type = LCLogEntryBuilderType.MULTILINE_DELIMITED;
+
     // Mutable
     private LogEntry m_currentLogEntry;
     private Integer m_columnCount;
+    private long count = 0;
 
     private MultiLineDelimitedBuilder( final Pattern logRowStartPattern,
                                       final Pattern logRowEndPattern,
@@ -78,6 +82,18 @@ public final class MultiLineDelimitedBuilder implements ILogEntryBuilder
 
         this.m_currentLogEntry = null;
         this.m_columnCount = null;
+    }
+
+    @Override
+    public LCLogEntryBuilderType getType()
+    {
+        return type;
+    }
+
+    @Override
+    public Long getCount()
+    {
+        return count;
     }
 
     public static MultiLineDelimitedBuilder from( final String logRowStartPatternStr,
@@ -252,6 +268,7 @@ public final class MultiLineDelimitedBuilder implements ILogEntryBuilder
             if( m_completionCallback != null)
             {
                 m_completionCallback.put(m_currentLogEntry);
+                count++;
             }
 
             m_currentLogEntry = null;

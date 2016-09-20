@@ -2,6 +2,7 @@ package com.sludev.logs.logcheck.log.impl.builder;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sludev.logs.logcheck.enums.LCLogEntryBuilderType;
 import com.sludev.logs.logcheck.log.ILogEntryBuilder;
 import com.sludev.logs.logcheck.log.ILogEntrySink;
 import com.sludev.logs.logcheck.log.LogEntry;
@@ -25,12 +26,26 @@ public class WindowsEventBuilder implements ILogEntryBuilder
 
     private final List<Pattern> ignoreLinePatternList;
     private final ILogEntrySink completionCallback;
+    private long count = 0;
+    private static final LCLogEntryBuilderType type = LCLogEntryBuilderType.WINDOWS_EVENT;
 
     private WindowsEventBuilder( final List<Pattern> ignoreLinePatternList,
                                  final ILogEntrySink completionCallback)
     {
         this.completionCallback = completionCallback;
         this.ignoreLinePatternList = ignoreLinePatternList;
+    }
+
+    @Override
+    public LCLogEntryBuilderType getType()
+    {
+        return type;
+    }
+
+    @Override
+    public Long getCount()
+    {
+        return count;
     }
 
     public static WindowsEventBuilder from( final List<Pattern> ignoreLinePatternList,
@@ -168,5 +183,6 @@ public class WindowsEventBuilder implements ILogEntryBuilder
         {
             completionCallback.put(currentLogEntry);
         }
+        count++;
     }
 }

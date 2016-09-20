@@ -976,7 +976,6 @@ public class LogCheckRunTest
      * @throws ESAException
      */
     @Test
-    @Ignore
     public void A006_ACScenario_catchupLogsThenTail()
             throws IOException, LogCheckException, InterruptedException, ExecutionException,
                     NoSuchAlgorithmException, ESAException
@@ -992,8 +991,13 @@ public class LogCheckRunTest
         }
         Files.createDirectory(testDir);
 
+        // Test-data directory is found in the parent's base directory
+        Path testDataPath = Paths.get("../../test-data")
+                                    .toAbsolutePath()
+                                    .normalize();
+
         // Copy the data we need for testing
-        FileUtils.copyDirectory(new File("test-data"),
+        FileUtils.copyDirectory(testDataPath.toFile(),
                                     testDir.resolve("test-data").toFile());
 
         internal_ACScenario_catchupLogsThenTail(testDir, "25m", true);

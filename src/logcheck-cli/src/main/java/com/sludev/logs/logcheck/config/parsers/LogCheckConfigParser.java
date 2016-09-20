@@ -845,7 +845,7 @@ public class LogCheckConfigParser
             String tempStr = currXPath.compile("./readOnlyLogFile").evaluate(currEl);
             if( StringUtils.isNoneBlank(tempStr) )
             {
-                currBuilder.setReadReOpenLogFile(Boolean.parseBoolean(tempStr));
+                currBuilder.setReadOnlyFileMode(Boolean.parseBoolean(tempStr));
             }
         }
         catch (XPathExpressionException ex)

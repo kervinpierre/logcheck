@@ -598,7 +598,7 @@ public final class FileLogCheckTail implements ILogCheckTail
         }
 
         BasicThreadFactory tailerFactory = new BasicThreadFactory.Builder()
-                .namingPattern("tailerThread-%d")
+                .namingPattern("fileLogCheckTailThread-%d")
                 .build();
 
         ExecutorService tailerExe = Executors.newSingleThreadExecutor(tailerFactory);
@@ -1035,7 +1035,7 @@ public final class FileLogCheckTail implements ILogCheckTail
                                         != currBackupFileWatch.getDetectedCreatePathCount()) );
 
                                 currLastBackupFileProcessed = currLastBackupFileProcessedTemp;
-                                backupLogFilesQueueTemp.forEach(backupLogFilesQueue::addFirst);
+                                backupLogFilesQueueTemp.forEach(backupLogFilesQueue::addLast);
 
                                 // Add the new files to the session file cache
                                 if( currSessionBackupFiles == null )
@@ -1098,7 +1098,7 @@ public final class FileLogCheckTail implements ILogCheckTail
 
                                 BasicThreadFactory logCheckTailerFactory
                                         = new BasicThreadFactory.Builder()
-                                        .namingPattern("tailerCompletionThread-%d")
+                                        .namingPattern("fileLogTailCompletionThread-%d")
                                         .build();
 
                                 ExecutorService logCheckTailerExe

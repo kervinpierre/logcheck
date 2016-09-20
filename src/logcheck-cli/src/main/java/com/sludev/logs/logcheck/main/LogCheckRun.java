@@ -562,9 +562,27 @@ public class LogCheckRun implements Callable<Map<Integer, LogCheckResult>>
             Map<Integer, LogCheckResult> tailResList = new HashMap<>(10);
             Map<Integer, LogCheckResult> storeResList = new HashMap<>(10);
 
-            //while( (fileTailRes == null) || (logStoreRes == null) )
             while( run )
             {
+                if( LOGGER.isDebugEnabled() )
+                {
+                    StringBuilder sb = new StringBuilder();
+
+                    sb.append("Builder queues :\n");
+
+                    for(  Integer currKey : logBuilderMap.keySet() )
+                    {
+                        List<ILogEntryBuilder> bld = logBuilderMap.get(currKey);
+                        sb.append(String.format("  key : %s\n", currKey));
+                        for( ILogEntryBuilder b : bld )
+                        {
+                            sb.append(String.format("  %s : %d\n", b.getType(), b.getCount()));
+                        }
+                    }
+
+                    LOGGER.debug(sb.toString());
+                }
+
                 if( allStoresAreRunning == false )
                 {
                     // The Log Store stopped so we should stop the tailer as well
@@ -592,6 +610,10 @@ public class LogCheckRun implements Callable<Map<Integer, LogCheckResult>>
                     if( allTailerThreadsDone )
                     {
                         run = false;
+
+                        // Give the tailer a final 2 seconds to push
+                        // out last records
+                        Thread.sleep(5000);
 
                         // Log polling thread has completed.  Generally this should
                         // not happen until we're shutting down.

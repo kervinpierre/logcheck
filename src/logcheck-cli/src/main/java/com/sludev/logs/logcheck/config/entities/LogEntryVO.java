@@ -226,26 +226,26 @@ public final class LogEntryVO implements Serializable
                 StringEscapeUtils.escapeJson(entryVO.m_host)) );
         js.append( String.format("\"message\":\"%s\",",
                 StringEscapeUtils.escapeJson(entryVO.m_message)) );
-        js.append( String.format("\"exception\":\"%s\"",
+        js.append( String.format("\"exception\":\"%s\",",
                 StringEscapeUtils.escapeJson(entryVO.m_exception)) );
 
-        js.append( String.format("\"appSource\":\"%s\"",
+        js.append( String.format("\"appSource\":\"%s\",",
                 StringEscapeUtils.escapeJson(entryVO.m_appSource)) );
-        js.append( String.format("\"appStatusCode\":\"%s\"",
+        js.append( String.format("\"appStatusCode\":\"%s\",",
                 StringEscapeUtils.escapeJson(entryVO.m_appStatusCode)) );
-        js.append( String.format("\"appChannel\":\"%s\"",
+        js.append( String.format("\"appChannel\":\"%s\",",
                 StringEscapeUtils.escapeJson(entryVO.m_appChannel)) );
-        js.append( String.format("\"appType\":\"%s\"",
+        js.append( String.format("\"appType\":\"%s\",",
                 StringEscapeUtils.escapeJson(entryVO.m_appType)) );
-        js.append( String.format("\"appRecordNumber\":\"%s\"",
+        js.append( String.format("\"appRecordNumber\":\"%s\",",
                 StringEscapeUtils.escapeJson(entryVO.m_appRecordNumber)) );
-        js.append( String.format("\"appEventId\":\"%s\"",
+        js.append( String.format("\"appEventId\":\"%s\",",
                 StringEscapeUtils.escapeJson(entryVO.m_appEventId)) );
-        js.append( String.format("\"appComputerName\":\"%s\"",
+        js.append( String.format("\"appComputerName\":\"%s\",",
                 StringEscapeUtils.escapeJson(entryVO.m_appComputerName)) );
-        js.append( String.format("\"appTimeGenerated\":\"%s\"",
+        js.append( String.format("\"appTimeGenerated\":\"%s\",",
                 StringEscapeUtils.escapeJson(entryVO.m_appTimeGenerated)) );
-        js.append( String.format("\"appDataStr\":\"%s\"",
+        js.append( String.format("\"appDataStr\":\"%s\",",
                 StringEscapeUtils.escapeJson(entryVO.m_appDataStr)) );
 
         js.append( String.format("\"jsonRaw\":\"%s\"",

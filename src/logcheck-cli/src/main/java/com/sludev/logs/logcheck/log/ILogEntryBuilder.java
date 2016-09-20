@@ -1,5 +1,7 @@
 package com.sludev.logs.logcheck.log;
 
+import com.sludev.logs.logcheck.enums.LCLogEntryBuilderType;
+
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -9,6 +11,8 @@ import java.util.regex.Pattern;
  */
 public interface ILogEntryBuilder
 {
+    LCLogEntryBuilderType getType();
+    Long getCount();
 
     void handleLogLine(String currLineStr) throws InterruptedException;
 

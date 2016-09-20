@@ -1,5 +1,6 @@
 package com.sludev.logs.logcheck.log.impl.builder;
 
+import com.sludev.logs.logcheck.enums.LCLogEntryBuilderType;
 import com.sludev.logs.logcheck.log.ILogEntryBuilder;
 import com.sludev.logs.logcheck.log.ILogEntrySink;
 import com.sludev.logs.logcheck.log.LogEntry;
@@ -18,6 +19,21 @@ public class NCSACommonLogBuilder implements ILogEntryBuilder
 {
     private final List<Pattern> ignoreLinePatternList;
     private final ILogEntrySink completionCallback;
+
+    private long count = 0;
+    private static final LCLogEntryBuilderType type = LCLogEntryBuilderType.NCSA_COMMON_LOG;
+
+    @Override
+    public LCLogEntryBuilderType getType()
+    {
+        return type;
+    }
+
+    @Override
+    public Long getCount()
+    {
+        return count;
+    }
 
     private NCSACommonLogBuilder(final List<Pattern> ignoreLinePatternList,
                                  final ILogEntrySink completionCallback)
@@ -54,6 +70,7 @@ public class NCSACommonLogBuilder implements ILogEntryBuilder
         if(completionCallback != null)
         {
             completionCallback.put(currentLogEntry);
+            count++;
         }
     }
 }

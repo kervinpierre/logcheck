@@ -754,7 +754,7 @@ public final class LogCheckConfigWriter
 
             currElem = doc.createElement("builder");
             currElem.appendChild(doc.createTextNode(
-                    StringUtils.lowerCase(currBuilder.name().replace('_', ' '))));
+                    StringUtils.lowerCase(currBuilder.name().replace('_', '-'))));
 
             if( builders == null )
             {

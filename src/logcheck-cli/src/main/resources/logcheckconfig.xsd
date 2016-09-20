@@ -453,8 +453,8 @@ NOTICE:  All information contained herein is, and remains
         <xs:restriction base="xs:string">
             <xs:enumeration value="none"/>
             <xs:enumeration value="singleline"/>
-            <xs:enumeration value="multiline delimited"/>
-            <xs:enumeration value="ncsa common log"/>
+            <xs:enumeration value="multiline-delimited"/>
+            <xs:enumeration value="ncsa-common-log"/>
         </xs:restriction>
     </xs:simpleType>
 

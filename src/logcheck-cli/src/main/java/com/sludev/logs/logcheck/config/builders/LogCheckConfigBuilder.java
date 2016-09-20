@@ -1195,6 +1195,7 @@ public final class LogCheckConfigBuilder
     }
 
     public void setLogEntryBuilderStrs( String[] logEntryBuilderStrs )
+            throws LogCheckException
     {
         if(logEntryBuilderStrs != null )
         {
